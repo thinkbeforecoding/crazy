@@ -1,0 +1,45 @@
+source https://www.nuget.org/api/v2
+
+nuget FSharp.Core
+group Server
+    source https://api.nuget.org/v3/index.json
+    framework: netcoreapp3.1
+    storage: none
+
+    nuget FSharp.Core
+    nuget Giraffe
+    nuget Elmish.Bridge.Giraffe ~> 3
+    nuget Thoth.Json.Giraffe
+    
+    nuget coverlet.collector
+    nuget Microsoft.NET.Test.Sdk
+nuget Unquote
+    nuget xunit
+    nuget xunit.runner.visualstudio version_in_path: true, storage: packages
+
+group Client
+    source https://api.nuget.org/v3/index.json
+    framework: netstandard2.0
+    storage: none
+
+    nuget Fable.Core ~> 3
+    nuget Fable.Elmish ~> 3
+    nuget Fable.Elmish.Debugger ~> 3
+    nuget Fable.Elmish.HMR ~> 4
+    nuget Fable.Elmish.React ~> 3
+    nuget Thoth.Fetch ~> 1
+    nuget Fable.React ~> 5
+    nuget Elmish.Bridge.Client ~> 3
+    nuget Fulma ~> 2
+    nuget Fable.FontAwesome.Free ~> 2
+
+group Build
+    source https://api.nuget.org/v3/index.json
+    framework: netstandard2.0
+    storage: none
+
+    nuget FSharp.Core
+    nuget Fake.Core.ReleaseNotes
+    nuget Fake.Core.Target
+    nuget Fake.DotNet.Cli
+    nuget Fake.IO.FileSystem

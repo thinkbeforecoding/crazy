@@ -1,0 +1,7 @@
+group Server
+Microsoft.NET.Test.Sdk
+xunit
+xunit.runner.visualstudio
+coverlet.collector
+FSharp.Core
+Unquote

@@ -1,0 +1,5 @@
+group Server
+    FSharp.Core
+    Giraffe
+    Thoth.Json.Giraffe
+    Elmish.Bridge.Giraffe
