@@ -218,19 +218,16 @@ module Player =
     type Event =
         | Started of Started
         | FirstCrossroadSelected of FirstCrossroadSelected
-        | FenceDrawn of FenceDrawn
-        | FenceRemoved of FenceRemoved
+        | FenceDrawn of Moved
+        | FenceRemoved of Moved
         | FenceLooped of FenceLooped
+        | MovedInField of Moved
     and Started =
         { Parcel : Parcel }
     and FirstCrossroadSelected =
         { Crossroad : Crossroad }
-    and FenceDrawn =
+    and Moved =
         { Move: Direction
-          Path: Path
-          Crossroad: Crossroad}
-    and FenceRemoved =
-        { Move : Direction
           Path: Path
           Crossroad: Crossroad}
     and FenceLooped =
@@ -241,7 +238,7 @@ module Player =
 
     let decide command player =
         match player, command with
-        | InitialState, Start cmd ->
+        | _, Start cmd ->
             Started { Parcel = cmd.Parcel }
         | Starting _, SelectFirstCrossroad cmd ->
             FirstCrossroadSelected { Crossroad = cmd.Crossroad }
@@ -254,7 +251,11 @@ module Player =
                 FenceRemoved { Move = dir; Path = nextPath; Crossroad = nextPos } 
             | _ ->
                 match Fence.findLoop dir player.Tractor player.Fence with
-                | Fence [] -> FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos } 
+                | Fence [] -> 
+                    if Crossroad.isInField player.Field nextPos then
+                        MovedInField { Move = dir; Path = nextPath; Crossroad = nextPos }
+                    else
+                        FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos } 
                 | loop -> FenceLooped { Move = dir; Loop = loop; Crossroad = nextPos }
         | _ -> failwith "Invalid operation"      
 
@@ -267,6 +268,7 @@ module Player =
         | Playing player, FenceDrawn e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.add (e.Path, e.Move) player.Fence }
         | Playing player, FenceRemoved e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.tail player.Fence }
         | Playing player, FenceLooped e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.remove e.Loop player.Fence }
+        | Playing player, MovedInField e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.empty }
         | _ -> player 
 
 
@@ -429,9 +431,9 @@ module Pix =
         let tx,ty = ofPoint tile
         
         match border with
-        | BN -> tx,ty-size*0.73
-        | BNW -> tx - size*0.75,ty-size*0.35
-        | BNE -> tx + size*0.73,ty-size*0.22
+        | BN -> tx - size * 0.1,ty-size*0.73
+        | BNW -> tx - size*0.77,ty-size*0.31
+        | BNE -> tx + size*0.74,ty-size*0.27
 
 
 

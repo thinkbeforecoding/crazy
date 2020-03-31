@@ -83,12 +83,13 @@ let update clientDispatch msg (model: Color option) =
             model, Cmd.none
         | None -> model, Cmd.none
 
+
+
 /// Connect the Elmish functions to an endpoint for websocket connections
 let webApp =
     Bridge.mkServer "/socket/init" init update
     |> Bridge.withServerHub connections
     |> Bridge.run Giraffe.server
-
 
 
 let configureApp (app : IApplicationBuilder) =

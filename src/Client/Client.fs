@@ -73,7 +73,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
 
         let cmd =
             match currentModel.Color with
-            | Some _ -> Cmd.none
+            | Some color -> Cmd.ofMsg (InitColor color)
             | None ->
                 let loc = Browser.Dom.document.location
                 Cmd.ofMsg (InitColor (parseColor loc.hash ))
@@ -98,10 +98,6 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         { currentModel with
               Message = m
         }, Cmd.none
-
-
-
-
 
 
 let imgUrl typ color = 
