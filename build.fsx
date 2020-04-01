@@ -80,7 +80,19 @@ Target.create "Build" (fun _ ->
         System.Text.Encoding.UTF8
         (Path.combine clientPath "Version.fs")
     runTool yarnTool "webpack-cli -p" __SOURCE_DIRECTORY__
+
+
+    DotNet.publish (fun p ->
+        { p with
+            Configuration = DotNet.BuildConfiguration.Release
+            OutputPath = Some "bin"
+        }) "crazy.sln"
+
+    Directory.ensure "bin/public"
+    Shell.copyDir "bin/public" "src/Client/deploy" (fun _ -> true) |> ignore
 )
+
+
 
 Target.create "Run" (fun _ ->
     let server = async {

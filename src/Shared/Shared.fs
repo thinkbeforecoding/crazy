@@ -55,14 +55,19 @@ module Direction =
         | Down -> Up
         | Horizontal -> Horizontal
 
+type Power =
+    | PowerUp
+    | PowerDown
+
+
 type Player =
     | Starting of Parcel
     | Playing of Playing
-
 and Playing =
     { Tractor: Crossroad
       Fence: Fence
-      Field: Field}
+      Field: Field
+      Power: Power }
 
 type Board = Map<Color, Player>
 
@@ -72,7 +77,8 @@ type PlayerState =
 and PlayingState =
     { STractor: Crossroad
       SFence: Fence
-      SField: Parcel list }
+      SField: Parcel list
+      SPower: Power}
 
 type BoardState = (Color*PlayerState) list
     
@@ -149,6 +155,7 @@ module Path =
 module Fence =
     let empty = Fence []
 
+
     let findLoop dir pos (Fence paths) =
         let nextPos = Crossroad.neighbor dir pos 
         let rec iter pos loop paths =
@@ -168,7 +175,7 @@ module Fence =
     let tail (Fence paths) =
         Fence (List.tail paths)
 
-    let protection pos (Fence paths) =
+    let fenceCrossroads tractor (Fence paths) =
         let rec loop pos paths =
             seq {
                 match paths with
@@ -178,8 +185,12 @@ module Fence =
                     yield next
                     yield! loop next tail
             }
+        loop tractor paths 
 
-        loop pos paths |> Seq.truncate 2
+    let protection tractor fence =
+        fenceCrossroads tractor fence
+        |> Seq.truncate 2
+
         
 
     let length (Fence paths) = List.length paths
@@ -222,6 +233,10 @@ module Player =
         | FenceRemoved of Moved
         | FenceLooped of FenceLooped
         | MovedInField of Moved
+        | MovedPowerless of Moved
+        | Annexed of Annexed
+        | CutFence of CutFence
+        | PoweredUp
     and Started =
         { Parcel : Parcel }
     and FirstCrossroadSelected =
@@ -234,29 +249,67 @@ module Player =
         { Move: Direction
           Loop: Fence
           Crossroad: Crossroad }
+    and Annexed =
+        {  Move: Direction
+           Crossroad: Crossroad
+           NewField: Field
+        }
+    and CutFence = 
+        { Color: Color }
+
+    let isCut tractor player =
+        match player with
+        | Playing player ->
+            Fence.fenceCrossroads player.Tractor player.Fence
+            |> Seq.contains tractor
+        | _ -> false
+
+    let decideCut otherPlayers tractor =
+        otherPlayers
+        |> List.filter (snd >> isCut tractor)
+        |> List.map (fun (color,_) -> CutFence { Color= color} )
 
 
-    let decide command player =
+    let decide otherPlayers command player =
         match player, command with
         | _, Start cmd ->
-            Started { Parcel = cmd.Parcel }
+            [ Started { Parcel = cmd.Parcel } ]
         | Starting _, SelectFirstCrossroad cmd ->
-            FirstCrossroadSelected { Crossroad = cmd.Crossroad }
+            [ FirstCrossroadSelected { Crossroad = cmd.Crossroad } ]
         | Playing player, Move cmd ->
             let dir = cmd.Direction
             let nextPos = Crossroad.neighbor dir player.Tractor
             let nextPath = Path.neighbor dir player.Tractor
-            match player.Fence with
-            | Rwd nextPath ->
-                FenceRemoved { Move = dir; Path = nextPath; Crossroad = nextPos } 
-            | _ ->
-                match Fence.findLoop dir player.Tractor player.Fence with
-                | Fence [] -> 
+            match player.Power with
+            | PowerUp ->
+                match player.Fence with
+                | Rwd nextPath ->
+                    [ FenceRemoved { Move = dir; Path = nextPath; Crossroad = nextPos }  ]
+                | _ ->
+                    match Fence.findLoop dir player.Tractor player.Fence with
+                    | Fence [] -> 
+                        
+                        [ 
+                          if Crossroad.isInField player.Field nextPos then
+                             MovedInField { Move = dir; Path = nextPath; Crossroad = nextPos }
+                          else
+                            FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos }  
+                          
+                          yield! decideCut otherPlayers nextPos
+                        ]
+                    | loop -> [  FenceLooped { Move = dir; Loop = loop; Crossroad = nextPos } ]
+            | PowerDown ->
+                [
+                    // when power is down, you don't draw fences
+                    MovedPowerless { Move = dir; Path = nextPath; Crossroad = nextPos }
+
                     if Crossroad.isInField player.Field nextPos then
-                        MovedInField { Move = dir; Path = nextPath; Crossroad = nextPos }
-                    else
-                        FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos } 
-                | loop -> FenceLooped { Move = dir; Loop = loop; Crossroad = nextPos }
+                        // when back in field, power is up
+                        PoweredUp
+                        // an maybe you cut someone just there
+                        yield! decideCut otherPlayers nextPos
+                ]
+                
         | _ -> failwith "Invalid operation"      
 
     let evolve player event =
@@ -264,26 +317,30 @@ module Player =
         | Starting p, FirstCrossroadSelected e ->
             Playing { Tractor = e.Crossroad
                       Fence = Fence.empty
-                      Field = Field.create p}
+                      Field = Field.create p
+                      Power = PowerUp
+                      }
         | Playing player, FenceDrawn e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.add (e.Path, e.Move) player.Fence }
         | Playing player, FenceRemoved e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.tail player.Fence }
         | Playing player, FenceLooped e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.remove e.Loop player.Fence }
         | Playing player, MovedInField e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.empty }
+        | Playing player, MovedPowerless e -> Playing { player with Tractor = e.Crossroad }
+        | Playing player, PoweredUp -> Playing { player with Power = PowerUp }
         | _ -> player 
 
 
-    let exec cmd state =
+    let exec otherPlayers cmd state =
         state
-        |> decide cmd
-        |> evolve state
+        |> decide otherPlayers cmd
+        |> List.fold evolve state
 
     let move dir fence =
         fence
-        |> exec (Move {Direction = dir })
+        |> exec [] (Move {Direction = dir })
 
     let start parcel pos =
         Starting parcel
-        |> exec (SelectFirstCrossroad { Crossroad = pos})
+        |> exec [] (SelectFirstCrossroad { Crossroad = pos})
 
 
     let possibleMove player dir =
@@ -343,7 +400,8 @@ module Player =
                   SFence = p.Fence
                   SField =
                     let (Field f) = p.Field
-                    f |> Set.toList }
+                    f |> Set.toList
+                  SPower = p.Power }
 
     let ofState (p: PlayerState) =
         match p with
@@ -353,6 +411,7 @@ module Player =
                 Tractor = p.STractor
                 Fence = p.SFence
                 Field = Field (set p.SField)
+                Power = p.SPower
             }
 
 module Board =
@@ -362,15 +421,36 @@ module Board =
     type Event =
         | Played of Color * Player.Event
 
+        
+    let otherPlayers color (board: Board) =
+        board
+        |> Map.toSeq
+        |> Seq.filter (fun (c,_) -> c <> color)
+        |> Seq.toList
+        
+
     let decide cmd (state: Board) =
         match cmd with
         | Play ( color, cmd) ->
             let player = state.[color]
-            let event = Player.decide cmd player
-            Played(color, event)
+            let others = otherPlayers color state
+
+            
+
+            Player.decide others cmd player
+            |> List.map (fun event -> Played(color, event))
 
     let evolve (state: Board) event =
         match event with
+        | Played (_, Player.CutFence { Color = color }) ->
+            match state.[color] with
+            | Playing player -> 
+                let cutPlayer =
+                    Playing { player with
+                                Fence = Fence.empty
+                                Power = PowerDown }
+                Map.add color cutPlayer state
+            | _ -> state
         | Played (color,e) ->
             let player = Player.evolve state.[color] e
             Map.add color player state
@@ -383,20 +463,13 @@ module Board =
         
 
 
-    let otherPlayers color (board: Board) =
-        board
-        |> Map.toSeq
-        |> Seq.filter (fun (c,_) -> c <> color)
-        |> Seq.map snd
-    
-
     let possibleMoves color (board: Board) =
         match color with
         | Some color ->
             match Map.tryFind color board with
             | Some p ->
                 [ for dir,m in Player.possibleMoves p do
-                  dir, Seq.fold (fun c p -> Player.bindMove (Player.checkMove p) c) m (otherPlayers color board)
+                  dir, Seq.fold (fun c p -> Player.bindMove (Player.checkMove p) c) m (List.map snd (otherPlayers color board))
                 ]
             | None -> []
         | None -> []
@@ -454,7 +527,7 @@ type ServerMsg =
 
 /// A type that specifies the messages sent to the client from the server on Elmish.Bridge
 type ClientMsg =
-    | Event of Board.Event
+    | Events of Board.Event list
     | Message of string
     | Sync of BoardState
     | SyncColor of Color

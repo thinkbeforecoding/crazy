@@ -16,7 +16,16 @@ open Elmish.Bridge
 
 let tryGetEnv = System.Environment.GetEnvironmentVariable >> function null | "" -> None | x -> Some x
 
-let publicPath = Path.GetFullPath "../Client/public"
+let publicPath =
+    "SERVER_ROOT"
+    |> tryGetEnv
+    |> Option.orElseWith ( fun () ->
+            let p =Path.GetFullPath "./public"
+            if Directory.Exists p then
+                Some p
+            else
+                None )
+    |> Option.defaultValue (Path.GetFullPath "../Client/public")
 let port =
     "SERVER_PORT"
     |> tryGetEnv |> Option.map uint16 |> Option.defaultValue 8085us
@@ -26,7 +35,7 @@ let connections =
 
 type RunnerCmd =
     | GetState of (Board -> unit)
-    | Exec of Board.Command * (Board.Event -> unit)
+    | Exec of Board.Command * (Board.Event list -> unit)
 
 let runner =
     MailboxProcessor.Start(fun mailbox ->
@@ -38,9 +47,9 @@ let runner =
                     reply state
                     return! loop state
                 | Exec (cmd, reply) ->
-                    let event = Board.decide cmd state 
-                    let newState = Board.evolve state event
-                    reply event
+                    let events = Board.decide cmd state 
+                    let newState = List.fold Board.evolve state events
+                    reply events
                     return! loop newState
             }
 
@@ -78,18 +87,20 @@ let update clientDispatch msg (model: Color option) =
     | Command cmd ->
         match model with
         | Some color -> 
-            let event = runner.PostAndReply(fun c -> Exec(Board.Play(color, cmd), c.Reply))
-            connections.BroadcastClient (Event event)
+            let events = runner.PostAndReply(fun c -> Exec(Board.Play(color, cmd), c.Reply))
+            connections.BroadcastClient (Events events)
             model, Cmd.none
         | None -> model, Cmd.none
 
 
-
-/// Connect the Elmish functions to an endpoint for websocket connections
-let webApp =
+let server = 
     Bridge.mkServer "/socket/init" init update
     |> Bridge.withServerHub connections
     |> Bridge.run Giraffe.server
+
+/// Connect the Elmish functions to an endpoint for websocket connections
+let webApp =
+    server
 
 
 let configureApp (app : IApplicationBuilder) =

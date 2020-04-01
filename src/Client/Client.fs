@@ -87,8 +87,8 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                   Message = "SyncColor" }
         newState, Cmd.none
 
-    | Remote (Event e) ->
-        let newState = Board.evolve currentModel.Board e
+    | Remote (Events e) ->
+        let newState = List.fold Board.evolve currentModel.Board e
         { currentModel with
               Board = newState
               Moves = Board.possibleMoves currentModel.Color newState
