@@ -158,6 +158,14 @@ module Path =
         | CRight, Down -> Path (tile + Axe.SE, BNW)
         | CRight, Horizontal -> Path (tile + Axe.SE, BN)
 
+    let tile (Path(tile,_)) = tile
+
+    let neighborTiles (Path(tile, side)) =
+        match side with
+        | BNW -> tile + Axe.NW
+        | BNE -> tile + Axe.NE
+        | BN -> tile + Axe.N
+
     let ofMoves moves start =
         List.mapFold (fun pos move -> (neighbor move pos, move), Crossroad.neighbor move pos) start moves
 
@@ -177,6 +185,8 @@ type OrientedPath =
 
 module Fence =
     let empty = Fence []
+
+    let isEmpty (Fence paths) = List.isEmpty paths 
 
 
     let findLoop dir pos (Fence paths) =
@@ -371,10 +381,12 @@ module Field =
         loop orientedPath pos [ Path.neighbor firstDir start, firstDir ]
 
 
+    let isInSameField start end' field =
+        borderBetween start end' field |> List.isEmpty |> not
 
 
-
-
+    let pathInFieldOrBorder path field =
+         contains (Path.tile path) field || contains (Path.neighborTiles path) field
 
         
         
@@ -475,24 +487,55 @@ module Player =
                 | _ ->
                     match Fence.findLoop dir player.Tractor player.Fence with
                     | Fence [] -> 
-                        
-                        [ FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos }  
+                        let endInField = Crossroad.isInField player.Field nextPos
+
+                        let pathInField = Field.pathInFieldOrBorder nextPath player.Field
+                        let inFallow =
+                            if endInField then
+                                if not (Fence.isEmpty player.Fence) then
+                                    let fenceStart = Fence.start player.Tractor player.Fence 
+                                    not (Field.isInSameField fenceStart nextPos player.Field)
+                                else
+                                    not pathInField
+                            else
+                                false
+
+                        [ 
+                          if pathInField && not inFallow then
+                              MovedInField { Move = dir; Path = nextPath; Crossroad = nextPos }  
+                          else
+                              FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos }  
                           yield! decideCut otherPlayers nextPos
-                          if Crossroad.isInField player.Field nextPos then
-                                let nextFence = Fence.add (nextPath, dir) player.Fence
-                                let annexed = annexation player.Field nextFence nextPos
-                                Annexed {
-                                    NewField = Field.parcels annexed
-                                    LostFields = 
-                                        [ for color,p in otherPlayers do
-                                            match p with
-                                            | Playing p ->
-                                                let lost = Field.interesect annexed p.Field
-                                                if not (Field.isEmpty lost) then
-                                                    color, Field.parcels lost
-                                            |_ -> ()
-                                        ]
-                                }
+                          if endInField && not pathInField && not inFallow then
+                            let nextFence = Fence.add (nextPath, dir) player.Fence
+                            let annexed = annexation player.Field nextFence nextPos
+
+                            let lostFields = 
+                                [ for color,p in otherPlayers do
+                                    match p with
+                                    | Playing p ->
+                                        let lost = Field.interesect annexed p.Field
+                                        if not (Field.isEmpty lost) then
+                                            color, Field.parcels lost
+                                    |_ -> ()
+                                ] 
+                            Annexed {
+                                NewField = Field.parcels annexed
+                                LostFields = lostFields
+                                    }
+
+                            for color, p in otherPlayers do
+                                match p with
+                                | Playing p ->
+                                    if not (Fence.isEmpty p.Fence) then
+                                        let start = Fence.start p.Tractor p.Fence
+                                        if Crossroad.isInField annexed start then
+                                            CutFence { Color = color }
+                                    else
+                                        let remainingField = p.Field - annexed
+                                        if Crossroad.isInField annexed p.Tractor && not (Crossroad.isInField remainingField p.Tractor) then
+                                            CutFence { Color = color }
+                                | _ -> ()
 
                         ]
                     | loop -> [  FenceLooped { Move = dir; Loop = loop; Crossroad = nextPos } ]
