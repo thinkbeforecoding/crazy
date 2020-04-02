@@ -92,7 +92,6 @@ let update clientDispatch msg (model: Color option) =
             model, Cmd.none
         | None -> model, Cmd.none
 
-
 let server = 
     Bridge.mkServer "/socket/init" init update
     |> Bridge.withServerHub connections

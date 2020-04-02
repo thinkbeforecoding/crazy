@@ -44,6 +44,12 @@ type Parcel = Parcel of Axe
 
 [<Struct>]
 type Field = Field of Parcel Set
+    with
+    static member (+) (Field x,Field y) =
+        Field (x + y)
+    static member (-) (Field x,Field y) =
+        Field (x - y)
+
 
 [<Struct>]
 type Fence = Fence of (Path*Direction) list
@@ -114,6 +120,9 @@ module Crossroad =
         | CRight, Horizontal -> tile + Axe.E2, CLeft
         |> Crossroad
 
+    let tile (Crossroad(tile,_)) = tile
+    let side (Crossroad(_,side)) = side
+
     let isInField (Field parcels) (Crossroad(tile, side)) =
         let p = Parcel tile
         match side with
@@ -150,7 +159,21 @@ module Path =
         | CRight, Horizontal -> Path (tile + Axe.SE, BN)
 
     let ofMoves moves start =
-        List.mapFold (fun pos move -> neighbor move pos, Crossroad.neighbor move pos) start moves
+        List.mapFold (fun pos move -> (neighbor move pos, move), Crossroad.neighbor move pos) start moves
+
+type LMax =  
+    { Max: Axe
+      Left: Direction list
+      Right: Direction list }
+    
+type OrientedPath =
+    | DNE
+    | DNW
+    | DW
+    | DSW
+    | DSE
+    | DE
+
 
 module Fence =
     let empty = Fence []
@@ -191,11 +214,37 @@ module Fence =
         fenceCrossroads tractor fence
         |> Seq.truncate 2
 
+    let start tractor (Fence paths) =
+        let rec loop pos paths =
+                match paths with
+                | [] -> pos
+                | (_,dir) :: tail ->
+                    let next = Crossroad.neighbor (Direction.rev dir) pos
+                    loop next tail
+        loop tractor paths 
+
+
         
 
     let length (Fence paths) = List.length paths
 
     let remove toRemove (Fence paths) = Fence (List.skip (length toRemove) paths)
+
+    let toOriented tractor (Fence paths) =
+        let o,end' =
+            List.mapFold (fun pos (_,dir) ->
+                let o =
+                    match dir, Crossroad.side pos with
+                    | Horizontal,CRight -> DW
+                    | Horizontal,CLeft -> DE
+                    | Up, CRight -> DNE
+                    | Up,CLeft -> DNW
+                    | Down, CRight -> DSE
+                    | Down, CLeft -> DSW
+                o, Crossroad.neighbor dir pos
+                )
+                tractor paths
+        List.rev o, end'
 
 [<AutoOpen>]
 module FenceOps =
@@ -205,9 +254,139 @@ module FenceOps =
             Some()
         | _ -> None
 
+
 module Field =
     let empty = Field Set.empty
+    let isEmpty (Field x) = Set.isEmpty x
+
     let create parcel = Field (set [parcel])
+
+    let ofParcels parcels  = Field(set parcels)
+    let parcels (Field parcels) = Set.toList parcels 
+    
+    let contains parcel (Field parcels) =
+        Set.contains (Parcel parcel) parcels
+
+    let interesect (Field x) (Field y) =
+        Field(Set.intersect x y)
+   
+    let fill (paths: (Path * Direction) list) =
+        let sortedPaths = 
+            paths
+            |> List.choose (function (Path(t,_),Horizontal) -> Some t | _ -> None)
+            |> List.sortBy (fun t -> t.Q, t.R)
+            |> List.groupBy(fun tile -> tile.Q)
+
+
+        [ for q, ps in sortedPaths  do
+            for l in List.chunkBySize 2 ps do 
+                match l with
+                | [s;e] -> yield! [ for r in s.R .. e.R-1 -> Parcel (Axe(q,r)) ]
+                | _ ->()
+        ]
+        |> set |> Field
+
+ 
+
+
+    let counterclock field (Crossroad(tile,side)) =
+        match side with
+        | CRight ->
+            if contains tile field then
+                Up, DNW
+            elif contains (tile + Axe.NE) field then
+                Horizontal , DE
+            else
+                Down,DSW
+        | CLeft ->
+            if contains tile field then
+                Down,DSE
+            elif contains (tile + Axe.NW) field then
+                Up,DNE
+            else
+                Horizontal, DW
+
+
+           
+    let borderBetween start end' field =
+        let rec loop orientedPath pos path =
+            if pos = start then
+                []
+            elif pos = end' then
+                List.rev path
+            else
+                match orientedPath with
+                | DE ->
+                    let tile = Crossroad.tile pos
+                    if contains tile field then
+                        
+                        let next = Crossroad.neighbor Down pos
+                        loop DSE next ((Path.neighbor Down pos, Down) :: path)
+                    else
+                        let next = Crossroad.neighbor Up pos
+                        loop DNE next ((Path.neighbor Up pos, Up) :: path)
+                | DNE ->
+                    let tile = Crossroad.tile pos + Axe.NE
+                    if contains tile field then
+                        let next = Crossroad.neighbor Horizontal pos
+                        loop DE next ((Path.neighbor Horizontal pos, Horizontal) :: path)
+                    else
+                        let next = Crossroad.neighbor Up pos
+                        loop DNW next ((Path.neighbor Up pos, Up) :: path)
+                | DNW ->
+                    let tile = Crossroad.tile pos + Axe.NW
+                    if contains tile field then
+                        let next = Crossroad.neighbor Up pos
+                        loop DNE next ((Path.neighbor Up pos, Up) :: path)
+                    else
+                        let next = Crossroad.neighbor Horizontal pos
+                        loop DW next ((Path.neighbor Horizontal pos, Horizontal) :: path)
+                | DW ->
+                    let tile = Crossroad.tile pos 
+                    if contains tile field then
+                        let next = Crossroad.neighbor Up pos
+                        loop DNW next ((Path.neighbor Up pos, Up) :: path)
+                    else
+                        let next = Crossroad.neighbor Down pos
+                        loop DSW next ((Path.neighbor Down pos, Down) :: path)
+                | DSW ->
+                    let tile = Crossroad.tile pos + Axe.SW 
+                    if contains tile field then
+                        let next = Crossroad.neighbor Horizontal pos
+                        loop DW next ((Path.neighbor Horizontal pos, Horizontal) :: path)
+                    else
+                        let next = Crossroad.neighbor Down pos
+                        loop DSE next ((Path.neighbor Down pos, Down) :: path)
+                | DSE ->
+                    let tile = Crossroad.tile pos + Axe.SE 
+                    if contains tile field then
+                        let next = Crossroad.neighbor Down pos
+                        loop DSW next ((Path.neighbor Down pos, Down) :: path)
+                    else
+                        let next = Crossroad.neighbor Horizontal pos
+                        loop DE next ((Path.neighbor Horizontal pos, Horizontal) :: path)
+
+        let firstDir,orientedPath = counterclock field start
+        let pos = Crossroad.neighbor firstDir start
+        loop orientedPath pos [ Path.neighbor firstDir start, firstDir ]
+
+
+
+
+
+
+
+        
+        
+        
+
+
+
+
+
+
+
+
 
 type MoveBlocker =
     | Tractor
@@ -250,9 +429,9 @@ module Player =
           Loop: Fence
           Crossroad: Crossroad }
     and Annexed =
-        {  Move: Direction
-           Crossroad: Crossroad
-           NewField: Field
+        {
+           NewField: Parcel list
+           LostFields: (Color * Parcel list) list
         }
     and CutFence = 
         { Color: Color }
@@ -269,7 +448,15 @@ module Player =
         |> List.filter (snd >> isCut tractor)
         |> List.map (fun (color,_) -> CutFence { Color= color} )
 
-
+        
+    let annexation field fence tractor =
+        let border = Field.borderBetween (Fence.start tractor fence) tractor field
+        let fullBorder = 
+            let (Fence paths) = fence
+            paths @ border 
+        Field.fill fullBorder - field
+                    
+                    
     let decide otherPlayers command player =
         match player, command with
         | _, Start cmd ->
@@ -289,13 +476,24 @@ module Player =
                     match Fence.findLoop dir player.Tractor player.Fence with
                     | Fence [] -> 
                         
-                        [ 
-                          if Crossroad.isInField player.Field nextPos then
-                             MovedInField { Move = dir; Path = nextPath; Crossroad = nextPos }
-                          else
-                            FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos }  
-                          
+                        [ FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos }  
                           yield! decideCut otherPlayers nextPos
+                          if Crossroad.isInField player.Field nextPos then
+                                let nextFence = Fence.add (nextPath, dir) player.Fence
+                                let annexed = annexation player.Field nextFence nextPos
+                                Annexed {
+                                    NewField = Field.parcels annexed
+                                    LostFields = 
+                                        [ for color,p in otherPlayers do
+                                            match p with
+                                            | Playing p ->
+                                                let lost = Field.interesect annexed p.Field
+                                                if not (Field.isEmpty lost) then
+                                                    color, Field.parcels lost
+                                            |_ -> ()
+                                        ]
+                                }
+
                         ]
                     | loop -> [  FenceLooped { Move = dir; Loop = loop; Crossroad = nextPos } ]
             | PowerDown ->
@@ -312,6 +510,7 @@ module Player =
                 
         | _ -> failwith "Invalid operation"      
 
+
     let evolve player event =
         match player, event with
         | Starting p, FirstCrossroadSelected e ->
@@ -326,7 +525,9 @@ module Player =
         | Playing player, MovedInField e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.empty }
         | Playing player, MovedPowerless e -> Playing { player with Tractor = e.Crossroad }
         | Playing player, PoweredUp -> Playing { player with Power = PowerUp }
+        | Playing player, Annexed e -> Playing { player with Fence = Fence.empty; Field = player.Field + Field.ofParcels e.NewField}
         | _ -> player 
+
 
 
     let exec otherPlayers cmd state =
@@ -451,6 +652,18 @@ module Board =
                                 Power = PowerDown }
                 Map.add color cutPlayer state
             | _ -> state
+        | Played (color, Player.Annexed e ) ->
+            let annexedPlayer = Player.evolve state.[color] (Player.Annexed e)
+            let newMap = Map.add color annexedPlayer state
+            e.LostFields
+            |> List.fold (fun map (color, parcels) ->
+                match state.[color] with
+                | Playing p ->
+                    let newP = Playing { p with Field = p.Field - Field.ofParcels parcels }
+                    Map.add color newP map
+                | _ -> map
+            
+            ) newMap
         | Played (color,e) ->
             let player = Player.evolve state.[color] e
             Map.add color player state
