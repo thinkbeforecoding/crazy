@@ -19,7 +19,7 @@ open Shared
 type Model = {
     Board: Board
     Color: Color option
-    Moves: (Direction * Result<Crossroad, Crossroad * MoveBlocker>) list 
+    Moves: Move list 
     Message: string
     }
 
@@ -27,6 +27,7 @@ type Model = {
 // the state of the application changes *only* in reaction to these events
 type Msg =
     | Move of Direction
+    | SelectFirstCrossroad of Crossroad
     | Remote of ClientMsg
     | ConnectionLost
     | InitColor of Color
@@ -49,15 +50,14 @@ let init () : Model * Cmd<Msg> =
 // It can also run side-effects (encoded as commands) like calling the server via Http.
 // these commands in turn, can dispatch messages to which the update function will react.
 let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
-    Browser.Dom.console.log("update")
     match msg with
+    | SelectFirstCrossroad c ->
+        let move = Player.SelectFirstCrossroad { Crossroad = c }
+        currentModel, Cmd.bridgeSend(Command move)
+
     | Move dir ->
-        match currentModel.Color with
-        | Some color ->
-            let move = Player.Move { Direction = dir}
-            let event = Board.decide (Board.Play (color, move)) currentModel.Board
-            currentModel, Cmd.bridgeSend(Command move)
-        | _ -> currentModel, Cmd.none
+        let move = Player.Move { Direction = dir}
+        currentModel, Cmd.bridgeSend(Command move)
     | ConnectionLost ->
         { currentModel with Message = "Connection lost"}, Cmd.none
     | InitColor color ->
@@ -201,11 +201,29 @@ let playerView color p =
 
             player color p.Tractor
         ]
+    | Starting (Parcel p) ->
+        let x,y = Pix.ofTile p |> Pix.rotate
+        [
+            parcel color (Parcel p)
+            div [ Style [ BackgroundImage (playerUrl color)
+                          BackgroundSize "contain"
+                          Width "2.5vw"
+                          Height "2.5vw"
+                          Position PositionOptions.Absolute
+                          Left (sprintf "%fvw" (x+3.3))
+                          Top (sprintf "%fvw" (y+3.3))
+                           ]] 
+                []
+        ]
 
-let moveView dispatch (move,result) =
-    match result with
-    | Ok c -> crossroad c (fun _ -> dispatch (Move move))
-    | Error (c,e) -> blockedCrossroad   c e
+
+
+let moveView dispatch move =
+    match move with
+    | Move.Move (dir,c) -> crossroad c (fun _ -> dispatch (Move dir))
+    | Move.ImpossibleMove (_,c,e) -> blockedCrossroad   c e
+    | Move.SelectCrossroad(c) -> crossroad c (fun _ -> dispatch (SelectFirstCrossroad c))
+    
     
 let view (model : Model) (dispatch : Msg -> unit) =
     div [ Style [ BackgroundImage "url(./img/board.jpg)"
@@ -219,6 +237,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
             for m in model.Moves do
                 moveView dispatch m
+
 
 
             div [ Style [ Position PositionOptions.Fixed

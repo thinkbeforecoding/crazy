@@ -54,8 +54,8 @@ let runner =
             }
 
         let board =
-            [ Blue, Player.start (Parcel.center + 2 * Axe.N) (Crossroad (Axe.N + Axe.NE, CLeft))
-              Yellow, Player.start (Parcel.center + 2 * Axe.S) (Crossroad (Axe.S + Axe.SW, CRight))]
+            [ Blue, Starting (Parcel.center + 2 * Axe.N) 
+              Yellow, Starting (Parcel.center + 2 * Axe.S) ]
             |> Map.ofList
 
 

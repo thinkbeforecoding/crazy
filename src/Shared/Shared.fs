@@ -404,6 +404,12 @@ type MoveBlocker =
     | Protection
 
 
+type Move =
+    | Move of Direction * Crossroad
+    | ImpossibleMove of Direction * Crossroad * MoveBlocker
+    | SelectCrossroad of Crossroad
+
+
 module Player =
     type Command =
         | Start of Start
@@ -717,18 +723,25 @@ module Board =
     let ofState (board: BoardState) =
         board |> List.map (fun (c,p) -> c, Player.ofState p) |> Map.ofList
         
-
-
     let possibleMoves color (board: Board) =
         match color with
         | Some color ->
             match Map.tryFind color board with
-            | Some p ->
+            | Some ((Playing _) as p)->
                 [ for dir,m in Player.possibleMoves p do
-                  dir, Seq.fold (fun c p -> Player.bindMove (Player.checkMove p) c) m (List.map snd (otherPlayers color board))
-                ]
+                    match Seq.fold (fun c p -> Player.bindMove (Player.checkMove p) c) m (List.map snd (otherPlayers color board)) with
+                    | Ok c -> Move(dir, c)
+                    | Error (c,e) -> ImpossibleMove(dir, c, e) ]
+            | Some (Starting (Parcel p)) ->
+                [ SelectCrossroad (Crossroad (p, CLeft))
+                  SelectCrossroad (Crossroad (p,CRight))
+                  SelectCrossroad (Crossroad (p+Axe.NW, CRight))
+                  SelectCrossroad (Crossroad (p+Axe.NE, CLeft))
+                  SelectCrossroad (Crossroad (p+Axe.SW, CRight))
+                  SelectCrossroad (Crossroad (p+Axe.SE, CLeft)) ]
             | None -> []
         | None -> []
+
 
 module Pix =
     let size = 5.75
