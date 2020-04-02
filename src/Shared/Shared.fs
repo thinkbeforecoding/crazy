@@ -380,7 +380,6 @@ module Field =
         let pos = Crossroad.neighbor firstDir start
         loop orientedPath pos [ Path.neighbor firstDir start, firstDir ]
 
-
     let isInSameField start end' field =
         borderBetween start end' field |> List.isEmpty |> not
 
@@ -492,11 +491,12 @@ module Player =
                         let pathInField = Field.pathInFieldOrBorder nextPath player.Field
                         let inFallow =
                             if endInField then
-                                if not (Fence.isEmpty player.Fence) then
-                                    let fenceStart = Fence.start player.Tractor player.Fence 
-                                    not (Field.isInSameField fenceStart nextPos player.Field)
+                                let nextFence = Fence.add (nextPath,dir) player.Fence
+                                if pathInField && Fence.length nextFence = 1 then
+                                    false
                                 else
-                                    not pathInField
+                                    let fenceStart = Fence.start nextPos nextFence
+                                    not (Field.isInSameField fenceStart nextPos player.Field)
                             else
                                 false
 

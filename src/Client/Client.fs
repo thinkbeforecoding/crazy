@@ -238,7 +238,6 @@ let view (model : Model) (dispatch : Msg -> unit) =
             //                  BackgroundColor "white"
             //                   ]] 
             //        [ str (sprintf "%d,%d,%d" x y z) ]
-
         ]
 
 
