@@ -13,5 +13,7 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
+- script: dotnet tool restore
+  displayName: 'dotnet tool restore'
 - script: dotnet fake build
   displayName: 'dotnet fake build'
