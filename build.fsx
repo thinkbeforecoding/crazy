@@ -11,6 +11,7 @@ open System
 open Fake.Core
 open Fake.DotNet
 open Fake.IO
+open Fake.IO.FileSystemOperators
 
 Target.initEnvironment ()
 
@@ -18,6 +19,8 @@ let serverPath = Path.getFullName "./src/Server"
 let clientPath = Path.getFullName "./src/Client"
 let clientDeployPath = Path.combine clientPath "deploy"
 let deployDir = Path.getFullName "./deploy"
+let bin = deployDir </> "bin"
+let pub = deployDir </> "public"
 
 let release = ReleaseNotes.load "RELEASE_NOTES.md"
 
@@ -85,11 +88,11 @@ Target.create "Build" (fun _ ->
     DotNet.publish (fun p ->
         { p with
             Configuration = DotNet.BuildConfiguration.Release
-            OutputPath = Some "bin"
+            OutputPath = Some bin
         }) "crazy.sln"
 
-    Directory.ensure "bin/public"
-    Shell.copyDir "bin/public" "src/Client/deploy" (fun _ -> true) |> ignore
+    Directory.ensure pub
+    Shell.copyDir pub "src/Client/deploy" (fun _ -> true) |> ignore
 )
 
 

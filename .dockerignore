@@ -1,0 +1,8 @@
+src/
+prep/
+node_modules/
+packages/
+paket-files/
+test/
+bin/
+

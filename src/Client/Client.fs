@@ -240,12 +240,12 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
 
 
-            div [ Style [ Position PositionOptions.Fixed
-                          Top 0
-                          Left 0
-                          BackgroundColor "white"
-                          ]
-            ]  [   str (sprintf "%A %s" model.Color model.Message) ]
+            //div [ Style [ Position PositionOptions.Fixed
+            //              Top 0
+            //              Left 0
+            //              BackgroundColor "white"
+            //              ]
+            //]  [   str (sprintf "%A %s" model.Color model.Message) ]
 
             //for q in -4..4 do
             // for r in -4..4 do
