@@ -798,7 +798,7 @@ type ServerMsg =
 type ClientMsg =
     | Events of Board.Event list
     | Message of string
-    | Sync of BoardState
-    | SyncColor of Color
+    | Sync of BoardState 
+    | SyncColor of  Color
 
 

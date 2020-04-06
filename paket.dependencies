@@ -6,9 +6,13 @@ group Server
     framework: netcoreapp3.1
     storage: none
 
+nuget Fable.Elmish.React
     nuget FSharp.Core
     nuget Giraffe
     nuget Elmish.Bridge.Giraffe ~> 3
+nuget JWT
+	nuget Mailkit
+	nuget Microsoft.Azure.Cosmos
     nuget Thoth.Json.Giraffe
     
     nuget coverlet.collector

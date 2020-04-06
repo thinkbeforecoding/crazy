@@ -1,5 +1,9 @@
 group Server
-    FSharp.Core
-    Giraffe
-    Thoth.Json.Giraffe
-    Elmish.Bridge.Giraffe
+FSharp.Core
+Giraffe
+Thoth.Json.Giraffe
+Elmish.Bridge.Giraffe
+MailKit
+Microsoft.Azure.Cosmos
+Fable.Elmish.React
+JWT
