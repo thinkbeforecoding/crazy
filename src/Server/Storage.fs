@@ -64,3 +64,6 @@ let getUserById cnxstring (userid: string) =
     let! response = container.ReadItemAsync<Model.User>("user", PartitionKey userid)
     return response.Resource
     }
+
+
+

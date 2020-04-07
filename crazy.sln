@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29905.134
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Client", "src\Client\Client.fsproj", "{73E8E820-C8AA-47CC-BB2B-152CA4D0B855}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Game", "src\Game\Game.fsproj", "{73E8E820-C8AA-47CC-BB2B-152CA4D0B855}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Server", "src\Server\Server.fsproj", "{73E8E820-C8AA-47CC-BB2B-152CA4D0B856}"
 EndProject
@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{4B4E906F-C
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "crazy.tests", "test\crazy.tests\crazy.tests.fsproj", "{C0AC3D90-554A-422E-A97F-58973874C936}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Join", "src\Join\Join.fsproj", "{DCA3AD85-2F3E-4EC5-AAC7-5ADFC4770C08}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{C0AC3D90-554A-422E-A97F-58973874C936}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C0AC3D90-554A-422E-A97F-58973874C936}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C0AC3D90-554A-422E-A97F-58973874C936}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCA3AD85-2F3E-4EC5-AAC7-5ADFC4770C08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCA3AD85-2F3E-4EC5-AAC7-5ADFC4770C08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCA3AD85-2F3E-4EC5-AAC7-5ADFC4770C08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCA3AD85-2F3E-4EC5-AAC7-5ADFC4770C08}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -15,3 +15,5 @@ release.sh
 deploy
 .ionide/
 *.user
+prep/
+local.settings.json

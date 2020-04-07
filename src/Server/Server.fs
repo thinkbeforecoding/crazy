@@ -28,6 +28,10 @@ type ServerConfig =
       JWTSecret: string
     }
 
+[<CLIMutable>]
+type JwtClaim = { sub: string
+                  nickname: string }
+
 let serverConfig =
     let config =
         ConfigurationBuilder()
@@ -60,27 +64,33 @@ let publicPath =
                 Some p
             else
                 None )
-    |> Option.defaultValue (Path.GetFullPath "../Client/public")
+    |> Option.defaultValue (Path.GetFullPath "../Game/public")
 let port =
     "SERVER_PORT"
     |> tryGetEnv |> Option.map uint16 |> Option.defaultValue 8085us
+type PlayerState =
+    | NotConnected
+    | Connected of Connected
+and Connected = 
+    { GameId: string
+      Color: Color option}
 
 let connections =
-  ServerHub<Color option,ServerMsg,ClientMsg>()
+  ServerHub<PlayerState,ServerMsg,ClientMsg>()
 
 
-type RunnerCmd =
-    | GetState of (Board -> unit)
+type GameRunnerCmd =
+    | GetState of (Board option -> unit)
     | Exec of Board.Command * (Board.Event list -> unit)
 
-let runner =
+let gameRunner() =
     MailboxProcessor.Start(fun mailbox ->
         let rec loop state =
             async {
                 let! msg = mailbox.Receive()
                 match msg with
                 | GetState reply ->
-                    reply state
+                    reply (Some state)
                     return! loop state
                 | Exec (cmd, reply) ->
                     let events = Board.decide cmd state 
@@ -89,49 +99,88 @@ let runner =
                     return! loop newState
             }
 
-        let board =
-            [ Blue, Starting (Parcel.center + 2 * Axe.N) 
-              Yellow, Starting (Parcel.center + 2 * Axe.S) ]
-            |> Map.ofList
-
-
-
+        let board : Board = { Players = Map.ofList [] }
         loop board
-        
     )
+
+     
+
+let runner =
+    MailboxProcessor.Start(fun mailbox ->
+        let rec loop games =
+            async {
+                let! (gameid, msg) = mailbox.Receive()
+
+                match msg with
+                | GetState reply ->
+                    match Map.tryFind gameid games with
+                    | Some (game: MailboxProcessor<GameRunnerCmd>) ->
+                        game.Post(msg)
+                    | None -> reply None
+                    return! loop games
+                | Exec (cmd, reply) ->
+                    let newGames =
+                        match Map.tryFind gameid games with
+                        | Some (game: MailboxProcessor<GameRunnerCmd>) ->
+                            game.Post(msg)
+                            games
+                        | None ->
+                            match cmd with
+                            | Board.Start _ ->
+                                let game = gameRunner()
+                                game.Post(msg)
+                                Map.add gameid game games
+                            | _ ->
+                                reply []
+                                games
+                    return! loop newGames
+                    
+
+            }
+        loop Map.empty
+    )
+
 
 /// Elmish init function with a channel for sending client messages
 /// Returns a new state and commands
-let init clientDispatch () =
-
-    let model = runner.PostAndReply(fun c -> GetState c.Reply)
-    clientDispatch (Sync (Board.toState model))
-    None, Cmd.none
+let init (claim: JwtClaim) clientDispatch () =
+    clientDispatch(SyncPlayer claim.sub)
+    NotConnected, Cmd.none
 
 /// Elmish update function with a channel for sending client messages
 /// Returns a new state and commands
-let update clientDispatch msg (model: Color option) =
+
+let update claim clientDispatch msg (model: PlayerState) =
     match msg with
-    | SyncState ->
-        let state = runner.PostAndReply(fun c -> GetState c.Reply)
-        clientDispatch (Sync (Board.toState state))
-        model, Cmd.none 
-    | SetColor color ->
-        clientDispatch (SyncColor color)
-        Some color, Cmd.none
+    //| SyncState ->
+    //    let state = runner.PostAndReply(fun c -> GetState c.Reply)
+    //    clientDispatch (Sync (Board.toState state))
+    //    model, Cmd.none 
+    | JoinGame gameid ->
+        
+        let state = runner.PostAndReply(fun c -> gameid, GetState c.Reply)
+        match state with 
+        | Some game ->
+            let color = 
+                Map.tryFind claim.sub game.Players
+                |> Option.bind (function 
+                    | Starting p -> Some p.Color
+                    | Playing p -> Some p.Color
+                    | _ -> None)
+                
+            clientDispatch (Sync (Board.toState game))
+            Connected {GameId = gameid; Color = color } ,  Cmd.none
+        | None ->
+            model, Cmd.none
 
     | Command cmd ->
         match model with
-        | Some color -> 
-            let events = runner.PostAndReply(fun c -> Exec(Board.Play(color, cmd), c.Reply))
-            connections.BroadcastClient (Events events)
+        | Connected g -> 
+            let events = runner.PostAndReply(fun c -> g.GameId, Exec(Board.Play(claim.sub, cmd), c.Reply))
+            connections.SendClientIf (function | Connected c when c.GameId = g.GameId -> true  | _ -> false) (Events events)
             model, Cmd.none
-        | None -> model, Cmd.none
+        | NotConnected -> model, Cmd.none
 
-let server = 
-    Bridge.mkServer "/socket/init" init update
-    |> Bridge.withServerHub connections
-    |> Bridge.run Giraffe.server
 
 module Template =
     open Fable.React
@@ -337,7 +386,7 @@ let postAuth (form: AuthForm) : HttpHandler = fun next ctx ->
                         .AddClaim(ClaimName.CasualName, user.name)
                         .AddClaim(ClaimName.ExpirationTime, DateTimeOffset.UtcNow.AddYears(1).ToUnixTimeSeconds())
                         .Encode()
-                ctx.Response.Cookies.Append("crazyfarmers", jwt, Http.CookieOptions(Secure = serverConfig.Secure, Domain = serverConfig.Domain, Expires = Nullable (DateTimeOffset.UtcNow.AddYears(1))))
+                ctx.Response.Cookies.Append("crazyfarmers", jwt, Http.CookieOptions(Secure = serverConfig.Secure, Domain = (match serverConfig.Domain with "localhost" -> null | s -> s), Expires = Nullable (DateTimeOffset.UtcNow.AddYears(1))))
                 return! (redirectTo false "/"  ) next ctx
             else
                 return! redirectTo false ("/auth/" + form.Userid ) next ctx
@@ -347,9 +396,6 @@ let postAuth (form: AuthForm) : HttpHandler = fun next ctx ->
         | None ->
             return! redirectTo false ("/auth/" + form.Userid ) next ctx
     }
-[<CLIMutable>]
-type JwtClaim = { sub: string
-                  nickname: string }
 
 let claim jwt = 
     if String.IsNullOrEmpty jwt then
@@ -380,13 +426,13 @@ let authTest : HttpHandler = fun next ctx ->
 
     }
 
-let requireLogin (handler: HttpHandler) : HttpHandler = fun next ctx ->
+let requireLogin (handler: _ -> HttpHandler) : HttpHandler = fun next ctx ->
     task {
         match claim ctx.Request.Cookies.["crazyfarmers"] with
         | Error _ ->
             return! redirectTo false "/auth/login" next ctx
-        | Ok _ ->
-            return! handler next ctx
+        | Ok claim ->
+            return! handler claim next ctx
     }
 
 let authApi =
@@ -401,10 +447,110 @@ let authApi =
         GET >=> routeBind<AuthForm> "/check/{userid}/{code}" postAuth
     ]
 
+let playGame claim = 
+    Bridge.mkServer "/socket/init" (init claim) (update claim)
+    |> Bridge.withServerHub connections
+    |> Bridge.run Giraffe.server
+
+module Join =
+    open SharedJoin
+    type Model =
+        | NoGame
+        | SetupGame of string 
+        | JoiningGame of string
+        | Started of string 
+
+    type RunnerCmd =
+        | GetState of  string * (Game option-> unit)
+        | Exec of string * Command * (Event list -> unit)
+    
+    let setupRunner =
+        MailboxProcessor.Start(fun mailbox ->
+            let rec loop games =
+                async {
+                    let! msg = mailbox.Receive()
+                    match msg with
+                    | GetState (id , reply) ->
+                        Map.tryFind id games
+                        |> reply 
+                        return! loop games
+                    | Exec (id, cmd, reply) ->
+                        let state = 
+                            Map.tryFind id games
+                            |> Option.defaultValue InitialState
+
+                        let events = decide cmd state 
+                        let newState = List.fold evolve state events
+                        reply events
+                        return! loop (Map.add id newState games)
+                }
+    
+            loop Map.empty
+        )
+    
+    
+    
+    let connections =
+      ServerHub<Model,ServerMsg,ClientMsg>()
+    
+    
+
+    let init claim clientDispatch () =
+        NoGame, Cmd.none
+
+    let update claim clientDispatch msg (model: Model) =
+        match model, msg with
+        | NoGame , CreateGame ->
+            let gameid = createId 10
+            let events = setupRunner.PostAndReply(fun c -> Exec(gameid, Create { GameId = gameid; Initiator = claim.sub}, c.Reply))
+            clientDispatch(Events events)
+            SetupGame gameid, Cmd.none
+        | NoGame, JoinGame gameid ->
+            match setupRunner.PostAndReply(fun c -> GetState(gameid, c.Reply)) with
+            | Some (Setup s) -> 
+                if s.Initiator = claim.sub then
+                   clientDispatch(SyncCreate (gameid, Setup s))
+                   SetupGame gameid, Cmd.none
+                else
+                    clientDispatch(SyncJoin (gameid, Setup s))
+                    JoiningGame gameid, Cmd.none
+            | Some (Game.Started s) ->
+                clientDispatch(SyncStarted (gameid, Game.Started s))
+                Started gameid, Cmd.none
+            | _ ->
+                model, Cmd.none
+
+        |SetupGame gameid, SelectColor color
+        |JoiningGame gameid, SelectColor color ->
+            let events = setupRunner.PostAndReply(fun c -> Exec(gameid, SetPlayer(color, claim.sub, claim.nickname), c.Reply))
+            connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events events)
+
+            model, Cmd.none
+        | SetupGame gameid, Start ->
+            let events = setupRunner.PostAndReply(fun c -> Exec(gameid, Command.Start, c.Reply))
+            for event in events do
+                match event with
+                | SharedJoin.Event.Started e ->
+                    runner.PostAndReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for c,(u,n) in e -> c,u] }, c.Reply))
+                    |> ignore
+                | _ -> ()
+            connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events events)
+            Started gameid, Cmd.none
+
+        | _ -> model, Cmd.none
+
+
+let joinGame claim  =
+    Bridge.mkServer "/socket/join" (Join.init claim) (Join.update claim)
+    |> Bridge.withServerHub Join.connections
+    |> Bridge.run Giraffe.server
+
+
 let webApp =
     choose [
         subRoute "/auth" authApi
-        requireLogin server
+        requireLogin playGame
+        requireLogin joinGame
 
     ]
 

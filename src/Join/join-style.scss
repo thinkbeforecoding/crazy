@@ -1,0 +1,54 @@
+﻿@charset "utf-8";
+
+// FontAwesome
+//$fa_font_path: "~@fortawesome/fontawesome-free/webfonts";
+//@import '~@fortawesome/fontawesome-free/scss/fontawesome.scss';
+//@import '~@fortawesome/fontawesome-free/scss/regular.scss';
+//@import '~@fortawesome/fontawesome-free/scss/solid.scss';
+//@import '~@fortawesome/fontawesome-free/scss/brands.scss';
+
+// OpenSans
+//$FontPathOpenSans: "~open-sans-fonts/open-sans";
+//@import '~open-sans-fonts/open-sans';
+//$family-primary: 'Open Sans';
+
+// Bulma
+//@import "~bulma/bulma";
+body {
+    margin: 0;
+    padding: 0;
+    background-image: url(../Game/public/img/background.png);
+    background-size:cover;
+}
+
+div, h1, h2 {
+    margin: 0;
+    padding: 0;
+}
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+.select-player {
+    float: left;
+    padding: 5px;
+
+    img {
+        border-radius: 15px;
+        width: 40vw;
+        max-width: 800px;
+        border: 3px solid transparent;
+    }
+
+    img:hover {
+        border: 3px solid red;
+        cursor: pointer;
+    }
+}
+
+.selected {
+    img, img:hover {
+        border: 3px solid black;
+        cursor: default;
+    }
+}
+

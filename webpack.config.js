@@ -15,11 +15,11 @@ var MiniCssExtractPlugin = require('mini-css-extract-plugin');
 var CONFIG = {
     // The tags to include the generated JS and CSS will be automatically injected in the HTML template
     // See https://github.com/jantimon/html-webpack-plugin
-    indexHtmlTemplate: './src/Client/index.html',
-    fsharpEntry: './src/Client/Client.fsproj',
-    cssEntry: './src/Client/style.scss',
-    outputDir: './src/Client/deploy',
-    assetsDir: './src/Client/public',
+    indexHtmlTemplate: './src/Game/index.html',
+    fsharpEntry: './src/Game/Game.fsproj',
+    cssEntry: './src/Game/style.scss',
+    outputDir: './src/Game/deploy',
+    assetsDir: './src/Game/public',
     devServerPort: 8080,
     // When using webpack-dev-server, you may need to redirect some calls
     // to a external API server. See https://webpack.js.org/configuration/dev-server/#devserver-proxy
@@ -28,7 +28,7 @@ var CONFIG = {
         '/api/**': {
             target: 'http://localhost:' + (process.env.SERVER_PROXY_PORT || "8085"),
                changeOrigin: true
-           },
+        },
         // redirect websocket requests that start with /socket/ to the server on the port 8085
         '/socket/**': {
             target: 'http://localhost:' + (process.env.SERVER_PROXY_PORT || "8085"),
@@ -71,8 +71,14 @@ console.log('Bundling for ' + (isProduction ? 'production' : 'development') + '.
 // and automatically injects <script> or <link> tags for generated bundles.
 var commonPlugins = [
     new HtmlWebpackPlugin({
+        filename: 'game/index.html',
+        template: resolve(CONFIG.indexHtmlTemplate),
+        excludeChunks: ['join', 'joinstyle']
+    }),
+    new HtmlWebpackPlugin({
         filename: 'index.html',
-        template: resolve(CONFIG.indexHtmlTemplate)
+        template: resolve('./src/Join/index.html'),
+        excludeChunks: ['game', 'style']
     })
 ];
 
@@ -82,9 +88,16 @@ module.exports = {
     // with the code because the MiniCssExtractPlugin will extract the
     // CSS in a separate files.
     entry: isProduction ? {
-        app: [resolve(CONFIG.fsharpEntry), resolve(CONFIG.cssEntry)]
+        game: [resolve(CONFIG.fsharpEntry),
+              resolve(CONFIG.cssEntry)],
+
+        join: [resolve('./src/Join/Join.fsproj'),
+               resolve(resolve('./src/Join/join-style.scss'))]
+
     } : {
-            app: [resolve(CONFIG.fsharpEntry)],
+            game: [resolve(CONFIG.fsharpEntry)],
+            join: [resolve('./src/Join/Join.fsproj')],
+            joinstyle: [resolve('./src/Join/join-style.scss')],
             style: [resolve(CONFIG.cssEntry)]
         },
     // Add a hash to the output file name in production
@@ -109,7 +122,7 @@ module.exports = {
     //      - HotModuleReplacementPlugin: Enables hot reloading when code changes without refreshing
     plugins: isProduction ?
         commonPlugins.concat([
-            new MiniCssExtractPlugin({ filename: 'style.[hash].css' }),
+            new MiniCssExtractPlugin({ filename: '[name].[hash].css' }),
             new CopyWebpackPlugin([{ from: resolve(CONFIG.assetsDir) }]),
         ])
         : commonPlugins.concat([
@@ -126,6 +139,11 @@ module.exports = {
         host: '0.0.0.0',
         port: CONFIG.devServerPort,
         proxy: CONFIG.devServerProxy,
+        historyApiFallback: {
+             rewrites: [
+                { from: /^\/game\/.*/, to: '/game/index.html' },
+             ]
+        },
         hot: true,
         inline: true
     },

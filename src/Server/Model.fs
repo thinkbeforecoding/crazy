@@ -18,4 +18,3 @@ type Challenge =
       expiry: DateTime }
 
 
-

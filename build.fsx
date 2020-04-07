@@ -16,8 +16,9 @@ open Fake.IO.FileSystemOperators
 Target.initEnvironment ()
 
 let serverPath = Path.getFullName "./src/Server"
-let clientPath = Path.getFullName "./src/Client"
-let clientDeployPath = Path.combine clientPath "deploy"
+let gamePath = Path.getFullName "./src/Game"
+let joinPath = Path.getFullName "./src/Join"
+let clientDeployPath = Path.combine gamePath "deploy"
 let deployDir = Path.getFullName "./deploy"
 let bin = deployDir </> "bin"
 let pub = deployDir </> "public"
@@ -81,7 +82,7 @@ Target.create "Build" (fun _ ->
         "let app = \".+\""
        ("let app = \"" + release.NugetVersion + "\"")
         System.Text.Encoding.UTF8
-        (Path.combine clientPath "Version.fs")
+        (Path.combine gamePath "Version.fs")
     runTool yarnTool "webpack-cli -p" __SOURCE_DIRECTORY__
 
 
@@ -92,7 +93,7 @@ Target.create "Build" (fun _ ->
         }) "crazy.sln"
 
     Directory.ensure pub
-    Shell.copyDir pub "src/Client/deploy" (fun _ -> true) |> ignore
+    Shell.copyDir pub clientDeployPath (fun _ -> true) |> ignore
 )
 
 

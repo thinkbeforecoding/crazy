@@ -18,7 +18,7 @@ open Shared
 // the initial value will be requested from server
 type Model = {
     Board: Board
-    Color: Color option
+    PlayerId: string option
     Moves: Move list 
     Message: string
     }
@@ -30,22 +30,18 @@ type Msg =
     | SelectFirstCrossroad of Crossroad
     | Remote of ClientMsg
     | ConnectionLost
-    | InitColor of Color
 
-let parseColor s =
-    match s with
-    | "#blue" -> Blue
-    | "#yellow" -> Yellow
-    | _ -> Blue
+let parseGame (s:string) =
+    let idx = s.LastIndexOf("/")
+    s.Substring(idx+1)
 
 // defines the initial state and initial command (= side-effect) of the application
 let init () : Model * Cmd<Msg> =
-    let loc = Browser.Dom.document.location
-    { Board = Map.empty
+    { Board = { Players = Map.empty }
       Moves = []
-      Color = None
+      PlayerId = None
       Message = "Init from client"
-    }, Cmd.ofMsg (InitColor (parseColor loc.hash ))
+    }, Cmd.none
 // The update function computes the next state of the application based on the current state and the incoming events/messages
 // It can also run side-effects (encoded as commands) like calling the server via Http.
 // these commands in turn, can dispatch messages to which the update function will react.
@@ -60,38 +56,39 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         currentModel, Cmd.bridgeSend(Command move)
     | ConnectionLost ->
         { currentModel with Message = "Connection lost"}, Cmd.none
-    | InitColor color ->
-        { currentModel with Message = "Init" }, Cmd.bridgeSend (SetColor color)
+    | Remote (SyncPlayer playerid) ->
+        let loc = Browser.Dom.document.location
+        { currentModel with PlayerId = Some playerid }, Cmd.bridgeSend (JoinGame (parseGame loc.pathname ))
         
-    | Remote (Sync s) ->
+    | Remote (Sync ( s)) ->
         let state = Board.ofState s
         let newState =
             { currentModel with
                   Board = state
-                  Moves =  Board.possibleMoves currentModel.Color state
-                  Message = "Sync" }
+                  Moves =  Board.possibleMoves currentModel.PlayerId state
+                  }
 
-        let cmd =
-            match currentModel.Color with
-            | Some color -> Cmd.ofMsg (InitColor color)
-            | None ->
-                let loc = Browser.Dom.document.location
-                Cmd.ofMsg (InitColor (parseColor loc.hash ))
+        //let cmd =
+        //    match currentModel.Color with
+        //    | Some color -> Cmd.ofMsg (InitColor color)
+        //    | None ->
+        //        let loc = Browser.Dom.document.location
+        //        Cmd.ofMsg (InitColor (parseColor loc.hash ))
             
-        newState, cmd
-    | Remote (SyncColor color) ->
-        let newState =
-            { currentModel with
-                  Color = Some color 
-                  Moves =  Board.possibleMoves (Some color) currentModel.Board
-                  Message = "SyncColor" }
-        newState, Cmd.none
+        newState, Cmd.none// cmd
+    //| Remote (SyncColor color) ->
+    //    let newState =
+    //        { currentModel with
+    //              Color = Some color 
+    //              Moves =  Board.possibleMoves (Some color) currentModel.Board
+    //              Message = "SyncColor" }
+    //    newState, Cmd.none
 
     | Remote (Events e) ->
         let newState = List.fold Board.evolve currentModel.Board e
         { currentModel with
               Board = newState
-              Moves = Board.possibleMoves currentModel.Color newState
+              Moves = Board.possibleMoves currentModel.PlayerId newState
               Message = "Event"
         }, Cmd.none
     | Remote (Message m) ->
@@ -107,7 +104,7 @@ let imgUrl typ color =
         | Yellow -> "yellow"
         | Purple -> "purple"
         | Red -> "red"
-    sprintf "url('./img/%s-%s.png')" typ colorName
+    sprintf "url('/img/%s-%s.png')" typ colorName
 let tileUrl = imgUrl "tile"
     
 let playerUrl = imgUrl "player"
@@ -187,11 +184,12 @@ let singleFence color path =
         []
 
 
-let playerView color p =
+let playerView userId p =
     match p with
     | Playing p ->
         let (Field parcels) = p.Field
         let (Fence paths) = p.Fence
+        let color = p.Color
         [
             for p in parcels do
                 parcel color p
@@ -201,7 +199,7 @@ let playerView color p =
 
             player color p.Tractor
         ]
-    | Starting (Parcel p) ->
+    | Starting { Parcel = Parcel p; Color = color } ->
         let x,y = Pix.ofTile p |> Pix.rotate
         [
             parcel color (Parcel p)
@@ -226,13 +224,13 @@ let moveView dispatch move =
     
     
 let view (model : Model) (dispatch : Msg -> unit) =
-    div [ Style [ BackgroundImage "url(./img/board.jpg)"
+    div [ Style [ BackgroundImage "url(/img/board.jpg)"
                   Width "100vw"
                   Height "100vw"
                   BackgroundSize "contain"
                   ] ]
         [
-            for color,p in Map.toSeq model.Board do
+            for color,p in Map.toSeq model.Board.Players do
                 yield! playerView color p
 
             for m in model.Moves do
@@ -282,3 +280,7 @@ Program.mkProgram init update view
 |> Program.withDebugger
 #endif
 |> Program.run
+
+        
+
+
