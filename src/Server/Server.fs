@@ -279,7 +279,7 @@ let sendChallenge config email name =
         let! userid =
             task{
             match! Storage.tryGetUserByEmail config.Cosmos email with
-            | Some user -> return Some user.userid
+            | Some user -> return Some (user.userid, user.name)
             | None -> 
                 match name with
                 | Some name -> 
@@ -294,12 +294,12 @@ let sendChallenge config email name =
                               name = name }
                         let! response = Storage.saveUser config.Cosmos user
                         succeeded <- response
-                    return Some userid 
+                    return Some (userid , name)
                 | None -> return None }
 
 
         match userid with
-        | Some userid ->
+        | Some (userid,name) ->
             let code = createId 16
 
 
@@ -314,12 +314,19 @@ let sendChallenge config email name =
 
             Email.sendCode config.BaseUri email userid code
 
-            return Some userid
+            return Some (userid, name)
 
         | None -> return None
     }
 
 
+let logout : HttpHandler = fun next ctx ->
+    task {
+        ctx.Response.Cookies.Delete("crazyfarmers")
+
+        return! redirectTo false "/" next ctx
+
+    }
 
 
 let login : HttpHandler = fun _ ctx ->
@@ -343,7 +350,7 @@ type RegisterForm =
 let postLogin (form: LoginForm)  : HttpHandler = fun next ctx ->
     task {
         match! sendChallenge serverConfig form.email None with
-        | Some userid ->
+        | Some (userid,_) ->
             return! redirectTo false ("/auth/check/" + userid ) next ctx
         | None -> 
             return! redirectTo false "/auth/register" next ctx
@@ -352,7 +359,7 @@ let postLogin (form: LoginForm)  : HttpHandler = fun next ctx ->
 let postRegister (form: RegisterForm)  : HttpHandler = fun next ctx ->
     task {
         match! sendChallenge serverConfig form.email (Some form.name) with
-        | Some userid ->
+        | Some (userid,_) ->
             return! redirectTo false ("/auth/check/" + userid ) next ctx
         | None -> 
             return! redirectTo false "/auth/register" next ctx
@@ -434,9 +441,19 @@ let requireLogin (handler: _ -> HttpHandler) : HttpHandler = fun next ctx ->
         | Ok claim ->
             return! handler claim next ctx
     }
+let tryLogin (handler: _ -> HttpHandler) : HttpHandler = fun next ctx ->
+    task {
+        match claim ctx.Request.Cookies.["crazyfarmers"] with
+        | Error _ ->
+            return! handler None next ctx
+
+        | Ok claim ->
+            return! handler (Some claim) next ctx
+    }
 
 let authApi =
     choose [
+        GET >=> route "/logout" >=> logout
         GET >=> route "/login" >=> login
         POST >=> route "/login" >=>  bindForm<LoginForm>(None)  postLogin 
         GET >=> route "/register" >=> register
@@ -496,34 +513,71 @@ module Join =
     
 
     let init claim clientDispatch () =
+        match claim with
+        | Some claim -> clientDispatch (LoggedIn (claim.sub, claim.nickname))
+        | None -> ()
         NoGame, Cmd.none
 
     let update claim clientDispatch msg (model: Model) =
         match model, msg with
+        | _ , Login email ->
+            let t =
+                task {
+                    let! result = sendChallenge serverConfig email None
+                    match result with
+                    | Some(playerid,_) -> clientDispatch (StartCheck playerid)
+                    | None -> () }
+            t.Wait()
+            model, Cmd.none
+        | _ , Register (email, name) ->
+            let t =
+                task {
+                    let! result = sendChallenge serverConfig email (Some name)
+                    match result with
+                    | Some(playerid,_) -> clientDispatch (StartCheck playerid)
+                    | None -> () }
+            t.Wait()
+            model, Cmd.none
+
+
         | NoGame , CreateGame ->
-            let gameid = createId 10
-            let events = setupRunner.PostAndReply(fun c -> Exec(gameid, Create { GameId = gameid; Initiator = claim.sub}, c.Reply))
-            clientDispatch(Events events)
-            SetupGame gameid, Cmd.none
-        | NoGame, JoinGame gameid ->
-            match setupRunner.PostAndReply(fun c -> GetState(gameid, c.Reply)) with
-            | Some (Setup s) -> 
-                if s.Initiator = claim.sub then
-                   clientDispatch(SyncCreate (gameid, Setup s))
-                   SetupGame gameid, Cmd.none
-                else
-                    clientDispatch(SyncJoin (gameid, Setup s))
-                    JoiningGame gameid, Cmd.none
-            | Some (Game.Started s) ->
-                clientDispatch(SyncStarted (gameid, Game.Started s))
-                Started gameid, Cmd.none
+            match claim with
+            | Some claim ->
+                let gameid = createId 10
+                let events = setupRunner.PostAndReply(fun c -> Exec(gameid, Create { GameId = gameid; Initiator = claim.sub}, c.Reply))
+                clientDispatch(Events events)
+                SetupGame gameid, Cmd.none
             | _ ->
+                clientDispatch(ShouldLogin )
+                model, Cmd.none
+                
+        | NoGame, JoinGame gameid ->
+            match claim with
+            | Some claim ->
+                match setupRunner.PostAndReply(fun c -> GetState(gameid, c.Reply)) with
+                | Some (Setup s) -> 
+                    if s.Initiator = claim.sub then
+                       clientDispatch(SyncCreate (gameid, Setup s))
+                       SetupGame gameid, Cmd.none
+                    else
+                        clientDispatch(SyncJoin (gameid, Setup s))
+                        JoiningGame gameid, Cmd.none
+                | Some (Game.Started s) ->
+                    clientDispatch(SyncStarted (gameid, Game.Started s))
+                    Started gameid, Cmd.none
+                | _ ->
+                    model, Cmd.none
+            | None ->
+                clientDispatch(ShouldLogin )
                 model, Cmd.none
 
         |SetupGame gameid, SelectColor color
         |JoiningGame gameid, SelectColor color ->
-            let events = setupRunner.PostAndReply(fun c -> Exec(gameid, SetPlayer(color, claim.sub, claim.nickname), c.Reply))
-            connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events events)
+            match claim with
+            | Some claim ->
+                let events = setupRunner.PostAndReply(fun c -> Exec(gameid, SetPlayer(color, claim.sub, claim.nickname), c.Reply))
+                connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events events)
+            | None -> ()
 
             model, Cmd.none
         | SetupGame gameid, Start ->
@@ -549,8 +603,8 @@ let joinGame claim  =
 let webApp =
     choose [
         subRoute "/auth" authApi
+        tryLogin joinGame
         requireLogin playGame
-        requireLogin joinGame
 
     ]
 

@@ -18,12 +18,23 @@ open SharedJoin
 // in this case, we are keeping track of a counter
 // we mark it as optional, because initially it will not be available from the client
 // the initial value will be requested from server
-type Model = 
+type Model =
+    { Player: Player option
+      Game: PageModel
+    }
+and Player =
+    { PlayerId: string
+      Name: string}
+and PageModel = 
     | Home
     | NewGame of NewGame
     | SelectGame
     | JoinGame of NewGame
     | Started of string
+    | LoginPage
+    | RegisterPage
+    | CheckPage of string
+
 
 and NewGame =
     { GameId: string
@@ -45,11 +56,15 @@ type Msg =
     | SelectColor of Color
     | Remote of ClientMsg
     | ConnectionLost
+    | OpenLogin
+    | OpenRegister
+    | Login of string
+    | Register of string * string
 
     
 // defines the initial state and initial command (= side-effect) of the application
 let init () : Model * Cmd<Msg> =
-    Home, Cmd.none
+    { Player = None; Game = Home }, Cmd.none
 // The update function computes the next state of the application based on the current state and the incoming events/messages
 // It can also run side-effects (encoded as commands) like calling the server via Http.
 // these commands in turn, can dispatch messages to which the update function will react.
@@ -58,15 +73,35 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | CreateNewGame  ->
         currentModel, Cmd.bridgeSend(CreateGame)
     | SelectJoin ->
-        SelectGame, Cmd.none
+        { currentModel with Game = SelectGame}, Cmd.none
     | Join gameid ->
         currentModel, Cmd.bridgeSend(ServerMsg.JoinGame gameid)
     | SelectColor color ->
         currentModel, Cmd.bridgeSend(ServerMsg.SelectColor color)
     | Cancel ->
-        Home, Cmd.none
+        { currentModel with Game = Home}, Cmd.none
     | Start ->
         currentModel, Cmd.bridgeSend(ServerMsg.Start)
+    | OpenLogin ->
+        { currentModel with Game = LoginPage }, Cmd.none
+    | OpenRegister ->
+        { currentModel with Game = RegisterPage }, Cmd.none
+    | Login email ->
+        currentModel, Cmd.bridgeSend(ServerMsg.Login email)
+    | Register (email,name) ->
+        currentModel, Cmd.bridgeSend(ServerMsg.Register (email,name))
+    | Remote(LoggedIn(playerid,name)) ->
+        { currentModel with
+            Player = Some { PlayerId = playerid
+                            Name = name}}, Cmd.none
+    | Remote(StartCheck playerid) ->
+        { currentModel with
+            Game = CheckPage playerid }, Cmd.none
+    | Remote(ShouldLogin) ->
+        { currentModel with
+            Game = LoginPage }, Cmd.none
+
+
     | Remote (Events events ) ->
         let newModel =
             events
@@ -90,22 +125,26 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                     Started g.GameId
                     
                 | _ -> state
-            ) currentModel
+            ) currentModel.Game
 
         match newModel with
         | Started gameid ->
             Browser.Dom.document.location.replace("/game/" + gameid)
         | _ -> ()
-        newModel, Cmd.none
+        { currentModel with Game = newModel}, Cmd.none
     | Remote (SyncJoin(gameid, game)) ->
         match game with
-        | Game.Setup s -> JoinGame { GameId = gameid
-                                     Players = s.Players}, Cmd.none
+        | Game.Setup s -> 
+            { currentModel with 
+                Game = JoinGame { GameId = gameid
+                                  Players = s.Players}}, Cmd.none
         | _ -> currentModel, Cmd.none
     | Remote (SyncCreate(gameid, game)) ->
         match game with
-        | Game.Setup s -> NewGame { GameId = gameid
-                                    Players = s.Players}, Cmd.none
+        | Game.Setup s -> 
+            { currentModel with
+                Game = NewGame { GameId = gameid
+                                 Players = s.Players}}, Cmd.none
         | _ -> currentModel, Cmd.none
     | Remote (SyncStarted(gameid, game)) ->
         Browser.Dom.document.location.replace("/game/" + gameid)
@@ -135,11 +174,15 @@ let selectPlayer dispatch color players =
         ]
 
 
-
+module Colors =
+    let lightGreen = "#ECF1A2" 
+    let darkGreen = "#D8EFAB"
+    let blue = "#A9DAF2"
     
 let view (model : Model) (dispatch : Msg -> unit) =
     div [  ]
-      [ match model with
+      [ 
+        match model.Game with
         | Home ->
             div [Style [BackgroundImage "url(/img/crazyfarmers.png)"
                         BackgroundRepeat "no-repeat"
@@ -148,6 +191,17 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         Height "100vh"
                         ]]
                 [
+            div [ Style [ Height "2em"
+                          TextAlign TextAlignOptions.Right ]]
+                [ match model.Player with
+                  | Some player -> 
+                       str player.Name
+                       a [ Href "/auth/logout" ] [str "Logout"]
+                  | None -> 
+                       a [ Href "#"
+                           OnClick (fun _ -> dispatch OpenLogin) ] [ str "Login" ] 
+                       a [ Href "#"
+                           OnClick (fun _ -> dispatch OpenRegister) ] [ str "Register" ] ]
             
             h1 [ Style [PaddingTop "10vh"] ] [ str "Join" ] 
             button [ OnClick (fun _ -> dispatch CreateNewGame) ] [ str "Nouvelle Partie" ]
@@ -187,6 +241,52 @@ let view (model : Model) (dispatch : Msg -> unit) =
                     dispatch (Join elt.value))] [ str "Join" ]
 
             button [ OnClick (fun _ -> dispatch Cancel) ] [ str "Cancel"]
+        | LoginPage ->
+            h1 [] [ str "Login" ]
+            div []
+                [ label [] [ str "Email" ]
+                  input [ Type "text"; Id "email" ] ]
+            button [ OnClick (fun _ ->
+                let email = Browser.Dom.document.getElementById("email") :?> Browser.Types.HTMLInputElement
+                dispatch (Login email.value)
+            )
+            
+                ] [ str "Login" ]
+            button [ OnClick (fun _ -> dispatch Cancel)] [ str "Cancel" ]
+            div []
+                [ str "Don't have an accout yet ? "
+                  a [ Href "#"; OnClick (fun _ -> dispatch OpenRegister) ] [ str "Register"]]
+        | RegisterPage ->
+            h1 [] [ str "Register" ]
+            div []
+                [ label [] [ str "Email" ]
+                  input [ Type "text" ; Id "email" ] ]
+            div []
+                [ label [] [ str "Name" ]
+                  input [ Type "text"; Id "name" ] ]
+            button [ OnClick (fun _ ->
+                let email = Browser.Dom.document.getElementById("email") :?> Browser.Types.HTMLInputElement
+                let name = Browser.Dom.document.getElementById("name") :?> Browser.Types.HTMLInputElement
+                dispatch (Register(email.value,name.value))
+            )] [ str "Register" ]
+            button [ OnClick (fun _ -> dispatch Cancel)] [ str "Cancel" ]
+            div []
+                [ str "Already have an accout ? "
+                  a [ Href "#"; OnClick (fun _ -> dispatch OpenLogin) ] [ str "Login"]]
+        | CheckPage playerid ->
+            h1 [] [ str "Check" ]
+            form [ Action "/auth/check"; HTMLAttr.Method "POST" ]
+                [
+                div []
+                    [ label [] [ str "Code" ]
+                      input [ Type "text"; Name "code"  ]
+                      input [ Type "hidden"; Name "userid"; Value playerid]
+                      ]
+
+                button [ ] [ str "Check" ]
+                ]
+            button [ OnClick (fun _ -> dispatch Cancel)] [ str "Cancel" ]
+            
       ]
 
 

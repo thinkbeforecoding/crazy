@@ -62,12 +62,17 @@ type ServerMsg =
     | JoinGame of string
     | SelectColor of Color
     | Start
+    | Login of string
+    | Register of string * string
 
 type ClientMsg =
     | Events of Event list
     | SyncCreate of string * Game
     | SyncJoin of string * Game
     | SyncStarted of string * Game
+    | LoggedIn of string * string
+    | ShouldLogin
+    | StartCheck of string
 
 
 
