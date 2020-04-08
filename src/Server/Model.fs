@@ -1,5 +1,6 @@
 ﻿module Model
 open System
+open FSharp.Data.UnitSystems.SI.UnitSymbols
 
 
 [<CLIMutable>]
@@ -15,6 +16,6 @@ type Challenge =
     { id: string
       userid: string
       challenge: string 
-      expiry: DateTime }
+      ttl: int<s> }
 
 

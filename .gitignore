@@ -16,4 +16,3 @@ deploy
 .ionide/
 *.user
 prep/
-local.settings.json

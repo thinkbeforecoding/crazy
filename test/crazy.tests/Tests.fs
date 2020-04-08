@@ -57,13 +57,14 @@ let ``Path of moves``() =
 [<Fact>]
 let ``Fence move``() =
     test <@
-            Player.start (Parcel Axe.center) (Crossroad (Axe.center, CLeft))
+            Player.start Blue (Parcel Axe.center) (Crossroad (Axe.center, CLeft))
             |> Player.move Up
             |> Player.move Up
             |> Player.move Horizontal
             |> Player.move Down
              =  Playing
-                { Tractor = Crossroad(Axe.NW, CLeft)
+                { Color = Blue
+                  Tractor = Crossroad(Axe.NW, CLeft)
                   Fence = Fence [ Path (Axe.NW, BNW), Down
                                   Path (Axe.NW, BN), Horizontal
                                   Path(Axe.NW, BNE), Up ]
@@ -75,7 +76,7 @@ let ``Fence move``() =
 [<Fact>]
 let ``Fence move reverse``() =
     test <@
-            Player.start (Parcel Axe.center) (Crossroad (Axe.center, CLeft))
+            Player.start Blue (Parcel Axe.center) (Crossroad (Axe.center, CLeft))
             |> Player.move Up
             |> Player.move Up
             |> Player.move Horizontal
@@ -83,7 +84,8 @@ let ``Fence move reverse``() =
             |> Player.move Up
             |> Player.move Horizontal
              =  Playing
-                { Tractor = Crossroad(Axe.N, CLeft)
+                { Color = Blue
+                  Tractor = Crossroad(Axe.N, CLeft)
                   Fence = Fence [ Path (Axe.NW, BNE), Up ]
                   Field = Field.create (Parcel Axe.center)
                   Power = PowerUp} @>
@@ -92,7 +94,7 @@ let ``Fence move reverse``() =
 [<Fact>]
 let ``Loops are deleted``() =
     test <@
-            Player.start  (Parcel Axe.center) (Crossroad (Axe.center, CRight))
+            Player.start Blue (Parcel Axe.center) (Crossroad (Axe.center, CRight))
             |> Player.move Horizontal
             |> Player.move Up
             |> Player.move Horizontal
@@ -101,7 +103,8 @@ let ``Loops are deleted``() =
             |> Player.move Horizontal
             |> Player.move Up
              =  Playing
-                { Tractor = Crossroad(Axe.E2, CLeft)
+                { Color = Blue
+                  Tractor = Crossroad(Axe.E2, CLeft)
                   Fence = Fence [ Path (Axe.SE, BN), Horizontal ]
                   Field = Field.create (Parcel Axe.center)
                   Power = PowerUp} @>

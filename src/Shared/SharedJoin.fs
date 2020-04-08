@@ -20,11 +20,15 @@ and Create =
 
 type Event =
     | Created of Created
-    | PlayerSet of Color * string * string
-    | Started of (Color * (string*string)) list
+    | PlayerSet of PlayerSet
+    | Started of PlayerSet list
 and Created =
     { GameId: string
       Initiator: string}
+and PlayerSet =
+    { Color: Color
+      PlayerId: string
+      Name: string }
 
 
 let decide cmd state =
@@ -34,10 +38,12 @@ let decide cmd state =
     | Setup s, SetPlayer (color, id, name) ->
         match Map.tryFind color s.Players with
         | None ->
-            [ PlayerSet(color,id, name) ]
+            [ PlayerSet { Color = color; PlayerId = id; Name = name } ]
         | _ -> []
     | Setup s, Start ->
-        [ Started (Map.toList s.Players)  ]
+        [ Started 
+            [ for c,(p,n) in Map.toSeq s.Players do
+                { Color = c; PlayerId = p; Name = n} ] ]
     | _ -> []
 
 
@@ -47,11 +53,11 @@ let evolve state event =
         Setup { 
             Initiator = c.Initiator
             Players = Map.empty  }
-    | Setup s, PlayerSet(color,id, name) ->
+    | Setup s, PlayerSet p ->
         Setup { s with Players = 
                             s.Players
-                            |> Map.filter (fun _ (p,_) -> p <> id)
-                            |> Map.add color (id, name)  }
+                            |> Map.filter (fun _ (pid,_) -> pid <> p.PlayerId)
+                            |> Map.add p.Color (p.PlayerId, p.Name)  }
     | Setup s, Started _ ->
         Game.Started s
     | _ ->  state

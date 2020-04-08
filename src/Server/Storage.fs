@@ -1,4 +1,5 @@
 ﻿module Storage
+open System
 open System.Threading.Tasks
 open FSharp.Control.Tasks.V2
 
@@ -66,4 +67,15 @@ let getUserById cnxstring (userid: string) =
     }
 
 
+let initialize cnxstring =
+
+    let client = new CosmosClient(cnxstring)
+    let db =
+        client.CreateDatabaseIfNotExistsAsync("crazyfarmers", Nullable 400)
+        |> Async.AwaitTask |> Async.RunSynchronously
+    db.Database.CreateContainerIfNotExistsAsync("crazyfarmers", "/p")
+    |> Async.AwaitTask |> Async.RunSynchronously |> ignore
+    db.Database.CreateContainerIfNotExistsAsync(
+        ContainerProperties( "login", "/userid", DefaultTimeToLive = Nullable -1) )
+    |> Async.AwaitTask |> Async.RunSynchronously |> ignore
 

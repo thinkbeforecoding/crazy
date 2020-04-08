@@ -16,6 +16,7 @@ open Elmish.Bridge
 open Microsoft.Extensions.Configuration
 open JWT.Builder
 open JWT.Algorithms
+open FSharp.Data.UnitSystems.SI.UnitSymbols
 
 let tryGetEnv = System.Environment.GetEnvironmentVariable >> function null | "" -> None | x -> Some x
 
@@ -83,41 +84,115 @@ type GameRunnerCmd =
     | GetState of (Board option -> unit)
     | Exec of Board.Command * (Board.Event list -> unit)
 
-let gameRunner() =
+open Newtonsoft.Json.Linq
+let (|JObj|_|) (o: obj) : 'e option =
+    match o with
+    | :? JObject as j -> Some (j.ToObject<'e>())
+    | :? JArray as j -> Some (j.ToObject<'e>())
+    | _ -> None
+
+
+type PlayerEvent = 
+    { Player: string
+      Event: obj }
+let serialize =
+    function
+    | Board.Event.Started e -> "Started", box e
+    | Board.Event.Played (playerid, Player.Event.MovedInField e ) -> "MovedInField", box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.FirstCrossroadSelected e ) -> "FirstCrossroadSelected" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.Annexed e ) -> "Annexed" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.CutFence e ) -> "CutFence" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.FenceDrawn e ) -> "FenceDrawn" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.FenceLooped e ) -> "FenceLooped" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.FenceRemoved e ) -> "FenceRemoved" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.MovedPowerless e ) -> "MovedPowerless" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.PoweredUp  ) -> "PoweredUp" , box { Player = playerid; Event = null }
+
+let deserialize =
+    function
+    | "Started", JObj e -> [Board.Started e]
+    | "MovedInField", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.MovedInField e)]
+    | "FirstCrossroadSelected", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.FirstCrossroadSelected e)]
+    | "Annexed", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.Annexed e)]
+    | "CutFence", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.CutFence e)]
+    | "FenceDrawn", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.FenceDrawn e)]
+    | "FenceLooped", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.FenceLooped e)]
+    | "FenceRemoved", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.FenceRemoved e)]
+    | "MovedPowerless", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.MovedPowerless e)]
+    | "PoweredUp", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.PoweredUp )]
+    | _ -> []
+
+
+let gameRunner container gameid =
+    let stream = "game-"+gameid
     MailboxProcessor.Start(fun mailbox ->
-        let rec loop state =
+        let rec loop state expectedVersion =
             async {
                 let! msg = mailbox.Receive()
+
+
                 match msg with
                 | GetState reply ->
                     reply (Some state)
-                    return! loop state
+                    return! loop state expectedVersion
                 | Exec (cmd, reply) ->
-                    let events = Board.decide cmd state 
-                    let newState = List.fold Board.evolve state events
-                    reply events
-                    return! loop newState
+
+                    let rec exec state expectedVersion =
+                        async {
+                            let events = Board.decide cmd state 
+
+                            let! result =
+                                EventStore.append serialize container stream expectedVersion events
+                                |> Async.AwaitTask
+                            match result with
+                            | Ok nextExpectedVersion ->
+                                let newState = List.fold Board.evolve state events
+                                reply events
+                                return (newState, nextExpectedVersion)
+                            | Error e ->
+                                let! newState, nextExpectedVersion =
+                                   EventStore.fold deserialize container Board.evolve stream state expectedVersion
+                                   |> Async.AwaitTask
+                                return! exec newState nextExpectedVersion 
+                        }
+
+                    let! newState, nextExpectedVersion =  exec state expectedVersion
+                    return! loop newState nextExpectedVersion
             }
 
-        let board : Board = { Players = Map.ofList [] }
-        loop board
+        async {
+            let! board, expectedVersion  = 
+                EventStore.fold deserialize container Board.evolve stream Board.initialState 0
+                |> Async.AwaitTask
+        
+
+
+            return! loop board expectedVersion
+        }
     )
 
      
 
 let runner =
+    let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
+    let container = client.GetContainer("crazyfarmers","crazyfarmers")
     MailboxProcessor.Start(fun mailbox ->
         let rec loop games =
             async {
                 let! (gameid, msg) = mailbox.Receive()
 
                 match msg with
-                | GetState reply ->
-                    match Map.tryFind gameid games with
-                    | Some (game: MailboxProcessor<GameRunnerCmd>) ->
-                        game.Post(msg)
-                    | None -> reply None
-                    return! loop games
+                | GetState _ ->
+                    let newGames =
+                        match Map.tryFind gameid games with
+                        | Some (game: MailboxProcessor<GameRunnerCmd>) ->
+                            game.Post(msg)
+                            games
+                        | None -> 
+                            let game = gameRunner container gameid
+                            game.Post(msg)
+                            Map.add gameid game games
+                    return! loop newGames
                 | Exec (cmd, reply) ->
                     let newGames =
                         match Map.tryFind gameid games with
@@ -127,7 +202,7 @@ let runner =
                         | None ->
                             match cmd with
                             | Board.Start _ ->
-                                let game = gameRunner()
+                                let game = gameRunner container gameid
                                 game.Post(msg)
                                 Map.add gameid game games
                             | _ ->
@@ -152,10 +227,6 @@ let init (claim: JwtClaim) clientDispatch () =
 
 let update claim clientDispatch msg (model: PlayerState) =
     match msg with
-    //| SyncState ->
-    //    let state = runner.PostAndReply(fun c -> GetState c.Reply)
-    //    clientDispatch (Sync (Board.toState state))
-    //    model, Cmd.none 
     | JoinGame gameid ->
         
         let state = runner.PostAndReply(fun c -> gameid, GetState c.Reply)
@@ -165,8 +236,7 @@ let update claim clientDispatch msg (model: PlayerState) =
                 Map.tryFind claim.sub game.Players
                 |> Option.bind (function 
                     | Starting p -> Some p.Color
-                    | Playing p -> Some p.Color
-                    | _ -> None)
+                    | Playing p -> Some p.Color )
                 
             clientDispatch (Sync (Board.toState game))
             Connected {GameId = gameid; Color = color } ,  Cmd.none
@@ -185,7 +255,6 @@ let update claim clientDispatch msg (model: PlayerState) =
 module Template =
     open Fable.React
     open Fable.React.Props
-    open Fable.ReactServer
     let register =
         html [ ]
             [ head [] 
@@ -307,7 +376,7 @@ let sendChallenge config email name =
                 { id = userid + "-" + code 
                   userid = userid
                   challenge = code
-                  expiry = DateTime.UtcNow.AddMinutes(5.)
+                  ttl = 300<s>
                 }
 
             do! Storage.saveChallenge config.Cosmos challenge
@@ -383,22 +452,17 @@ let postAuth (form: AuthForm) : HttpHandler = fun next ctx ->
     task {
         match! Storage.tryGetChallenge serverConfig.Cosmos  form.Userid form.Code with
         | Some challenge ->
-            if challenge.expiry >= DateTime.UtcNow then
-                let! user = Storage.getUserById serverConfig.Cosmos form.Userid
-                let jwt = 
-                    JwtBuilder()
-                        .WithAlgorithm(HMACSHA256Algorithm())
-                        .WithSecret(serverConfig.JWTSecret)
-                        .AddClaim(ClaimName.Subject, form.Userid)
-                        .AddClaim(ClaimName.CasualName, user.name)
-                        .AddClaim(ClaimName.ExpirationTime, DateTimeOffset.UtcNow.AddYears(1).ToUnixTimeSeconds())
-                        .Encode()
-                ctx.Response.Cookies.Append("crazyfarmers", jwt, Http.CookieOptions(Secure = serverConfig.Secure, Domain = (match serverConfig.Domain with "localhost" -> null | s -> s), Expires = Nullable (DateTimeOffset.UtcNow.AddYears(1))))
-                return! (redirectTo false "/"  ) next ctx
-            else
-                return! redirectTo false ("/auth/" + form.Userid ) next ctx
-
-                
+            let! user = Storage.getUserById serverConfig.Cosmos form.Userid
+            let jwt = 
+                JwtBuilder()
+                    .WithAlgorithm(HMACSHA256Algorithm())
+                    .WithSecret(serverConfig.JWTSecret)
+                    .AddClaim(ClaimName.Subject, form.Userid)
+                    .AddClaim(ClaimName.CasualName, user.name)
+                    .AddClaim(ClaimName.ExpirationTime, DateTimeOffset.UtcNow.AddYears(1).ToUnixTimeSeconds())
+                    .Encode()
+            ctx.Response.Cookies.Append("crazyfarmers", jwt, Http.CookieOptions(Secure = serverConfig.Secure, Domain = (match serverConfig.Domain with "localhost" -> null | s -> s), Expires = Nullable (DateTimeOffset.UtcNow.AddYears(1))))
+            return! (redirectTo false "/"  ) next ctx
 
         | None ->
             return! redirectTo false ("/auth/" + form.Userid ) next ctx
@@ -478,30 +542,93 @@ module Join =
         | Started of string 
 
     type RunnerCmd =
-        | GetState of  string * (Game option-> unit)
-        | Exec of string * Command * (Event list -> unit)
+        | GetState of  (Game option-> unit)
+        | Exec of Command * (Event list -> unit)
     
+
+    let serialize =
+        function
+        | Created e -> "Created", box e
+        | PlayerSet e -> "PlayerSet", box e
+        | Event.Started e -> "Started", box (List.toArray e)
+
+    let deserialize =
+        function
+        | "Created", JObj e -> [Created e]
+        | "PlayerSet", JObj e -> [PlayerSet e]
+        | "Started", JObj e -> [Event.Started (Array.toList e)]
+        | _ -> []
+
+    let gameRunner container gameid =
+        let stream = "join-"+gameid
+        MailboxProcessor.Start(fun mailbox ->
+            let rec loop state expectedVersion =
+                async {
+                    let! msg = mailbox.Receive()
+
+
+                    match msg with
+                    | GetState reply ->
+                        reply (Some state)
+                        return! loop state expectedVersion
+                    | Exec (cmd, reply) ->
+
+                        let rec exec state expectedVersion =
+                            async {
+                                let events = decide cmd state 
+
+                                let! result =
+                                    EventStore.append serialize container stream expectedVersion events
+                                    |> Async.AwaitTask
+                                match result with
+                                | Ok nextExpectedVersion ->
+                                    let newState = List.fold evolve state events
+                                    reply events
+                                    return (newState, nextExpectedVersion)
+                                | Error e ->
+                                    let! newState, nextExpectedVersion =
+                                       EventStore.fold deserialize container evolve stream state expectedVersion
+                                       |> Async.AwaitTask
+                                    return! exec newState nextExpectedVersion 
+                            }
+
+                        let! newState, nextExpectedVersion =  exec state expectedVersion
+                        return! loop newState nextExpectedVersion
+                }
+
+            async {
+                let! board, expectedVersion  = 
+                    EventStore.fold deserialize container evolve stream InitialState 0
+                    |> Async.AwaitTask
+            
+
+
+                return! loop board expectedVersion
+            }
+        )
+
+
+
+        
+
+
     let setupRunner =
+        let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
+        let container = client.GetContainer("crazyfarmers","crazyfarmers")
+
         MailboxProcessor.Start(fun mailbox ->
             let rec loop games =
                 async {
-                    let! msg = mailbox.Receive()
-                    match msg with
-                    | GetState (id , reply) ->
-                        Map.tryFind id games
-                        |> reply 
+                    let! id, msg = mailbox.Receive()
+                    match Map.tryFind id games with
+                    | Some (runner: _ MailboxProcessor) ->
+                        runner.Post msg
                         return! loop games
-                    | Exec (id, cmd, reply) ->
-                        let state = 
-                            Map.tryFind id games
-                            |> Option.defaultValue InitialState
-
-                        let events = decide cmd state 
-                        let newState = List.fold evolve state events
-                        reply events
-                        return! loop (Map.add id newState games)
+                    | None ->
+                        let runner = gameRunner container id
+                        runner.Post msg
+                        return! loop (Map.add id runner games)
                 }
-    
             loop Map.empty
         )
     
@@ -544,7 +671,7 @@ module Join =
             match claim with
             | Some claim ->
                 let gameid = createId 10
-                let events = setupRunner.PostAndReply(fun c -> Exec(gameid, Create { GameId = gameid; Initiator = claim.sub}, c.Reply))
+                let events = setupRunner.PostAndReply(fun c -> gameid, Exec(Create { GameId = gameid; Initiator = claim.sub}, c.Reply))
                 clientDispatch(Events events)
                 SetupGame gameid, Cmd.none
             | _ ->
@@ -554,7 +681,7 @@ module Join =
         | NoGame, JoinGame gameid ->
             match claim with
             | Some claim ->
-                match setupRunner.PostAndReply(fun c -> GetState(gameid, c.Reply)) with
+                match setupRunner.PostAndReply(fun c -> gameid, GetState(c.Reply)) with
                 | Some (Setup s) -> 
                     if s.Initiator = claim.sub then
                        clientDispatch(SyncCreate (gameid, Setup s))
@@ -575,17 +702,17 @@ module Join =
         |JoiningGame gameid, SelectColor color ->
             match claim with
             | Some claim ->
-                let events = setupRunner.PostAndReply(fun c -> Exec(gameid, SetPlayer(color, claim.sub, claim.nickname), c.Reply))
+                let events = setupRunner.PostAndReply(fun c -> gameid, Exec(SetPlayer(color, claim.sub, claim.nickname), c.Reply))
                 connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events events)
             | None -> ()
 
             model, Cmd.none
         | SetupGame gameid, Start ->
-            let events = setupRunner.PostAndReply(fun c -> Exec(gameid, Command.Start, c.Reply))
+            let events = setupRunner.PostAndReply(fun c -> gameid, Exec(Command.Start, c.Reply))
             for event in events do
                 match event with
                 | SharedJoin.Event.Started e ->
-                    runner.PostAndReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for c,(u,n) in e -> c,u] }, c.Reply))
+                    runner.PostAndReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e -> p.Color, p.PlayerId ] }, c.Reply))
                     |> ignore
                 | _ -> ()
             connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events events)
@@ -610,6 +737,8 @@ let webApp =
 
 
 let configureApp (app : IApplicationBuilder) =
+    Storage.initialize serverConfig.Cosmos
+
     app.UseDefaultFiles()
        .UseStaticFiles()
        .UseWebSockets()

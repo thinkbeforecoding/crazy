@@ -5,3 +5,5 @@ xunit.runner.visualstudio
 coverlet.collector
 FSharp.Core
 Unquote
+Microsoft.Azure.Cosmos
+Microsoft.Azure.Cosmos.Direct

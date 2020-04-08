@@ -73,9 +73,9 @@ and Playing =
       Power: Power }
 
 type Board = 
-    { Players: Map<string, Player> 
+    { Players: Map<string, Player> }
 
-    }
+
 
 type PlayerState =
     | SStarting of StartingState
@@ -427,7 +427,6 @@ module Player =
         { Direction: Direction }
 
     type Event =
-        | Started of Started
         | FirstCrossroadSelected of FirstCrossroadSelected
         | FenceDrawn of Moved
         | FenceRemoved of Moved
@@ -480,8 +479,6 @@ module Player =
                     
     let decide (otherPlayers: (string * Player) list) command player =
         match player, command with
-        | _, Start cmd ->
-            [ Started { Parcel = cmd.Parcel } ]
         | Starting _, SelectFirstCrossroad cmd ->
             [ FirstCrossroadSelected { Crossroad = cmd.Crossroad } ]
         | Playing player, Move cmd ->
@@ -593,8 +590,8 @@ module Player =
         fence
         |> exec [] (Move {Direction = dir })
 
-    let start parcel pos =
-        Starting parcel
+    let start color parcel pos =
+        Starting  { Parcel = parcel; Color = color }
         |> exec [] (SelectFirstCrossroad { Crossroad = pos})
 
 
@@ -678,6 +675,8 @@ module Player =
             }
 
 module Board =
+    let initialState = { Players = Map.empty }
+
     type Command =
         | Play of string * Player.Command
         | Start of Start

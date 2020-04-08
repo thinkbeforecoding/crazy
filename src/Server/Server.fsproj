@@ -11,6 +11,7 @@
         <Compile Include="..\Shared\SharedJoin.fs" />
         <Compile Include="Model.fs" />
         <Compile Include="Storage.fs" />
+        <Compile Include="EventStore.fs" />
         <Compile Include="Email.fs" />
         <Compile Include="Server.fs" />
     </ItemGroup>

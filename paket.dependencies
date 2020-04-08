@@ -13,6 +13,7 @@ nuget Fable.Elmish.React
 nuget JWT
 	nuget Mailkit
 	nuget Microsoft.Azure.Cosmos
+nuget Microsoft.Azure.Cosmos.Direct
     nuget Thoth.Json.Giraffe
     
     nuget coverlet.collector

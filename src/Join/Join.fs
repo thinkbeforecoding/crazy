@@ -110,16 +110,16 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                 | _, Created e ->
                     NewGame { GameId = e.GameId
                               Players = Map.empty }
-                | NewGame g, PlayerSet(color,id, name) ->
+                | NewGame g, PlayerSet p ->
                     NewGame { g with Players = 
                             g.Players 
-                            |> Map.filter (fun k (p,_) -> p <> id)
-                            |> Map.add color (id,name) }
-                | JoinGame g, PlayerSet(color,id,name) ->
+                            |> Map.filter (fun k (pid,_) -> pid <> p.PlayerId)
+                            |> Map.add p.Color (p.PlayerId,p.Name) }
+                | JoinGame g, PlayerSet p ->
                     JoinGame { g with Players = 
                             g.Players 
-                            |> Map.filter (fun k (p,_) -> p <> id)
-                            |> Map.add color (id,name) }
+                            |> Map.filter (fun k (pid,_) -> pid <> p.PlayerId)
+                            |> Map.add p.Color (p.PlayerId,p.Name) }
                 | NewGame g,  Event.Started _ 
                 | JoinGame g, Event.Started _ ->
                     Started g.GameId
