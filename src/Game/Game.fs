@@ -91,7 +91,7 @@ let parseGame (s:string) =
 
 // defines the initial state and initial command (= side-effect) of the application
 let init () : Model * Cmd<Msg> =
-    let board= { Players = Map.empty }
+    let board= Board.initialState
     { Board = board
       LocalVersion = -1
       Synched = board
@@ -283,16 +283,18 @@ let moveView dispatch move =
 let view (model : Model) (dispatch : Msg -> unit) =
     div [ ClassName "board" ]
         [
-            for _,p in Map.toSeq model.Board.Players do
-                lazyViewWith sameField playerField p
+            match model.Board with
+            | Board board ->
+                for _,p in Map.toSeq board.Players do
+                    lazyViewWith sameField playerField p
 
-            for _,p in Map.toSeq model.Board.Players do
-                lazyViewWith sameFence playerFences  p
-            for _,p in Map.toSeq model.Board.Players do
-                playerTractor  p
+                for _,p in Map.toSeq board.Players do
+                    lazyViewWith sameFence playerFences  p
+                for _,p in Map.toSeq board.Players do
+                    playerTractor  p
 
-            for m in model.Moves do
-                moveView dispatch m
+                for m in model.Moves do
+                    moveView dispatch m
 
 
 

@@ -107,6 +107,8 @@ let serialize =
     | Board.Event.Played (playerid, Player.Event.FenceRemoved e ) -> "FenceRemoved" , box { Player = playerid; Event = e }
     | Board.Event.Played (playerid, Player.Event.MovedPowerless e ) -> "MovedPowerless" , box { Player = playerid; Event = e }
     | Board.Event.Played (playerid, Player.Event.PoweredUp  ) -> "PoweredUp" , box { Player = playerid; Event = null }
+    | Board.Event.Next  -> "Next" , null
+
 
 let deserialize =
     function
@@ -120,6 +122,7 @@ let deserialize =
     | "FenceRemoved", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.FenceRemoved e)]
     | "MovedPowerless", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.MovedPowerless e)]
     | "PoweredUp", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.PoweredUp )]
+    | "Next", _ -> [ Board.Next]
     | _ -> []
 
 
@@ -234,14 +237,14 @@ let update claim clientDispatch msg (model: PlayerState) =
         
         let state = runner.PostAndReply(fun c -> gameid, GetState c.Reply)
         match state with 
-        | Some (game, version) ->
+        | Some (Board game, version) ->
             let color = 
                 Map.tryFind claim.sub game.Players
                 |> Option.bind (function 
                     | Starting p -> Some p.Color
                     | Playing p -> Some p.Color )
                 
-            clientDispatch (Sync (Board.toState game, version))
+            clientDispatch (Sync (Board.toState (Board game), version))
             Connected {GameId = gameid; Color = color } ,  Cmd.none
         | None ->
             model, Cmd.none

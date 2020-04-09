@@ -70,10 +70,28 @@ and Playing =
       Tractor: Crossroad
       Fence: Fence
       Field: Field
-      Power: Power }
+      Power: Power
+      Moves: int } 
+type Table =
+    { Players: string[]
+      Current: int }
+    member this.Player = this.Players.[this.Current]
+
+    member this.Next =
+        { this with
+            Current = (this.Current + 1) % this.Players.Length }
+
+    static member start players =
+        { Players = players
+          Current = 0 }
+
 
 type Board = 
-    { Players: Map<string, Player> }
+    | InitialState
+    | Board of PlayingBoard
+and PlayingBoard =
+    { Players: Map<string, Player>
+      Table: Table  }
 
 
 
@@ -88,9 +106,16 @@ and PlayingState =
       STractor: Crossroad
       SFence: Fence
       SField: Parcel list
-      SPower: Power}
+      SPower: Power
+      SMoves: int }
 
-type BoardState = (string*PlayerState) list
+type BoardState = 
+    { SPlayers: (string*PlayerState) list 
+      STable: STable
+    }
+and STable =
+    { SPlayers: string[]
+      SCurrent: int }
     
 
 module Axe =
@@ -259,6 +284,8 @@ module Fence =
                 )
                 tractor paths
         List.rev o, end'
+
+    let givesAcceleration fence = length fence >= 4
 
 [<AutoOpen>]
 module FenceOps =
@@ -477,6 +504,19 @@ module Player =
             paths @ border 
         Field.fill fullBorder - field
                     
+
+    let startTurn player =
+        match player with
+        | Playing p ->
+            Playing { p with
+                Moves = 
+                    if Fence.givesAcceleration p.Fence then
+                        4
+                    else
+                        3
+            }
+        | Starting _ -> player
+        
                     
     let decide (otherPlayers: (string * Player) list) command player =
         match player, command with
@@ -486,7 +526,7 @@ module Player =
             let dir = cmd.Direction
             let nextPos = Crossroad.neighbor dir player.Tractor
             let nextPath = Path.neighbor dir player.Tractor
-            if nextPos <> cmd.Destination then
+            if nextPos <> cmd.Destination || player.Moves <= 0 then
                 []
             else
                 match player.Power with
@@ -573,12 +613,12 @@ module Player =
                       Fence = Fence.empty
                       Field = Field.create p.Parcel
                       Power = PowerUp
-                      }
-        | Playing player, FenceDrawn e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.add (e.Path, e.Move) player.Fence }
-        | Playing player, FenceRemoved e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.tail player.Fence }
-        | Playing player, FenceLooped e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.remove e.Loop player.Fence }
-        | Playing player, MovedInField e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.empty }
-        | Playing player, MovedPowerless e -> Playing { player with Tractor = e.Crossroad }
+                      Moves = 3; }
+        | Playing player, FenceDrawn e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.add (e.Path, e.Move) player.Fence; Moves = player.Moves-1 }
+        | Playing player, FenceRemoved e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.tail player.Fence ; Moves = player.Moves-1  }
+        | Playing player, FenceLooped e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.remove e.Loop player.Fence ; Moves = player.Moves-1  }
+        | Playing player, MovedInField e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.empty; Moves = player.Moves-1  }
+        | Playing player, MovedPowerless e -> Playing { player with Tractor = e.Crossroad; Moves = player.Moves-1  }
         | Playing player, PoweredUp -> Playing { player with Power = PowerUp }
         | Playing player, Annexed e -> Playing { player with Fence = Fence.empty; Field = player.Field + Field.ofParcels e.NewField}
         | _ -> player 
@@ -611,7 +651,7 @@ module Player =
 
     let possibleMoves player =
         match player with
-        | Playing player ->
+        | Playing player when player.Moves >= 0 ->
             [ Up;Down;Horizontal]
             |> List.collect (possibleMove player)
 
@@ -664,7 +704,9 @@ module Player =
                   SField =
                     let (Field f) = p.Field
                     f |> Set.toList
-                  SPower = p.Power }
+                  SPower = p.Power
+                  SMoves = p.Moves
+                  }
 
     let ofState (p: PlayerState) =
         match p with
@@ -679,10 +721,11 @@ module Player =
                 Fence = p.SFence
                 Field = Field (set p.SField)
                 Power = p.SPower
+                Moves = p.SMoves
             }
 
 module Board =
-    let initialState = { Players = Map.empty }
+    let initialState = InitialState
 
     type Command =
         | Play of string * Player.Command
@@ -693,9 +736,9 @@ module Board =
     type Event =
         | Played of string * Player.Event
         | Started of (Color*string*Parcel) list 
-
+        | Next
         
-    let otherPlayers playerid (board: Board) =
+    let otherPlayers playerid (board: PlayingBoard) =
         board.Players
         |> Map.toSeq
         |> Seq.filter (fun (id,_) -> id <> playerid)
@@ -703,8 +746,9 @@ module Board =
         
 
     let decide cmd (state: Board) =
-        match cmd with
-        | Start cmd ->
+        
+        match state, cmd with
+        | InitialState, Start cmd ->
             match cmd.Players with
             | [ c1,u1; c2,u2 ] ->
                 [ Started [ c1, u1, Parcel.center + 2 * Axe.N 
@@ -725,60 +769,93 @@ module Board =
                     failwith "To few players"
                 else
                     failwith "To many players"
-        | Play (playerid, cmd) ->
+        | Board state,Play (playerid, cmd) ->
             let player = state.Players.[playerid]
             let others = otherPlayers playerid state
 
-            
+            if playerid = state.Table.Player then
+                let events = 
+                    Player.decide others cmd player
 
-            Player.decide others cmd player
-            |> List.map (fun event -> Played(playerid, event))
+                let nextState = List.fold Player.evolve player events
+                match nextState with
+                | Playing { Moves = 0 } ->
+                    [ for e in  events do
+                        Played(playerid, e)
+                      Next ]
+                | _ ->
+                    [ for e in events -> Played(playerid,e) ]
+            else
+                []
+        | _ -> []
 
     let evolve (state: Board) event =
-        match event with
-        | Started players ->
-            { Board.Players =
-                Map.ofList [ for c,u,p in players -> u, Starting { Color = c; Parcel = p}]
-            }
-
-        | Played (_, Player.CutFence { Player = playerid }) ->
-            match state.Players.[playerid] with
+        match state,event with
+        | InitialState, Started players ->
+            Board 
+                { Players =
+                    Map.ofList [ for c,u,p in players -> u, Starting { Color = c; Parcel = p}]
+                  Table =  Table.start [| for _,p,_ in players -> p |] 
+                }
+        | InitialState, _ -> state
+        | Board _, Started _ -> state
+        | Board board, Played (_, Player.CutFence { Player = playerid }) ->
+            match board.Players.[playerid] with
             | Playing player -> 
                 let cutPlayer =
                     Playing { player with
                                 Fence = Fence.empty
                                 Power = PowerDown }
-                { state with
-                    Players = Map.add playerid cutPlayer state.Players }
+                Board { board with
+                            Players = Map.add playerid cutPlayer board.Players }
             | _ -> state
-        | Played (playerid, Player.Annexed e ) ->
-            let annexedPlayer = Player.evolve state.Players.[playerid] (Player.Annexed e)
-            let newMap = Map.add playerid annexedPlayer state.Players
+        | Board board, Played (playerid, Player.Annexed e ) ->
+            let annexedPlayer = Player.evolve board.Players.[playerid] (Player.Annexed e)
+            let newMap = Map.add playerid annexedPlayer board.Players
             e.LostFields
             |> List.fold (fun map (playerid, parcels) ->
-                match state.Players.[playerid] with
+                match board.Players.[playerid] with
                 | Playing p ->
                     let newP = Playing { p with Field = p.Field - Field.ofParcels parcels }
-                    { state with
-                        Players = Map.add playerid newP map.Players }
+                    { board with
+                                Players = Map.add playerid newP map.Players }
                 | _ -> map
             
-            ) { state with Players = newMap }
-        | Played (playerid,e) ->
-            let player = Player.evolve state.Players.[playerid] e
-            { state with
-                Players = Map.add playerid player state.Players }
+            ) { board with Players = newMap }
+            |> Board
+        | Board board, Played (playerid,e) ->
+            let player = Player.evolve board.Players.[playerid] e
+            Board { board with
+                       Players = Map.add playerid player board.Players }
+        | Board board, Next ->
+            let nextTable = board.Table.Next
+            let player = Player.startTurn board.Players.[nextTable.Player]
+            Board {
+                board with
+                    Players = Map.add nextTable.Player player board.Players
+                    Table = nextTable}
 
     let toState (board: Board) =
-        board.Players |> Map.toList |> List.map (fun (playerid,p) -> playerid, Player.toState p)
+        match board with
+        | Board board ->
+            { SPlayers =
+                board.Players
+                |> Map.toList
+                |> List.map (fun (playerid,p) -> playerid, Player.toState p)
+              STable = { SPlayers = board.Table.Players; SCurrent = board.Table.Current } }
+        | InitialState -> { SPlayers = []; STable = { SPlayers = null; SCurrent = 0} }
 
     let ofState (board: BoardState) =
-        {Board.Players = 
-            board |> List.map (fun (c,p) -> c, Player.ofState p) |> Map.ofList }
+        match board.SPlayers with
+        | [] -> 
+            InitialState
+        | _ ->
+            Board { Players = board.SPlayers |> List.map (fun (c,p) -> c, Player.ofState p) |> Map.ofList 
+                    Table = { Players = board.STable.SPlayers; Current = board.STable.SCurrent } }
         
     let possibleMoves playerid (board: Board) =
-        match playerid with
-        | Some playerid ->
+        match board, playerid with
+        | Board board, Some playerid ->
             match Map.tryFind playerid board.Players with
             | Some ((Playing _) as p)->
                 [ for dir,m in Player.possibleMoves p do
@@ -793,7 +870,7 @@ module Board =
                   SelectCrossroad (Crossroad (p+Axe.SW, CRight))
                   SelectCrossroad (Crossroad (p+Axe.SE, CLeft)) ]
             | None -> []
-        | None -> []
+        | _ -> []
 
 /// A type that specifies the messages sent to the server from the client on Elmish.Bridge
 /// to learn more, read about at https://github.com/Nhowka/Elmish.Bridge#shared
