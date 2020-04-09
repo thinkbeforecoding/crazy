@@ -239,9 +239,14 @@ let colorName =
     | Red -> "red"
     | Purple -> "purple"
 
-let selectPlayer dispatch color players =
+let selectPlayer dispatch color players login =
     let player = Map.tryFind color players
-    div [ classList ["select-player", true; "selected", player.IsSome ]
+    let selected = player.IsSome
+    let isLocalPlayer = 
+        match login, player with
+        | Some pl, Some(p,_) -> pl.PlayerId = p
+        | _ -> false
+    div [ classList ["select-player", true; "selected", selected; "local", isLocalPlayer ]
           if player.IsNone then
               OnClick (fun _ -> dispatch (SelectColor color))
           ]
@@ -257,114 +262,171 @@ module Colors =
     let lightGreen = "#ECF1A2" 
     let darkGreen = "#D8EFAB"
     let blue = "#A9DAF2"
-    
+  
+
+let header dispatch player =
+    div [ ClassName "header"]
+        [ match player with
+          | Some player -> 
+                span [] [ str player.Name ]
+                span [] [ a [ Href "/auth/logout" ] [str "Logout"] ]
+          | None -> 
+                span []
+                    [ a [ Href "#"
+                          OnClick (fun _ -> dispatch OpenLogin) ] [ str "Login" ] 
+                       ]
+                span []
+                    [ a [ Href "#"
+                          OnClick (fun _ -> dispatch OpenRegister) ] [ str "Register" ] ]
+        ]
+
+
+let mainTitle text = h1 [ ClassName "main"] [str text] 
+let cancel dispatch = a [ Href "#"; OnClick (fun _ -> dispatch Cancel) ] [ str "Cancel"]
+
+
 let view (model : Model) (dispatch : Msg -> unit) =
     div [  ]
       [ 
         match model.Game with
         | Home ->
-            div [Style [BackgroundImage "url(/img/crazyfarmers.png)"
-                        BackgroundRepeat "no-repeat"
-                        BackgroundPosition "top right"
-                        BackgroundSize "60%"
-                        Height "100vh"
-                        ]]
-                [
-            div [ Style [ Height "2em"
-                          TextAlign TextAlignOptions.Right ]]
-                [ match model.Player with
-                  | Some player -> 
-                       str player.Name
-                       a [ Href "/auth/logout" ] [str "Logout"]
-                  | None -> 
-                       a [ Href "#"
-                           OnClick (fun _ -> dispatch OpenLogin) ] [ str "Login" ] 
-                       a [ Href "#"
-                           OnClick (fun _ -> dispatch OpenRegister) ] [ str "Register" ] ]
-            
-            h1 [ Style [PaddingTop "10vh"] ] [ str "Join" ] 
-            button [ OnClick (fun _ -> dispatch CreateNewGame) ] [ str "Nouvelle Partie" ]
-            button [ OnClick (fun _ -> dispatch SelectJoin)] [ str "Rejoindre une Partie"]
+            div [ ClassName "title" ] [
+                header dispatch model.Player
+
+                div [ ClassName "content" ]
+                    [ mainTitle "Play Online"
+                      button [ OnClick (fun _ -> dispatch CreateNewGame) ] [ str "New game" ]
+                      button [ OnClick (fun _ -> dispatch SelectJoin)] [ str "Join game"]
+                    ]
             ]
         | NewGame game ->
-            h1 [] [ str "New game"]
-            str ("GameId: " + game.GameId)
-            div []
-                [ for color in [ Blue; Yellow; Purple; Red ] do
-                    selectPlayer dispatch color game.Players
-                ]
-            div [ Style [ Clear ClearOptions.Both ]]
-                [ button [ OnClick (fun _ -> dispatch Start) 
-                           Disabled (not game.CanStart)
-                           ] [ str "Start"]
-                
-                  button [ OnClick (fun _ -> dispatch Cancel) ] [ str "Cancel"]]
+            div [ ClassName "content" ] [
+                header dispatch model.Player
+                div [ ClassName "content" ]
+                    [ mainTitle "New game"
+                      p [] [ str ("Game id: " + game.GameId) ]
+                      p [ ClassName "info"] [ str "Send this game id to your friends, and tell them to join the game using this code."]
+                      p [ ClassName "info"] [ str "Select your team, and start the game once your friends joined."]
+
+                      div []
+                          [ for color in [ Blue; Yellow; Purple; Red ] do
+                            selectPlayer dispatch color game.Players model.Player
+                          ]
+
+
+                      div [ Style [ Clear ClearOptions.Both ]]
+                          [ button [ OnClick (fun _ -> dispatch Start) 
+                                     Disabled (not game.CanStart)
+                                   ] [ str "Start"] 
+                    
+                            cancel dispatch
+                           ]
+                    ]
+            ]
         | JoinGame game ->
-            h1 [] [ str "Join game"]
-            str ("GameId: " + game.GameId)
-            div []
-                [ for color in [ Blue; Yellow; Purple; Red ] do
-                    selectPlayer dispatch color game.Players
+            div [ ClassName "content" ] [
+                header dispatch model.Player
+
+                div [ ClassName "content" ]
+                    [ mainTitle "Join game"
+                      str ("Game id: " + game.GameId)
+
+                      div [ ClassName "info"] 
+                          [ str "Select your team ! If you don't select any, you can still watch the game. "  ]
+
+                      div []
+                          [ for color in [ Blue; Yellow; Purple; Red ] do
+                                selectPlayer dispatch color game.Players model.Player
+                          ]
+                      div [ Style [ Clear ClearOptions.Both ]]
+                          [ cancel dispatch]
+                    ]
                 ]
-            div [ Style [ Clear ClearOptions.Both ]]
-                [ button [ OnClick (fun _ -> dispatch Cancel) ] [ str "Cancel"]]
 
         | SelectGame ->
-            h1 [] [ str "Join game"]
+            div [ ClassName "title" ] [
+                header dispatch model.Player
 
-            input [ Type "text"; Id "gameid" ]
-            
-            button [ OnClick (fun _ -> 
-                    let elt = Browser.Dom.document.getElementById("gameid") :?> Browser.Types.HTMLInputElement
+                div [ ClassName "content" ]
+                    [ mainTitle "Join game"
 
-                    dispatch (Join elt.value))] [ str "Join" ]
+                      div [ ClassName "info"] 
+                          [ str "Get a game id from an friend, and paste it here to join the game."  ]
 
-            button [ OnClick (fun _ -> dispatch Cancel) ] [ str "Cancel"]
-        | LoginPage ->
-            h1 [] [ str "Login" ]
-            div []
-                [ label [] [ str "Email" ]
-                  input [ Type "text"; Id "email" ] ]
-            button [ OnClick (fun _ ->
-                let email = Browser.Dom.document.getElementById("email") :?> Browser.Types.HTMLInputElement
-                dispatch (Login email.value)
-            )
-            
-                ] [ str "Login" ]
-            button [ OnClick (fun _ -> dispatch Cancel)] [ str "Cancel" ]
-            div []
-                [ str "Don't have an accout yet ? "
-                  a [ Href "#"; OnClick (fun _ -> dispatch OpenRegister) ] [ str "Register"]]
-        | RegisterPage ->
-            h1 [] [ str "Register" ]
-            div []
-                [ label [] [ str "Email" ]
-                  input [ Type "text" ; Id "email" ] ]
-            div []
-                [ label [] [ str "Name" ]
-                  input [ Type "text"; Id "name" ] ]
-            button [ OnClick (fun _ ->
-                let email = Browser.Dom.document.getElementById("email") :?> Browser.Types.HTMLInputElement
-                let name = Browser.Dom.document.getElementById("name") :?> Browser.Types.HTMLInputElement
-                dispatch (Register(email.value,name.value))
-            )] [ str "Register" ]
-            button [ OnClick (fun _ -> dispatch Cancel)] [ str "Cancel" ]
-            div []
-                [ str "Already have an accout ? "
-                  a [ Href "#"; OnClick (fun _ -> dispatch OpenLogin) ] [ str "Login"]]
-        | CheckPage playerid ->
-            h1 [] [ str "Check" ]
-            form [ Action "/auth/check"; HTMLAttr.Method "POST" ]
-                [
-                div []
-                    [ label [] [ str "Code" ]
-                      input [ Type "text"; Name "code"  ]
-                      input [ Type "hidden"; Name "userid"; Value playerid]
+                      input [ Type "text"; Id "gameid" ]
+                
+                      div [ Style [ Clear ClearOptions.Both ]]
+                          [ button [ OnClick (fun _ -> 
+                                     let elt = Browser.Dom.document.getElementById("gameid") :?> Browser.Types.HTMLInputElement
+
+                                     dispatch (Join elt.value))] [ str "Join" ]
+
+                            cancel dispatch
                       ]
+                    ]
+            ]
+        | LoginPage ->
+            div [ ClassName "title" ] [
+                div [ ClassName "content" ] [
 
-                button [ ] [ str "Check" ]
+                    mainTitle "Login"
+                    div []
+                        [ label [] [ str "Email" ]
+                          input [ Type "text"; Id "email" ] ]
+                    button [ OnClick (fun _ ->
+                        let email = Browser.Dom.document.getElementById("email") :?> Browser.Types.HTMLInputElement
+                        dispatch (Login email.value)
+                    )
+                    
+                        ] [ str "Login" ]
+                    cancel dispatch
+                    div [ ClassName "switch" ]
+                        [ str "Don't have an accout yet ? "
+                          a [ Href "#"; OnClick (fun _ -> dispatch OpenRegister) ] [ str "Register"]]
                 ]
-            button [ OnClick (fun _ -> dispatch Cancel)] [ str "Cancel" ]
+            ]
+        | RegisterPage ->
+            div [ ClassName "title" ] [
+                div [ ClassName "content" ] [
+
+                    mainTitle "Register"
+
+                    div []
+                        [ label [] [ str "Email" ]
+                          input [ Type "text" ; Id "email" ] ]
+                    div []
+                        [ label [] [ str "Name" ]
+                          input [ Type "text"; Id "name" ] ]
+                    button [ OnClick (fun _ ->
+                        let email = Browser.Dom.document.getElementById("email") :?> Browser.Types.HTMLInputElement
+                        let name = Browser.Dom.document.getElementById("name") :?> Browser.Types.HTMLInputElement
+                        dispatch (Register(email.value,name.value))
+                    )] [ str "Register" ]
+                    cancel dispatch
+                    div [ ClassName "switch"  ]
+                        [ str "Already have an accout ? "
+                          a [ Href "#"; OnClick (fun _ -> dispatch OpenLogin) ] [ str "Login"]]
+                ]
+            ]
+        | CheckPage playerid ->
+            div [ ClassName "title" ] [
+                div [ ClassName "content" ] [
+
+                    mainTitle "Check"
+
+                    form [ Action "/auth/check"; HTMLAttr.Method "POST" ]
+                        [
+                        div []
+                            [ label [] [ str "Code" ]
+                              input [ Type "text"; Name "code"  ]
+                              input [ Type "hidden"; Name "userid"; Value playerid]
+                              ]
+
+                        button [ ] [ str "Check" ]
+                        ]
+                    cancel dispatch
+                ]
+            ]
             
       ]
 

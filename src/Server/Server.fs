@@ -547,7 +547,6 @@ module Join =
     type RunnerCmd =
         | GetState of  ((Game * int) option-> unit)
         | Exec of Command * ((Event list * int) -> unit)
-    
 
     let serialize =
         function
@@ -578,12 +577,10 @@ module Join =
                         reply (Some (newState, nextExpectedVersion))
                         return! loop newState nextExpectedVersion
                     | Exec (cmd, reply) ->
-                        printfn "Cmd: %A" cmd
 
                         let rec exec state expectedVersion =
                             async {
                                 let events = decide cmd state 
-                                printfn "Events: %A" events
 
                                 let! result =
                                     EventStore.append serialize container stream expectedVersion events
@@ -648,7 +645,6 @@ module Join =
       ServerHub<Model,ServerMsg,ClientMsg>()
     
     
-
     let init claim clientDispatch () =
         match claim with
         | Some claim -> clientDispatch (LoggedIn (claim.sub, claim.nickname))

@@ -12,9 +12,31 @@
 //@import '~open-sans-fonts/open-sans';
 //$family-primary: 'Open Sans';
 
+
+
 // Bulma
 //@import "~bulma/bulma";
+@font-face {
+    font-family: 'BigSlabHammer';
+    /*src: url(webfont.eot');  IE9+ Compat Modes */
+    /*src: url('webfont.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
+    /*url('webfont.woff2') format('woff2'), Super modern browsers */
+    //src: url('webfont.woff') format('woff'), /* Modern browsers */
+    src: url(../Game/public/font/BigSlabHammer.ttf) format('truetype'), /* Safari, Android, iOS */
+}
+
+$crazy-red:  #E84737;
+$crazy-blue: #B0DFF5;
+$crazy-purple: #83436A;
+$crazy-dark: #354A4A;
+
+$crazy-lightgreen: #ECF1A2;
+$crazy-darkgreen: #D8EFAB;
+
+$crazy-grey: #C2C7DB;
+
 body {
+    font-family: Arial, Helvetica, sans-serif;
     margin: 0;
     padding: 0;
     background-image: url(../Game/public/img/background.png);
@@ -24,6 +46,13 @@ body {
 div, h1, h2 {
     margin: 0;
     padding: 0;
+
+}
+
+h1, h2 {
+    font-family: BigSlabHammer;
+    font-weight: normal;
+
 }
 *, *::before, *::after {
     box-sizing: inherit;
@@ -40,16 +69,95 @@ div, h1, h2 {
     }
 
     img:hover {
-        border: 3px solid red;
+        border: 3px solid $crazy-red;
         cursor: pointer;
     }
 }
 
 .selected {
     img, img:hover {
-        border: 3px solid black;
+        border: 3px solid $crazy-dark;
         cursor: default;
     }
 
 }
+.selected.local {
+    img, img:hover {
+        border: 3px solid $crazy-red;
+        cursor: default;
+    }
+}
 
+.title {
+    background-image: url(/img/crazyfarmers.png);
+    background-repeat: no-repeat;
+    background-position: top right;
+    background-size: 60%;
+    height: 100vh;
+}
+
+.content {
+    padding: 2em;
+
+    a {
+        text-decoration: none;
+        color: black;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+}
+.header {
+    height: 2em;
+    text-align: right;
+    color: black;
+
+    span {
+        margin-left: 1em;
+        margin-right: 0.5em;
+    }
+
+    a {
+        color: black;
+        text-decoration: none;
+    }
+    a:hover {
+        color: gray;
+    }
+}
+
+
+label {
+    width: 10em;
+}
+
+input {
+    margin-top: 0.8em;
+}
+
+button {
+    background-color: $crazy-grey;
+    font-weight: bold;
+    margin-top: 1em;
+    margin-right: 1em;
+    border-radius: 3px;
+    border: 1px solid $crazy-dark;
+    padding: 0.5em;
+}
+
+h1.main {
+    margin-top: 10vh;
+    margin-bottom: 1em;
+}
+
+.switch {
+    margin-top: 2em;
+    font-style: italic;
+
+}
+
+.info {
+    font-style: italic;
+    color: $crazy-dark;
+}
