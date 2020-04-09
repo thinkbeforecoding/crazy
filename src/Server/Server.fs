@@ -81,7 +81,7 @@ let connections =
 
 
 type GameRunnerCmd =
-    | GetState of (Board option -> unit)
+    | GetState of ((Board * int) option -> unit)
     | Exec of Board.Command * (Board.Event list -> unit)
 
 open Newtonsoft.Json.Linq
@@ -133,8 +133,11 @@ let gameRunner container gameid =
 
                 match msg with
                 | GetState reply ->
-                    reply (Some state)
-                    return! loop state expectedVersion
+                    let! newState, nextExpectedVersion =
+                       EventStore.fold deserialize container Board.evolve stream state expectedVersion
+                       |> Async.AwaitTask
+                    reply (Some (newState, nextExpectedVersion))
+                    return! loop newState nextExpectedVersion
                 | Exec (cmd, reply) ->
 
                     let rec exec state expectedVersion =
@@ -231,14 +234,14 @@ let update claim clientDispatch msg (model: PlayerState) =
         
         let state = runner.PostAndReply(fun c -> gameid, GetState c.Reply)
         match state with 
-        | Some game ->
+        | Some (game, version) ->
             let color = 
                 Map.tryFind claim.sub game.Players
                 |> Option.bind (function 
                     | Starting p -> Some p.Color
                     | Playing p -> Some p.Color )
                 
-            clientDispatch (Sync (Board.toState game))
+            clientDispatch (Sync (Board.toState game, version))
             Connected {GameId = gameid; Color = color } ,  Cmd.none
         | None ->
             model, Cmd.none
@@ -247,7 +250,7 @@ let update claim clientDispatch msg (model: PlayerState) =
         match model with
         | Connected g -> 
             let events = runner.PostAndReply(fun c -> g.GameId, Exec(Board.Play(claim.sub, cmd), c.Reply))
-            connections.SendClientIf (function | Connected c when c.GameId = g.GameId -> true  | _ -> false) (Events events)
+            //connections.SendClientIf (function | Connected c when c.GameId = g.GameId -> true  | _ -> false) (Events events)
             model, Cmd.none
         | NotConnected -> model, Cmd.none
 
@@ -703,7 +706,8 @@ module Join =
             match claim with
             | Some claim ->
                 let events = setupRunner.PostAndReply(fun c -> gameid, Exec(SetPlayer(color, claim.sub, claim.nickname), c.Reply))
-                connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events events)
+                //function | Connected c when c.GameId = gameId -> true  | _ -> falsefunction | Connected c when c.GameId = gameId -> true  | _ -> falsefunction | Connected c when c.GameId = gameId -> true  | _ -> false) (Events events)
+                ()
             | None -> ()
 
             model, Cmd.none
@@ -720,6 +724,31 @@ module Join =
 
         | _ -> model, Cmd.none
 
+    let subsJoin =
+        let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
+        
+        let container = client.GetContainer("crazyfarmers", "crazyfarmers")
+        let feed =
+           container.GetChangeFeedProcessorBuilder<EventStore.BatchData>("join-" + Environment.MachineName,
+                fun changes ct ->
+                    task {
+                        for c in changes do
+                        let events = 
+                            [ for ed in c.e do
+                                yield! deserialize (ed.c, ed.d) ]
+                        let gameid = c.p.Substring(5) 
+                        connections.SendClientIf (function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events events)
+                            
+                        
+                    } :> Task
+            )
+            .WithLeaseContainer(client.GetContainer("crazyfarmers", "subscriptions"))
+            .WithInstanceName(Environment.MachineName)
+            .WithPollInterval(TimeSpan.FromMilliseconds 500.)
+            .Build()
+        feed.StartAsync() |> Async.AwaitTask |> Async.RunSynchronously
+        
+        
 
 let joinGame claim  =
     Bridge.mkServer "/socket/join" (Join.init claim) (Join.update claim)
@@ -749,6 +778,33 @@ let configureServices (services : IServiceCollection) =
     services.AddSingleton<Giraffe.Serialization.Json.IJsonSerializer>(Thoth.Json.Giraffe.ThothSerializer()) |> ignore
 
 do printfn "%s" Email.smtpConfig.Host
+do printfn "%s" serverConfig.Cosmos
+
+let subsGame =
+    let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
+    
+    let container = client.GetContainer("crazyfarmers", "crazyfarmers")
+    let feed =
+       container.GetChangeFeedProcessorBuilder<EventStore.BatchData>("game-"+Environment.MachineName,
+            fun changes ct ->
+                task {
+                    for c in changes |> Seq.sortBy (fun c -> c.id) do
+                    let events = 
+                        [ for ed in c.e do
+                            yield! deserialize (ed.c, ed.d) ]
+                    let gameId = c.p.Substring(5) 
+                    printfn "Push Event: %d" c.i
+                    connections.SendClientIf (function | Connected c when c.GameId = gameId -> true  | _ -> false) (Events (events, c.i ))
+                        
+                    
+                } :> Task
+        )
+        .WithLeaseContainer(client.GetContainer("crazyfarmers", "subscriptions"))
+        .WithInstanceName(Environment.MachineName)
+        .WithPollInterval(TimeSpan.FromMilliseconds 500.)
+        .Build()
+    feed.StartAsync() |> Async.AwaitTask |> Async.RunSynchronously
+
 
 WebHost
     .CreateDefaultBuilder()

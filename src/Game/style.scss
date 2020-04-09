@@ -15,9 +15,102 @@
 // Bulma
 //@import "~bulma/bulma";
 
+
+
 body {
     margin: 0;
     padding: 0;
 }
-   
+
+.board {
+    background-image: url(/img/board.jpg);
+    background-size: contain;
+    width: 100vw;
+    height: 100vw;
+}
+.fence {
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 4.3vw;
+    height: 1.1vw;
+    position: absolute;
+}
+.player {
+    background-size: contain;
+    width: 2.5vw;
+    height: 2.5vw;
+    position: absolute;
+}
+
+.tile {
+    background-size: contain;
+    width: 9vw;
+    height: 9vw;
+    position: absolute;
+}
+
+
+.crossroad {
+    width: 2.5vw;
+    height: 2.5vw;
+    position: absolute;
+}
+
+.blue {
+    .fence {
+        background-image: url(/img/fence-blue.png);
+    }
+
+    .player {
+        background-image: url(/img/player-blue.png);
+    }
+
+    .tile {
+        background-image: url(/img/tile-blue.png);
+    }
+}
+.yellow {
+    .fence {
+        background-image: url(/img/fence-yellow.png);
+    }
+
+    .player {
+        background-image: url(/img/player-yellow.png);
+    }
+
+    .tile {
+        background-image: url(/img/tile-yellow.png);
+    }
+}
+
+.red {
+    .fence {
+        background-image: url(/img/fence-red.png);
+    }
+
+    .player {
+        background-image: url(/img/player-red.png);
+    }
+
+
+
+    .tile {
+        background-image: url(/img/tile-red.png);
+    }
+}
+
+.purple {
+    .fence {
+        background-image: url(/img/fence-purple.png);
+    }
+
+    .player {
+        background-image: url(/img/player-purple.png);
+    }
+
+    .tile {
+        background-image: url(/img/tile-purple.png);
+    }
+}
+
 

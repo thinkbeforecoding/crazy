@@ -424,7 +424,8 @@ module Player =
     and SelectFirstCrossroad =
         { Crossroad: Crossroad }
     and Move =
-        { Direction: Direction }
+        { Direction: Direction
+          Destination: Crossroad }
 
     type Event =
         | FirstCrossroadSelected of FirstCrossroadSelected
@@ -485,79 +486,82 @@ module Player =
             let dir = cmd.Direction
             let nextPos = Crossroad.neighbor dir player.Tractor
             let nextPath = Path.neighbor dir player.Tractor
-            match player.Power with
-            | PowerUp ->
-                match player.Fence with
-                | Rwd nextPath ->
-                    [ FenceRemoved { Move = dir; Path = nextPath; Crossroad = nextPos }  ]
-                | _ ->
-                    match Fence.findLoop dir player.Tractor player.Fence with
-                    | Fence [] -> 
-                        let endInField = Crossroad.isInField player.Field nextPos
+            if nextPos <> cmd.Destination then
+                []
+            else
+                match player.Power with
+                | PowerUp ->
+                    match player.Fence with
+                    | Rwd nextPath ->
+                        [ FenceRemoved { Move = dir; Path = nextPath; Crossroad = nextPos }  ]
+                    | _ ->
+                        match Fence.findLoop dir player.Tractor player.Fence with
+                        | Fence [] -> 
+                            let endInField = Crossroad.isInField player.Field nextPos
 
-                        let pathInField = Field.pathInFieldOrBorder nextPath player.Field
-                        let inFallow =
-                            if endInField then
-                                let nextFence = Fence.add (nextPath,dir) player.Fence
-                                if pathInField && Fence.length nextFence = 1 then
-                                    false
+                            let pathInField = Field.pathInFieldOrBorder nextPath player.Field
+                            let inFallow =
+                                if endInField then
+                                    let nextFence = Fence.add (nextPath,dir) player.Fence
+                                    if pathInField && Fence.length nextFence = 1 then
+                                        false
+                                    else
+                                        let fenceStart = Fence.start nextPos nextFence
+                                        not (Field.isInSameField fenceStart nextPos player.Field)
                                 else
-                                    let fenceStart = Fence.start nextPos nextFence
-                                    not (Field.isInSameField fenceStart nextPos player.Field)
-                            else
-                                false
+                                    false
 
-                        [ 
-                          if pathInField && not inFallow then
-                              MovedInField { Move = dir; Path = nextPath; Crossroad = nextPos }  
-                          else
-                              FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos }  
-                          yield! decideCut otherPlayers nextPos
-                          if endInField && not pathInField && not inFallow then
-                            let nextFence = Fence.add (nextPath, dir) player.Fence
-                            let annexed = annexation player.Field nextFence nextPos
+                            [ 
+                              if pathInField && not inFallow then
+                                  MovedInField { Move = dir; Path = nextPath; Crossroad = nextPos }  
+                              else
+                                  FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos }  
+                              yield! decideCut otherPlayers nextPos
+                              if endInField && not pathInField && not inFallow then
+                                let nextFence = Fence.add (nextPath, dir) player.Fence
+                                let annexed = annexation player.Field nextFence nextPos
 
-                            let lostFields = 
-                                [ for color,p in otherPlayers do
+                                let lostFields = 
+                                    [ for color,p in otherPlayers do
+                                        match p with
+                                        | Playing p ->
+                                            let lost = Field.interesect annexed p.Field
+                                            if not (Field.isEmpty lost) then
+                                                color, Field.parcels lost
+                                        |_ -> ()
+                                    ] 
+                                Annexed {
+                                    NewField = Field.parcels annexed
+                                    LostFields = lostFields
+                                        }
+
+                                for playerid, p in otherPlayers do
                                     match p with
                                     | Playing p ->
-                                        let lost = Field.interesect annexed p.Field
-                                        if not (Field.isEmpty lost) then
-                                            color, Field.parcels lost
-                                    |_ -> ()
-                                ] 
-                            Annexed {
-                                NewField = Field.parcels annexed
-                                LostFields = lostFields
-                                    }
+                                        if not (Fence.isEmpty p.Fence) then
+                                            let start = Fence.start p.Tractor p.Fence
+                                            if Crossroad.isInField annexed start then
+                                                CutFence { Player = playerid }
+                                        else
+                                            let remainingField = p.Field - annexed
+                                            if Crossroad.isInField annexed p.Tractor && not (Crossroad.isInField remainingField p.Tractor) then
+                                                CutFence { Player = playerid }
+                                    | _ -> ()
 
-                            for playerid, p in otherPlayers do
-                                match p with
-                                | Playing p ->
-                                    if not (Fence.isEmpty p.Fence) then
-                                        let start = Fence.start p.Tractor p.Fence
-                                        if Crossroad.isInField annexed start then
-                                            CutFence { Player = playerid }
-                                    else
-                                        let remainingField = p.Field - annexed
-                                        if Crossroad.isInField annexed p.Tractor && not (Crossroad.isInField remainingField p.Tractor) then
-                                            CutFence { Player = playerid }
-                                | _ -> ()
+                            ]
+                        | loop -> [  FenceLooped { Move = dir; Loop = loop; Crossroad = nextPos } ]
+                | PowerDown ->
+                    [
+                        // when power is down, you don't draw fences
+                        MovedPowerless { Move = dir; Path = nextPath; Crossroad = nextPos }
 
-                        ]
-                    | loop -> [  FenceLooped { Move = dir; Loop = loop; Crossroad = nextPos } ]
-            | PowerDown ->
-                [
-                    // when power is down, you don't draw fences
-                    MovedPowerless { Move = dir; Path = nextPath; Crossroad = nextPos }
-
-                    if Crossroad.isInField player.Field nextPos then
-                        // when back in field, power is up
-                        PoweredUp
-                        // an maybe you cut someone just there
-                        yield! decideCut otherPlayers nextPos
-                ]
-                
+                        if Crossroad.isInField player.Field nextPos then
+                            // when back in field, power is up
+                            PoweredUp
+                            // an maybe you cut someone just there
+                            yield! decideCut otherPlayers nextPos
+                    ]
+                    
         | _ -> failwith "Invalid operation"      
 
 
@@ -586,9 +590,12 @@ module Player =
         |> decide otherPlayers cmd
         |> List.fold evolve state
 
-    let move dir fence =
-        fence
-        |> exec [] (Move {Direction = dir })
+    let move dir player =
+        match player with
+        | Playing p ->
+            player
+            |> exec [] (Move {Direction = dir; Destination = p.Tractor })
+        | _ -> failwith "Not playing"
 
     let start color parcel pos =
         Starting  { Parcel = parcel; Color = color }
@@ -788,51 +795,6 @@ module Board =
             | None -> []
         | None -> []
 
-
-module Pix =
-    let size = 5.75
-    let offsetX = 48.5
-    let offsetY = 47.8
-
-    let ofPoint (Axe(q,r)) = 
-        let x = size * (3./2. * float q ) + offsetX
-        let y = size * (sqrt 3./2. * float q  +  sqrt 3. * float r) + offsetY
-        x,y
-
-    let ofTile pos =
-        let x,y = ofPoint pos  
-        x - size /2. , y - size /2.
-
-    let playerSize = 0.
-    let ofPlayer (Crossroad (tile,corner)) =
-        let tx,ty = ofPoint tile 
-        let x = 
-            match corner with
-            | CLeft  -> tx - size * 0.9 - playerSize/2.
-            | CRight -> tx + size * 1.1 - playerSize/2.
-        let y = ty - playerSize/2.
-        x,y
-          
-
-    let fenceWidth = 2.
-    let ofFence (Path(tile,border)) =
-        let tx,ty = ofPoint tile
-        
-        match border with
-        | BN -> tx - size * 0.1,ty-size*0.73
-        | BNW -> tx - size*0.77,ty-size*0.31
-        | BNE -> tx + size*0.74,ty-size*0.27
-
-
-
-    let teta = -0.063
-    let cost = cos teta 
-    let sint = sin teta
-    let rotate (x,y) =
-        let cx = x-offsetX
-        let cy = y-offsetY
-        offsetX + cx * cost + cy * sint, offsetY - cx * sint + cy * cost 
-
 /// A type that specifies the messages sent to the server from the client on Elmish.Bridge
 /// to learn more, read about at https://github.com/Nhowka/Elmish.Bridge#shared
 type ServerMsg =
@@ -842,9 +804,9 @@ type ServerMsg =
 
 /// A type that specifies the messages sent to the client from the server on Elmish.Bridge
 type ClientMsg =
-    | Events of Board.Event list
+    | Events of Board.Event list * int
     | Message of string
-    | Sync of BoardState 
+    | Sync of BoardState * int
     | SyncPlayer of  string
 
 

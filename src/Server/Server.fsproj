@@ -6,6 +6,7 @@
     </PropertyGroup>
     <ItemGroup>
         <None Include="paket.references" />
+        <Compile Include="Bridge.fs" />
         <Compile Include="..\Shared\Shared.fs" />
         <Compile Include="..\Shared\SharedGame.fs" />
         <Compile Include="..\Shared\SharedJoin.fs" />
