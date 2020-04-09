@@ -72,10 +72,10 @@ type ServerMsg =
     | Register of string * string
 
 type ClientMsg =
-    | Events of Event list
-    | SyncCreate of string * Game
-    | SyncJoin of string * Game
-    | SyncStarted of string * Game
+    | Events of Event list * int
+    | SyncCreate of string * Game * int
+    | SyncJoin of string * Game * int
+    | SyncStarted of string * Game * int
     | LoggedIn of string * string
     | ShouldLogin
     | StartCheck of string

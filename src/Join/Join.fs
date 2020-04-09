@@ -21,6 +21,9 @@ open SharedJoin
 type Model =
     { Player: Player option
       Game: PageModel
+      LocalVersion: int
+      Synched: PageModel
+      Version: int
     }
 and Player =
     { PlayerId: string
@@ -61,10 +64,73 @@ type Msg =
     | Login of string
     | Register of string * string
 
-    
+
+let localDecide command state =
+    match state.Game, command with
+    | NewGame g, SetPlayer (c,p,n) 
+    | JoinGame g, SetPlayer (c,p,n) ->
+        match Map.tryFind c g.Players with
+        | Some _   -> []
+        | None -> [ PlayerSet { Color = c; PlayerId = p; Name = n} ]
+    | _, Create e ->
+        if Option.isSome state.Player then
+            [ Created { GameId = e.GameId; Initiator = e.Initiator }]
+        else
+            []
+    | NewGame g, Command.Start ->
+        if g.CanStart then
+            [ Event.Started [ for c,(p,n) in Map.toSeq g.Players -> { Color = c; PlayerId = p; Name = n}] ]
+        else 
+            []
+    |_ -> []
+
+let localEvolve state event =
+    match state, event with
+    | _, Created e ->
+        NewGame { GameId = e.GameId
+                  Players = Map.empty }
+    | NewGame g, PlayerSet p ->
+        NewGame { g with Players = 
+                g.Players 
+                |> Map.filter (fun k (pid,_) -> pid <> p.PlayerId)
+                |> Map.add p.Color (p.PlayerId,p.Name) }
+    | JoinGame g, PlayerSet p ->
+        JoinGame { g with Players = 
+                g.Players 
+                |> Map.filter (fun k (pid,_) -> pid <> p.PlayerId)
+                |> Map.add p.Color (p.PlayerId,p.Name) }
+    | NewGame g,  Event.Started _ 
+    | JoinGame g, Event.Started _ ->
+        Started g.GameId
+        
+    | _ -> state
+
+
+
 // defines the initial state and initial command (= side-effect) of the application
 let init () : Model * Cmd<Msg> =
-    { Player = None; Game = Home }, Cmd.none
+    { Player = None; 
+      Game = Home
+      LocalVersion = -1
+      Synched = Home
+      Version = -1
+      }, Cmd.none
+     
+
+let handleCommand state (command, serverCmd : ServerMsg) =
+    let events =
+        localDecide command state
+    if List.isEmpty events then
+        state, Cmd.none
+    else
+        let newState = List.fold localEvolve state.Game events
+        Browser.Dom.console.log (sprintf "Events %A" events)
+        { state
+            with
+                Game = newState
+                LocalVersion = state.LocalVersion + 1
+        } , Cmd.bridgeSend(serverCmd)
+
 // The update function computes the next state of the application based on the current state and the incoming events/messages
 // It can also run side-effects (encoded as commands) like calling the server via Http.
 // these commands in turn, can dispatch messages to which the update function will react.
@@ -77,11 +143,16 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | Join gameid ->
         currentModel, Cmd.bridgeSend(ServerMsg.JoinGame gameid)
     | SelectColor color ->
-        currentModel, Cmd.bridgeSend(ServerMsg.SelectColor color)
+        match currentModel.Player with
+        | Some p ->
+            (SetPlayer (color, p.PlayerId, p.Name),ServerMsg.SelectColor color)
+            |> handleCommand currentModel
+        | None -> currentModel, Cmd.none
     | Cancel ->
         { currentModel with Game = Home}, Cmd.none
     | Start ->
-        currentModel, Cmd.bridgeSend(ServerMsg.Start)
+        (Command.Start,ServerMsg.Start)
+        |> handleCommand currentModel
     | OpenLogin ->
         { currentModel with Game = LoginPage }, Cmd.none
     | OpenRegister ->
@@ -102,51 +173,59 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
             Game = LoginPage }, Cmd.none
 
 
-    | Remote (Events events ) ->
-        let newModel =
-            events
-            |> List.fold (fun state event ->
-                match state, event with
-                | _, Created e ->
-                    NewGame { GameId = e.GameId
-                              Players = Map.empty }
-                | NewGame g, PlayerSet p ->
-                    NewGame { g with Players = 
-                            g.Players 
-                            |> Map.filter (fun k (pid,_) -> pid <> p.PlayerId)
-                            |> Map.add p.Color (p.PlayerId,p.Name) }
-                | JoinGame g, PlayerSet p ->
-                    JoinGame { g with Players = 
-                            g.Players 
-                            |> Map.filter (fun k (pid,_) -> pid <> p.PlayerId)
-                            |> Map.add p.Color (p.PlayerId,p.Name) }
-                | NewGame g,  Event.Started _ 
-                | JoinGame g, Event.Started _ ->
-                    Started g.GameId
-                    
-                | _ -> state
-            ) currentModel.Game
+    | Remote (Events (events, version) ) ->
+        if version >= currentModel.Version then
+            let newModel =
+                events
+                |> List.fold localEvolve currentModel.Synched
+            let newVersion = version+1
 
-        match newModel with
-        | Started gameid ->
-            Browser.Dom.document.location.replace("/game/" + gameid)
-        | _ -> ()
-        { currentModel with Game = newModel}, Cmd.none
-    | Remote (SyncJoin(gameid, game)) ->
-        match game with
-        | Game.Setup s -> 
-            { currentModel with 
-                Game = JoinGame { GameId = gameid
-                                  Players = s.Players}}, Cmd.none
-        | _ -> currentModel, Cmd.none
-    | Remote (SyncCreate(gameid, game)) ->
-        match game with
-        | Game.Setup s -> 
+            match newModel with
+            | Started gameid ->
+                Browser.Dom.document.location.replace("/game/" + gameid)
+            | _ -> ()
+
+            
             { currentModel with
-                Game = NewGame { GameId = gameid
-                                 Players = s.Players}}, Cmd.none
+                    Game = 
+                        if newVersion >= currentModel.LocalVersion then
+                            newModel
+                        else
+                            currentModel.Game
+                    LocalVersion = max currentModel.LocalVersion newVersion
+                    Synched = newModel
+                    Version = newVersion
+                    }, Cmd.none
+        else
+            currentModel, Cmd.none
+    | Remote (SyncJoin(gameid, game, version)) ->
+
+        match game with
+        | Game.Setup s -> 
+            let newGame = 
+                JoinGame { GameId = gameid
+                           Players = s.Players}
+            { currentModel with
+                Game = newGame
+                LocalVersion = version
+                Synched = newGame
+                Version = version
+            }, Cmd.none
         | _ -> currentModel, Cmd.none
-    | Remote (SyncStarted(gameid, game)) ->
+    | Remote (SyncCreate(gameid, game, version)) ->
+        match game with
+        | Game.Setup s -> 
+            let newGame = 
+                NewGame { GameId = gameid
+                          Players = s.Players}
+            { currentModel with
+                Game = newGame
+                LocalVersion = version
+                Synched = newGame
+                Version = version
+             }, Cmd.none
+        | _ -> currentModel, Cmd.none
+    | Remote (SyncStarted(gameid, game,_)) ->
         Browser.Dom.document.location.replace("/game/" + gameid)
         
         currentModel, Cmd.none

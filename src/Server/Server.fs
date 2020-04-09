@@ -545,8 +545,8 @@ module Join =
         | Started of string 
 
     type RunnerCmd =
-        | GetState of  (Game option-> unit)
-        | Exec of Command * (Event list -> unit)
+        | GetState of  ((Game * int) option-> unit)
+        | Exec of Command * ((Event list * int) -> unit)
     
 
     let serialize =
@@ -572,13 +572,18 @@ module Join =
 
                     match msg with
                     | GetState reply ->
-                        reply (Some state)
-                        return! loop state expectedVersion
+                        let! newState, nextExpectedVersion =
+                           EventStore.fold deserialize container evolve stream state expectedVersion
+                           |> Async.AwaitTask
+                        reply (Some (newState, nextExpectedVersion))
+                        return! loop newState nextExpectedVersion
                     | Exec (cmd, reply) ->
+                        printfn "Cmd: %A" cmd
 
                         let rec exec state expectedVersion =
                             async {
                                 let events = decide cmd state 
+                                printfn "Events: %A" events
 
                                 let! result =
                                     EventStore.append serialize container stream expectedVersion events
@@ -586,7 +591,7 @@ module Join =
                                 match result with
                                 | Ok nextExpectedVersion ->
                                     let newState = List.fold evolve state events
-                                    reply events
+                                    reply (events, nextExpectedVersion)
                                     return (newState, nextExpectedVersion)
                                 | Error e ->
                                     let! newState, nextExpectedVersion =
@@ -596,6 +601,8 @@ module Join =
                             }
 
                         let! newState, nextExpectedVersion =  exec state expectedVersion
+
+
                         return! loop newState nextExpectedVersion
                 }
 
@@ -685,15 +692,15 @@ module Join =
             match claim with
             | Some claim ->
                 match setupRunner.PostAndReply(fun c -> gameid, GetState(c.Reply)) with
-                | Some (Setup s) -> 
+                | Some (Setup s, version) -> 
                     if s.Initiator = claim.sub then
-                       clientDispatch(SyncCreate (gameid, Setup s))
+                       clientDispatch(SyncCreate (gameid, Setup s, version))
                        SetupGame gameid, Cmd.none
                     else
-                        clientDispatch(SyncJoin (gameid, Setup s))
+                        clientDispatch(SyncJoin (gameid, Setup s, version))
                         JoiningGame gameid, Cmd.none
-                | Some (Game.Started s) ->
-                    clientDispatch(SyncStarted (gameid, Game.Started s))
+                | Some (Game.Started s, version) ->
+                    clientDispatch(SyncStarted (gameid, Game.Started s, version))
                     Started gameid, Cmd.none
                 | _ ->
                     model, Cmd.none
@@ -712,14 +719,14 @@ module Join =
 
             model, Cmd.none
         | SetupGame gameid, Start ->
-            let events = setupRunner.PostAndReply(fun c -> gameid, Exec(Command.Start, c.Reply))
+            let events, version = setupRunner.PostAndReply(fun c -> gameid, Exec(Command.Start, c.Reply))
             for event in events do
                 match event with
                 | SharedJoin.Event.Started e ->
                     runner.PostAndReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e -> p.Color, p.PlayerId ] }, c.Reply))
                     |> ignore
                 | _ -> ()
-            connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events events)
+            connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events(events, version))
             Started gameid, Cmd.none
 
         | _ -> model, Cmd.none
@@ -737,7 +744,7 @@ module Join =
                             [ for ed in c.e do
                                 yield! deserialize (ed.c, ed.d) ]
                         let gameid = c.p.Substring(5) 
-                        connections.SendClientIf (function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events events)
+                        connections.SendClientIf (function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events (events, c.i))
                             
                         
                     } :> Task
@@ -777,8 +784,6 @@ let configureServices (services : IServiceCollection) =
     services.AddGiraffe() |> ignore
     services.AddSingleton<Giraffe.Serialization.Json.IJsonSerializer>(Thoth.Json.Giraffe.ThothSerializer()) |> ignore
 
-do printfn "%s" Email.smtpConfig.Host
-do printfn "%s" serverConfig.Cosmos
 
 let subsGame =
     let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
@@ -793,7 +798,6 @@ let subsGame =
                         [ for ed in c.e do
                             yield! deserialize (ed.c, ed.d) ]
                     let gameId = c.p.Substring(5) 
-                    printfn "Push Event: %d" c.i
                     connections.SendClientIf (function | Connected c when c.GameId = gameId -> true  | _ -> false) (Events (events, c.i ))
                         
                     
