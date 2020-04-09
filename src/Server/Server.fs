@@ -246,7 +246,7 @@ let update claim clientDispatch msg (model: PlayerState) =
                 
             clientDispatch (Sync (Board.toState (Board game), version))
             Connected {GameId = gameid; Color = color } ,  Cmd.none
-        | None ->
+        | _ ->
             model, Cmd.none
 
     | Command cmd ->
@@ -676,7 +676,7 @@ module Join =
             model, Cmd.none
 
 
-        | NoGame , CreateGame ->
+        | _ , CreateGame ->
             match claim with
             | Some claim ->
                 let gameid = createId 10
@@ -687,7 +687,7 @@ module Join =
                 clientDispatch(ShouldLogin )
                 model, Cmd.none
                 
-        | NoGame, JoinGame gameid ->
+        | _, JoinGame gameid ->
             match claim with
             | Some claim ->
                 match setupRunner.PostAndReply(fun c -> gameid, GetState(c.Reply)) with
@@ -722,10 +722,10 @@ module Join =
             for event in events do
                 match event with
                 | SharedJoin.Event.Started e ->
-                    runner.PostAndReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e -> p.Color, p.PlayerId ] }, c.Reply))
+                    runner.PostAndReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e -> p.Color, p.PlayerId, p.Name ] }, c.Reply))
                     |> ignore
                 | _ -> ()
-            connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events(events, version))
+            //connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events(events, version))
             Started gameid, Cmd.none
 
         | _ -> model, Cmd.none
@@ -739,11 +739,13 @@ module Join =
                 fun changes ct ->
                     task {
                         for c in changes do
-                        let events = 
-                            [ for ed in c.e do
-                                yield! deserialize (ed.c, ed.d) ]
-                        let gameid = c.p.Substring(5) 
-                        connections.SendClientIf (function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events (events, c.i))
+                            if c.p.StartsWith("join-") then
+                                let events = 
+                                    [ for ed in c.e do
+                                        yield! deserialize (ed.c, ed.d) ]
+                                let gameid = c.p.Substring(5) 
+                                printfn "%d %A" c.i events
+                                connections.SendClientIf (function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events (events, c.i))
                             
                         
                     } :> Task
@@ -792,14 +794,13 @@ let subsGame =
        container.GetChangeFeedProcessorBuilder<EventStore.BatchData>("game-"+Environment.MachineName,
             fun changes ct ->
                 task {
-                    for c in changes |> Seq.sortBy (fun c -> c.id) do
-                    let events = 
-                        [ for ed in c.e do
-                            yield! deserialize (ed.c, ed.d) ]
-                    let gameId = c.p.Substring(5) 
-                    connections.SendClientIf (function | Connected c when c.GameId = gameId -> true  | _ -> false) (Events (events, c.i ))
-                        
-                    
+                    for c in changes do
+                        if c.p.StartsWith("game-") then
+                            let events = 
+                                [ for ed in c.e do
+                                    yield! deserialize (ed.c, ed.d) ]
+                            let gameId = c.p.Substring(5) 
+                            connections.SendClientIf (function | Connected c when c.GameId = gameId -> true  | _ -> false) (Events (events, c.i ))
                 } :> Task
         )
         .WithLeaseContainer(client.GetContainer("crazyfarmers", "subscriptions"))

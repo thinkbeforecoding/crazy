@@ -284,6 +284,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
     div [ ClassName "board" ]
         [
             match model.Board with
+            | InitialState -> ()
             | Board board ->
                 for _,p in Map.toSeq board.Players do
                     lazyViewWith sameField playerField p
@@ -296,6 +297,21 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 for m in model.Moves do
                     moveView dispatch m
 
+                
+                let player =  board.Players.[board.Table.Player]
+                div [ Style [Position PositionOptions.Fixed
+                             Left 0
+                             Top 0
+                             Padding "10px"
+                             BackgroundColor "white"
+                            ] ]
+                    [  
+                        div [ ClassName (colorName (Player.color player))                             ]
+                            [ div [ClassName "player" ] []]
+                        
+                       
+                        div [Style [ MarginLeft "3em" ]] [ str board.Table.Names.[board.Table.Player] ]
+                    ]
 
 
             //div [ Style [ Position PositionOptions.Fixed

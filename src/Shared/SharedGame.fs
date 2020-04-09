@@ -1,5 +1,7 @@
 namespace Shared
 
+open System.Collections.Generic
+
 
 
 [<Struct>]
@@ -74,6 +76,7 @@ and Playing =
       Moves: int } 
 type Table =
     { Players: string[]
+      Names: Map<string,string>
       Current: int }
     member this.Player = this.Players.[this.Current]
 
@@ -82,8 +85,11 @@ type Table =
             Current = (this.Current + 1) % this.Players.Length }
 
     static member start players =
-        { Players = players
-          Current = 0 }
+
+        { Players = [| for p,_ in players -> p |]
+          Current = 0
+          Names = Map.ofList players
+          }
 
 
 type Board = 
@@ -115,6 +121,7 @@ type BoardState =
     }
 and STable =
     { SPlayers: string[]
+      SNames: (string*string)[]
       SCurrent: int }
     
 
@@ -516,6 +523,11 @@ module Player =
                         3
             }
         | Starting _ -> player
+
+    let color player =
+        match player with
+        | Playing p -> p.Color
+        | Starting p -> p.Color
         
                     
     let decide (otherPlayers: (string * Player) list) command player =
@@ -731,11 +743,11 @@ module Board =
         | Play of string * Player.Command
         | Start of Start
     and Start =
-        { Players: (Color * string) list }
+        { Players: (Color * string * string) list }
 
     type Event =
         | Played of string * Player.Event
-        | Started of (Color*string*Parcel) list 
+        | Started of (Color*string*string*Parcel) list 
         | Next
         
     let otherPlayers playerid (board: PlayingBoard) =
@@ -750,19 +762,19 @@ module Board =
         match state, cmd with
         | InitialState, Start cmd ->
             match cmd.Players with
-            | [ c1,u1; c2,u2 ] ->
-                [ Started [ c1, u1, Parcel.center + 2 * Axe.N 
-                            c2, u2, Parcel.center + 2 * Axe.S  ] ]
+            | [ c1,u1,n1; c2,u2,n2 ] ->
+                [ Started [ c1, u1, n1, Parcel.center + 2 * Axe.N 
+                            c2, u2, n2, Parcel.center + 2 * Axe.S  ] ]
 
-            | [ c1,u1; c2,u2; c3,u3 ] ->
-                [ Started [ c1, u1, Parcel.center + 2 * Axe.N
-                            c2, u2, Parcel.center + 2 * Axe.SW
-                            c3, u3, Parcel.center + 2 * Axe.SE ] ]
-            | [ c1,u1; c2,u2; c3,u3; c4,u4 ] ->
-                [ Started [ c1, u1, Parcel.center + Axe.N + Axe.NE
-                            c2, u2, Parcel.center + 2 * Axe.NW
-                            c3, u3, Parcel.center + Axe.SW + Axe.S
-                            c4, u4, Parcel.center + 2 * Axe.SE ] ]
+            | [ c1,u1,n1; c2,u2,n2; c3,u3,n3 ] ->
+                [ Started [ c1, u1, n1, Parcel.center + 2 * Axe.N
+                            c2, u2, n2, Parcel.center + 2 * Axe.SW
+                            c3, u3, n3, Parcel.center + 2 * Axe.SE ] ]
+            | [ c1,u1,n1; c2,u2,n2; c3,u3,n3; c4,u4,n4 ] ->
+                [ Started [ c1, u1, n1, Parcel.center + Axe.N + Axe.NE
+                            c2, u2, n2, Parcel.center + 2 * Axe.NW
+                            c3, u3, n3, Parcel.center + Axe.SW + Axe.S
+                            c4, u4, n4, Parcel.center + 2 * Axe.SE ] ]
             | _ ->
                 let playerCount = List.length cmd.Players
                 if playerCount < 2 then
@@ -794,8 +806,8 @@ module Board =
         | InitialState, Started players ->
             Board 
                 { Players =
-                    Map.ofList [ for c,u,p in players -> u, Starting { Color = c; Parcel = p}]
-                  Table =  Table.start [| for _,p,_ in players -> p |] 
+                    Map.ofList [ for c,u,n,p in players -> u, Starting { Color = c; Parcel = p}]
+                  Table =  Table.start [ for _,p,n,_ in players -> p,n ] 
                 }
         | InitialState, _ -> state
         | Board _, Started _ -> state
@@ -842,8 +854,10 @@ module Board =
                 board.Players
                 |> Map.toList
                 |> List.map (fun (playerid,p) -> playerid, Player.toState p)
-              STable = { SPlayers = board.Table.Players; SCurrent = board.Table.Current } }
-        | InitialState -> { SPlayers = []; STable = { SPlayers = null; SCurrent = 0} }
+              STable = { SPlayers = board.Table.Players
+                         SNames = [| for KeyValue(p,n) in board.Table.Names -> p,n |]
+                         SCurrent = board.Table.Current } }
+        | InitialState -> { SPlayers = []; STable = { SPlayers = null; SNames = null; SCurrent = 0} }
 
     let ofState (board: BoardState) =
         match board.SPlayers with
@@ -851,7 +865,9 @@ module Board =
             InitialState
         | _ ->
             Board { Players = board.SPlayers |> List.map (fun (c,p) -> c, Player.ofState p) |> Map.ofList 
-                    Table = { Players = board.STable.SPlayers; Current = board.STable.SCurrent } }
+                    Table = { Players = board.STable.SPlayers
+                              Names = Map.ofArray board.STable.SNames
+                              Current = board.STable.SCurrent } }
         
     let possibleMoves playerid (board: Board) =
         match board, playerid with

@@ -23,8 +23,7 @@ type Model =
       Game: PageModel
       LocalVersion: int
       Synched: PageModel
-      Version: int
-    }
+      Version: int }
 and Player =
     { PlayerId: string
       Name: string}
@@ -90,15 +89,17 @@ let localEvolve state event =
         NewGame { GameId = e.GameId
                   Players = Map.empty }
     | NewGame g, PlayerSet p ->
-        NewGame { g with Players = 
-                g.Players 
-                |> Map.filter (fun k (pid,_) -> pid <> p.PlayerId)
-                |> Map.add p.Color (p.PlayerId,p.Name) }
+        NewGame { g with 
+                    Players = 
+                        g.Players 
+                        |> Map.filter (fun _ (pid,_) -> pid <> p.PlayerId)
+                        |> Map.add p.Color (p.PlayerId,p.Name) }
     | JoinGame g, PlayerSet p ->
-        JoinGame { g with Players = 
-                g.Players 
-                |> Map.filter (fun k (pid,_) -> pid <> p.PlayerId)
-                |> Map.add p.Color (p.PlayerId,p.Name) }
+        JoinGame { g with 
+                    Players = 
+                        g.Players 
+                        |> Map.filter (fun _ (pid,_) -> pid <> p.PlayerId)
+                        |> Map.add p.Color (p.PlayerId,p.Name) }
     | NewGame g,  Event.Started _ 
     | JoinGame g, Event.Started _ ->
         Started g.GameId
@@ -178,7 +179,6 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
             let newModel =
                 events
                 |> List.fold localEvolve currentModel.Synched
-            let newVersion = version+1
 
             match newModel with
             | Started gameid ->
@@ -188,13 +188,13 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
             
             { currentModel with
                     Game = 
-                        if newVersion >= currentModel.LocalVersion then
+                        if version >= currentModel.LocalVersion then
                             newModel
                         else
                             currentModel.Game
-                    LocalVersion = max currentModel.LocalVersion newVersion
+                    LocalVersion = max currentModel.LocalVersion version
                     Synched = newModel
-                    Version = newVersion
+                    Version = version
                     }, Cmd.none
         else
             currentModel, Cmd.none
@@ -427,6 +427,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                     cancel dispatch
                 ]
             ]
+        | Started _ -> ()
             
       ]
 
