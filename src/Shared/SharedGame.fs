@@ -46,6 +46,9 @@ type Path = Path of Axe * BorderSide
 
 type Direction = Up | Down | Horizontal
 
+type Goal =
+    | Common of int
+    | Individual of int
 
 [<Struct>]
 type Parcel = Parcel of Axe
@@ -151,12 +154,14 @@ type Table =
 type Board = 
     | InitialState
     | Board of PlayingBoard
+    | Won of string * PlayingBoard
 and PlayingBoard =
     { Players: Map<string, Player>
       Table: Table
       DrawPile: Card list
       DiscardPile: Card list
-      Barns: Barns }
+      Barns: Barns
+      Goal: Goal }
 
 
 
@@ -182,6 +187,8 @@ type BoardState =
       SDiscardPile: Card []
       SFreeBarns: Parcel[]
       SOccupiedBarns: Parcel[]
+      SGoal: Goal
+      SWinner: string
     }
 and STable =
     { SPlayers: string[]
@@ -351,6 +358,7 @@ module FenceOps =
 module Field =
     let empty = Field Set.empty
     let isEmpty (Field x) = Set.isEmpty x
+    let size (Field x) = Set.count x
 
     let create parcel = Field (set [parcel])
 
@@ -617,7 +625,10 @@ module Player =
         | Playing p -> Playing { p with Hand = Hand.toPrivate p.Hand }
         | Starting p -> Starting { p with Hand = Hand.toPrivate p.Hand }
 
-
+    let fieldTotalSize player =
+        match player with
+        | Playing p -> Field.size p.Field
+        | Starting p -> 1
                     
     let decide (otherPlayers: (string * Player) list) barns command player =
         match player, command with
@@ -898,10 +909,12 @@ module Board =
         | Started of Started
         | Next
         | PlayerDrewCards of PlayerDrewCards
+        | GameWon of string
     and Started =
         { Players: (Color*string*string*Parcel) list 
           DrawPile: Card list
           Barns: Parcel list
+          Goal: Goal
         }
     and PlayerDrewCards =
         { Player: string 
@@ -912,13 +925,35 @@ module Board =
         |> Map.toSeq
         |> Seq.filter (fun (id,_) -> id <> playerid)
         |> Seq.toList
-        
+
+    let totalSize (board: PlayingBoard) = 
+       let players = board.Players
+       players
+       |> Map.fold (fun count _ p -> count + Player.fieldTotalSize p) 0
+
+    let tryFindWinner (board: PlayingBoard) =
+        let players = board.Players
+        match board.Goal with
+        | Common goal ->
+            if totalSize board >= goal then
+                players
+                |> Map.toList
+                |> List.maxBy(fun (_,p)-> Player.fieldTotalSize p)
+                |> Some
+            else
+                None
+        | Individual goal ->
+            players
+            |> Map.toList
+            |> List.tryFind (fun (_, p) -> Player.fieldTotalSize p >= goal)
+
+
 
     let decide cmd (state: Board) =
         
         match state, cmd with
         | InitialState, Start cmd ->
-            let players, barns =
+            let players, barns, goal =
                 match cmd.Players with
                 | [ c1,u1,n1; c2,u2,n2 ] ->
                     [ c1, u1, n1, Parcel.center + 2 * Axe.N 
@@ -936,7 +971,7 @@ module Board =
                         Parcel.center + Axe.N + Axe.NW
                         Parcel.center + Axe.S + Axe.SE
                         Parcel.center + Axe.S + Axe.SW
-                    ]
+                    ], Goal.Common 27
 
 
                 | [ c1,u1,n1; c2,u2,n2; c3,u3,n3 ] ->
@@ -955,7 +990,9 @@ module Board =
                           Parcel.center + Axe.N + Axe.NE
                           Parcel.center + Axe.N + Axe.NW
                           Parcel.center + Axe.S + Axe.SE
-                          Parcel.center + Axe.S + Axe.SW ]
+                          Parcel.center + Axe.S + Axe.SW ],
+                          Goal.Individual 11
+
                 | [ c1,u1,n1; c2,u2,n2; c3,u3,n3; c4,u4,n4 ] ->
                     [ c1, u1, n1, Parcel.center + Axe.N + Axe.NE
                       c2, u2, n2, Parcel.center + 2 * Axe.NW
@@ -969,7 +1006,8 @@ module Board =
                          Parcel.center + 2 * Axe.N + Axe.NE
                          Parcel.center + 2 * Axe.S + Axe.SW
                          Parcel.center + Axe.E2 + Axe.SE
-                         Parcel.center + Axe.W2 + Axe.NW ]
+                         Parcel.center + Axe.W2 + Axe.NW ],
+                         Goal.Individual 9
                 | _ ->
                     let playerCount = List.length cmd.Players
                     if playerCount < 2 then
@@ -979,7 +1017,8 @@ module Board =
             [ Started {
                 Players = players
                 DrawPile = DrawPile.shuffle DrawPile.cards
-                Barns = barns } ] 
+                Barns = barns 
+                Goal = goal } ] 
         | Board state,Play (playerid, cmd) ->
             let player = state.Players.[playerid]
             let others = otherPlayers playerid state
@@ -990,25 +1029,35 @@ module Board =
 
                 [ for e in events do
                     Played(playerid,e)
+                  
+                  let nextState = List.fold Player.evolve player events
 
                   match List.tryFind (function Player.Annexed _ -> true | _ -> false) events with
                   | Some (Player.Annexed e) ->
-                        let cardsToTake =
-                            e.FreeBarns.Length + 2 * e.OccupiedBarns.Length
-                        if cardsToTake > 0 then
-                            PlayerDrewCards 
-                                { Player = playerid
-                                  Cards = Public (state.DrawPile |> DrawPile.take cardsToTake) }
-                  | _ -> ()
+                        let nextBoard = 
+                            { state with Players = Map.add playerid nextState state.Players }
 
+                        match tryFindWinner nextBoard with
+                        | Some (winner,_) ->
+                            GameWon winner
+                        | _ ->
 
+                            let cardsToTake =
+                                e.FreeBarns.Length + 2 * e.OccupiedBarns.Length
+                            if cardsToTake > 0 then
+                                PlayerDrewCards 
+                                    { Player = playerid
+                                      Cards = Public (state.DrawPile |> DrawPile.take cardsToTake) }
 
-
-                  let nextState = List.fold Player.evolve player events
-                  match nextState with
-                  | Playing p when not (Moves.canMove p.Moves) ->
-                          Next 
-                  | _ -> ()
+                            match nextState with
+                            | Playing p when not (Moves.canMove p.Moves) ->
+                                Next 
+                            | _ -> ()
+                  | _ -> 
+                      match nextState with
+                      | Playing p when not (Moves.canMove p.Moves) ->
+                              Next 
+                      | _ -> ()
                 ]
             else
                 []
@@ -1023,9 +1072,11 @@ module Board =
                   Table =  Table.start [ for _,p,n,_ in s.Players -> p,n ] 
                   DrawPile = s.DrawPile
                   DiscardPile = []
-                  Barns = Barns.init s.Barns }
+                  Barns = Barns.init s.Barns
+                  Goal = s.Goal }
         | InitialState, _ -> state
         | Board _, Started _ -> state
+        | Board board, GameWon player -> Won(player, board)
         | Board board, Played (_, Player.CutFence { Player = playerid }) ->
             match board.Players.[playerid] with
             | Playing player -> 
@@ -1076,6 +1127,7 @@ module Board =
                 board with
                     Players = Map.add nextTable.Player player board.Players
                     Table = nextTable}
+        | Won _, _ -> state
 
     let toState (board: Board) =
         match board with
@@ -1092,22 +1144,53 @@ module Board =
               SDiscardPile = List.toArray board.DiscardPile
               SFreeBarns = Field.parcels board.Barns.Free |> List.toArray
               SOccupiedBarns = Field.parcels board.Barns.Occupied |> List.toArray
+              SGoal = board.Goal
+              SWinner = null
                          }
-        | InitialState -> { SPlayers = [||]; STable = { SPlayers = null; SNames = null; SCurrent = 0}; SDiscardPile = [||]; SFreeBarns = null; SOccupiedBarns = null }
+        | InitialState -> 
+            { SPlayers = [||]
+              STable = { SPlayers = null; SNames = null; SCurrent = 0}
+              SDiscardPile = [||]
+              SFreeBarns = null
+              SOccupiedBarns = null
+              SGoal = Common 0
+              SWinner = null }
+        | Won(player, board) ->
+            { SPlayers =
+                board.Players
+                |> Map.toSeq
+                |> Seq.map (fun (playerid,p) -> playerid, Player.toState p)
+                |> Seq.toArray
+
+              STable = { SPlayers = board.Table.Players
+                         SNames = [| for KeyValue(p,n) in board.Table.Names -> p,n |]
+                         SCurrent = board.Table.Current }
+              SDiscardPile = List.toArray board.DiscardPile
+              SFreeBarns = Field.parcels board.Barns.Free |> List.toArray
+              SOccupiedBarns = Field.parcels board.Barns.Occupied |> List.toArray
+              SGoal = board.Goal
+              SWinner = player }
+
+
 
     let ofState (board: BoardState) =
         match board.SPlayers with
         | [||] -> 
             InitialState
         | _ ->
-            Board { Players = board.SPlayers |> Seq.map (fun (c,p) -> c, Player.ofState p) |> Map.ofSeq 
+            let state =
+                  { Players = board.SPlayers |> Seq.map (fun (c,p) -> c, Player.ofState p) |> Map.ofSeq 
                     Table = { Players = board.STable.SPlayers
                               Names = Map.ofArray board.STable.SNames
                               Current = board.STable.SCurrent }
                     DrawPile = [] 
                     DiscardPile = Array.toList board.SDiscardPile
                     Barns = { Free = Field.ofParcels board.SFreeBarns
-                              Occupied = Field.ofParcels board.SOccupiedBarns } }
+                              Occupied = Field.ofParcels board.SOccupiedBarns }
+                    Goal = board.SGoal }
+            match board.SWinner with
+            | null -> Board state
+            | winner -> Won(winner, state) 
         
     let possibleMoves playerid (board: Board) =
         match board, playerid with
@@ -1141,5 +1224,13 @@ type ClientMsg =
     | Message of string
     | Sync of BoardState * int
     | SyncPlayer of  string
+
+
+
+            
+
+            
+
+        
 
 

@@ -90,6 +90,7 @@ let (|JObj|_|) (o: obj) : 'e option =
     match o with
     | :? JObject as j -> Some (j.ToObject<'e>())
     | :? JArray as j -> Some (j.ToObject<'e>())
+    | :? string as s -> Some (unbox s)
     | _ -> None
 
 
@@ -110,7 +111,7 @@ let serialize =
     | Board.Event.Played (playerid, Player.Event.PoweredUp  ) -> "PoweredUp" , box { Player = playerid; Event = null }
     | Board.Event.Next  -> "Next" , null
     | Board.Event.PlayerDrewCards e  -> "PlayerDrewCards" , box e
-
+    | Board.Event.GameWon e  -> "GameWon" , box e
 
 let deserialize =
     function
@@ -126,7 +127,9 @@ let deserialize =
     | "PoweredUp", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.PoweredUp )]
     | "Next", _ -> [ Board.Next]
     | "PlayerDrewCards", JObj e -> [ Board.PlayerDrewCards e ]
+    | "GameWon", JObj e -> [ Board.GameWon e ]
     | _ -> []
+
 
 
 let gameRunner container gameid =
@@ -146,28 +149,32 @@ let gameRunner container gameid =
                     return! loop newState nextExpectedVersion
                 | Exec (cmd, reply) ->
 
-                    let rec exec state expectedVersion =
+                    let rec exec board  expectedVersion =
                         async {
-                            let events = Board.decide cmd state 
+                            
+                            let events = Board.decide cmd board 
+                            let newBoard = List.fold Board.evolve state events
+
+
 
                             let! result =
                                 EventStore.append serialize container stream expectedVersion events
                                 |> Async.AwaitTask
                             match result with
                             | Ok nextExpectedVersion ->
-                                let newState = List.fold Board.evolve state events
                                 reply events
-                                return (newState, nextExpectedVersion)
+                                return (newBoard,  nextExpectedVersion)
                             | Error e ->
                                 let! newState, nextExpectedVersion =
                                    EventStore.fold deserialize container Board.evolve stream state expectedVersion
                                    |> Async.AwaitTask
-                                return! exec newState nextExpectedVersion 
+                                return! exec newState  nextExpectedVersion 
                         }
 
-                    let! newState, nextExpectedVersion =  exec state expectedVersion
-                    return! loop newState nextExpectedVersion
+                    let! newBoard, nextExpectedVersion =  exec state expectedVersion
+                    return! loop newBoard nextExpectedVersion
             }
+
 
         async {
             let! board, expectedVersion  = 
@@ -240,7 +247,8 @@ let update claim clientDispatch msg (model: PlayerState) =
         
         let state = runner.PostAndReply(fun c -> gameid, GetState c.Reply)
         match state with 
-        | Some (Board game, version) ->
+        | Some (Board game as s, version)
+        | Some (Won(_, game) as s, version) ->
             let color = 
                 Map.tryFind claim.sub game.Players
                 |> Option.bind (function 
@@ -258,9 +266,8 @@ let update claim clientDispatch msg (model: PlayerState) =
                                 Player.toPrivate player
                         )
                 }
-
                 
-            clientDispatch (Sync (Board.toState (Board privateGame), version))
+            clientDispatch (Sync (Board.toState s, version))
             Connected {GameId = gameid; Color = color; Player = claim.sub } ,  Cmd.none
         | _ ->
             model, Cmd.none
@@ -269,7 +276,9 @@ let update claim clientDispatch msg (model: PlayerState) =
         match model with
         | Connected g -> 
             let events = runner.PostAndReply(fun c -> g.GameId, Exec(Board.Play(claim.sub, cmd), c.Reply))
-            //connections.SendClientIf (function | Connected c when c.GameId = g.GameId -> true  | _ -> false) (Events events)
+
+
+
             model, Cmd.none
         | NotConnected -> model, Cmd.none
 
@@ -601,19 +610,22 @@ module Join =
                             async {
                                 let events = decide cmd state 
 
-                                let! result =
-                                    EventStore.append serialize container stream expectedVersion events
-                                    |> Async.AwaitTask
-                                match result with
-                                | Ok nextExpectedVersion ->
-                                    let newState = List.fold evolve state events
-                                    reply (events, nextExpectedVersion)
-                                    return (newState, nextExpectedVersion)
-                                | Error e ->
-                                    let! newState, nextExpectedVersion =
-                                       EventStore.fold deserialize container evolve stream state expectedVersion
-                                       |> Async.AwaitTask
-                                    return! exec newState nextExpectedVersion 
+                                if List.isEmpty events then
+                                    return state, expectedVersion
+                                else
+                                    let! result =
+                                        EventStore.append serialize container stream expectedVersion events
+                                        |> Async.AwaitTask
+                                    match result with
+                                    | Ok nextExpectedVersion ->
+                                        let newState = List.fold evolve state events
+                                        reply (events, nextExpectedVersion)
+                                        return (newState, nextExpectedVersion)
+                                    | Error e ->
+                                        let! newState, nextExpectedVersion =
+                                           EventStore.fold deserialize container evolve stream state expectedVersion
+                                           |> Async.AwaitTask
+                                        return! exec newState nextExpectedVersion 
                             }
 
                         let! newState, nextExpectedVersion =  exec state expectedVersion

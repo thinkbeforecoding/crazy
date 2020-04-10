@@ -320,23 +320,36 @@ let barnsView barns =
           for parcel in Field.parcels barns.Occupied do
             barn parcel true ]
 
- 
+let boardView board =
+   [ for _,p in Map.toSeq board.Players do
+         lazyViewWith sameField playerField p
+
+     lazyView barnsView board.Barns
+
+     for _,p in Map.toSeq board.Players do
+         lazyViewWith sameFence playerFences  p
+
+     for _,p in Map.toSeq board.Players do
+         playerTractor  p ]
+
+let goalView board =
+    match board.Goal with
+    | Common c ->
+        div []
+            [ str (sprintf "%d parcels left" (c - Board.totalSize board)) ]
+    | Individual c ->
+        div []
+            [ for playerid, player in Map.toSeq board.Players do
+                p [] [ str (sprintf "%s: %d parcels left" board.Table.Names.[playerid] (c - Player.fieldTotalSize player)) ]
+            ]
+
 let view (model : Model) (dispatch : Msg -> unit) =
     div [ ClassName "board" ]
         [
             match model.Board with
             | InitialState -> ()
             | Board board ->
-                for _,p in Map.toSeq board.Players do
-                    lazyViewWith sameField playerField p
-
-                lazyView barnsView board.Barns
-
-                for _,p in Map.toSeq board.Players do
-                    lazyViewWith sameFence playerFences  p
-
-                for _,p in Map.toSeq board.Players do
-                    playerTractor  p
+                yield! boardView board
 
                 for m in model.Moves do
                     moveView dispatch m
@@ -358,7 +371,21 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         
                         handView (Player.hand player)
 
+                        goalView board
                     ]
+            | Won(winner, board) ->
+                yield! boardView board
+                
+
+                div [ Style [ Position PositionOptions.Absolute
+                              Top "10em"
+                              Left "10em"
+                              BackgroundColor "white"
+                              ] ]
+                    [ p [] [ str "And the winner is !"]
+                      p [] [ str board.Table.Names.[winner] ] ]
+
+                
 
 
             //div [ Style [ Position PositionOptions.Fixed
