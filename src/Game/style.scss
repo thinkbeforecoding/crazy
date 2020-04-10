@@ -128,7 +128,7 @@ $back-y: 0.15vw;
 
 .cards {
     div {
-        margin-top: 3em;
+        /*margin-top: 3em;*/
         width: 8vw;
         height: 11.54vw;
         background-size: contain;
@@ -141,6 +141,7 @@ $back-y: 0.15vw;
     }
 
     div.back {
+        margin-top: 3em;
         display: block;
         position: absolute;
         background-image: url(/img/card-back.jpg);

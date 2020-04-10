@@ -74,7 +74,8 @@ type PlayerState =
     | Connected of Connected
 and Connected = 
     { GameId: string
-      Color: Color option}
+      Color: Color option
+      Player: string }
 
 let connections =
   ServerHub<PlayerState,ServerMsg,ClientMsg>()
@@ -245,9 +246,22 @@ let update claim clientDispatch msg (model: PlayerState) =
                 |> Option.bind (function 
                     | Starting p -> Some p.Color
                     | Playing p -> Some p.Color )
+
+            let privateGame =
+                { game with
+                    Players = 
+                        game.Players
+                        |> Map.map (fun playerid player ->
+                            if playerid = claim.sub then
+                                player
+                            else
+                                Player.toPrivate player
+                        )
+                }
+
                 
-            clientDispatch (Sync (Board.toState (Board game), version))
-            Connected {GameId = gameid; Color = color } ,  Cmd.none
+            clientDispatch (Sync (Board.toState (Board privateGame), version))
+            Connected {GameId = gameid; Color = color; Player = claim.sub } ,  Cmd.none
         | _ ->
             model, Cmd.none
 
@@ -802,7 +816,44 @@ let subsGame =
                                 [ for ed in c.e do
                                     yield! deserialize (ed.c, ed.d) ]
                             let gameId = c.p.Substring(5) 
-                            connections.SendClientIf (function | Connected c when c.GameId = gameId -> true  | _ -> false) (Events (events, c.i ))
+
+                            match events with
+                            | [Board.Started e] ->
+
+                                Events ([ Board.Started { e with DrawPile = [] } ], c.i)
+                                |> connections.SendClientIf (function Connected c when c.GameId = gameId -> true  | _ -> false )
+                            | _ ->
+                                let drawingPlayers =
+                                    events
+                                    |> List.choose (function
+                                        | Board.PlayerDrewCards e -> Some e.Player
+                                        | _ -> None)
+                                    |> set
+
+                                for drawingPlayer in drawingPlayers do
+                                    let personalEvents =
+                                        events
+                                        |> List.map (
+                                            function
+                                            | Board.PlayerDrewCards e when e.Player <> drawingPlayer ->
+                                                Board.PlayerDrewCards { e with Cards = Hand.toPrivate e.Cards }
+                                            | e -> e
+                                        )
+                                    connections.SendClientIf (function | Connected c when c.GameId = gameId && c.Player = drawingPlayer -> true  | _ -> false) 
+                                        (Events (personalEvents, c.i ))
+
+                                let privateEvents =
+                                        events
+                                        |> List.map (
+                                            function
+                                            | Board.PlayerDrewCards e ->
+                                                Board.PlayerDrewCards { e with Cards = Hand.toPrivate e.Cards }
+                                            | e -> e
+                                        )
+
+
+                                connections.SendClientIf (function | Connected c when c.GameId = gameId && not (Set.contains c.Player drawingPlayers ) -> true  | _ -> false)
+                                    (Events (privateEvents, c.i ))
                 } :> Task
         )
         .WithLeaseContainer(client.GetContainer("crazyfarmers", "subscriptions"))

@@ -303,7 +303,7 @@ let cardName =
 let handView =
     function 
     | Public cards -> 
-       div [ ClassName "cards"; Style [ MarginTop "11vw"]]
+       div [ ClassName "cards" ]
            [ for c in cards do
                div [ ClassName (cardName c) ] []
            ]

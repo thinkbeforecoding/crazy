@@ -97,6 +97,18 @@ type Hand =
     | Private of int
     | Public of Card list
 
+module Hand =
+    let toPrivate =
+        function
+        | Public p -> Private p.Length
+        | priv -> priv
+
+    let count =
+        function
+        | Public p -> p.Length
+        | Private c -> c
+        
+
 type Player =
     | Starting of Starting
     | Playing of Playing
@@ -481,7 +493,6 @@ module Barns =
 
 
 
-
 type MoveBlocker =
     | Tractor
     | Protection
@@ -599,6 +610,14 @@ module Player =
         match player with
         | Playing p -> p.Hand
         | Starting p -> p.Hand
+
+
+    let toPrivate player =
+        match player with
+        | Playing p -> Playing { p with Hand = Hand.toPrivate p.Hand }
+        | Starting p -> Starting { p with Hand = Hand.toPrivate p.Hand }
+
+
                     
     let decide (otherPlayers: (string * Player) list) barns command player =
         match player, command with
@@ -727,7 +746,7 @@ module Player =
         | _ -> failwith "Not playing"
 
     let start color parcel pos =
-        Starting  { Parcel = parcel; Color = color; Hand = Private 0 }
+        Starting  { Parcel = parcel; Color = color; Hand = Public [] }
         |> exec [] Barns.empty (SelectFirstCrossroad { Crossroad = pos})
 
 
@@ -784,16 +803,18 @@ module Player =
             Playing 
                 { p with 
                     Hand = 
-                        match p.Hand with
-                        | Public h -> Public (h @ cards)
-                        | Private h -> Private (h + cards.Length) }
+                        match p.Hand, cards with
+                        | Public h, Public c -> Public (h @ c)
+                        | Private h, Private c -> Private (h + c)  
+                        | _ -> failwith "Unexpected mix" }
         | Starting p ->
             Starting
                 { p with
                     Hand = 
-                        match p.Hand with
-                        | Public h -> Public (h @ cards)
-                        | Private h -> Private (h + cards.Length) }
+                        match p.Hand, cards with
+                        | Public h, Public c -> Public (h @ c)
+                        | Private h, Private c -> Private (h + c)  
+                        | _ -> failwith "Unexpected mix" }
 
 
 
@@ -855,6 +876,14 @@ module DrawPile =
         let rand = System.Random()
         List.sortBy (fun _ -> rand.Next()) cards
 
+
+    let remove cards pile =
+        let count = Hand.count cards
+        pile |> List.skip (min (List.length pile) count)
+
+    let take count pile =
+        pile |> List.truncate count
+
 module Board =
     let initialState = InitialState
 
@@ -876,7 +905,7 @@ module Board =
         }
     and PlayerDrewCards =
         { Player: string 
-          Cards: int}
+          Cards: Hand }
         
     let otherPlayers playerid (board: PlayingBoard) =
         board.Players
@@ -959,14 +988,28 @@ module Board =
                 let events = 
                     Player.decide others state.Barns cmd player
 
-                let nextState = List.fold Player.evolve player events
-                match nextState with
-                | Playing p when not (Moves.canMove p.Moves) ->
-                    [ for e in  events do
-                        Played(playerid, e)
-                      Next ]
-                | _ ->
-                    [ for e in events -> Played(playerid,e) ]
+                [ for e in events do
+                    Played(playerid,e)
+
+                  match List.tryFind (function Player.Annexed _ -> true | _ -> false) events with
+                  | Some (Player.Annexed e) ->
+                        let cardsToTake =
+                            e.FreeBarns.Length + 2 * e.OccupiedBarns.Length
+                        if cardsToTake > 0 then
+                            PlayerDrewCards 
+                                { Player = playerid
+                                  Cards = Public (state.DrawPile |> DrawPile.take cardsToTake) }
+                  | _ -> ()
+
+
+
+
+                  let nextState = List.fold Player.evolve player events
+                  match nextState with
+                  | Playing p when not (Moves.canMove p.Moves) ->
+                          Next 
+                  | _ -> ()
+                ]
             else
                 []
         | _ -> []
@@ -976,7 +1019,7 @@ module Board =
         | InitialState, Started s ->
             Board 
                 { Players =
-                    Map.ofList [ for c,u,n,p in s.Players -> u, Starting { Color = c; Parcel = p; Hand = Private 0}]
+                    Map.ofList [ for c,u,n,p in s.Players -> u, Starting { Color = c; Parcel = p; Hand = Public []}]
                   Table =  Table.start [ for _,p,n,_ in s.Players -> p,n ] 
                   DrawPile = s.DrawPile
                   DiscardPile = []
@@ -1012,9 +1055,8 @@ module Board =
                                Barns.annex annexedBarns board.Barns }
             |> Board
         | Board board, PlayerDrewCards e ->
-            let drawnCards = board.DrawPile |> List.truncate e.Cards
-            let newDrawPile = board.DrawPile |> List.skip e.Cards
-            let player = board.Players.[e.Player] |> Player.takeCards drawnCards
+            let newDrawPile = board.DrawPile |> DrawPile.remove e.Cards
+            let player = board.Players.[e.Player] |> Player.takeCards e.Cards
             Board {
                 board with
                     Players = Map.add e.Player player board.Players
