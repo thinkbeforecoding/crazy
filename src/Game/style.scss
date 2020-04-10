@@ -15,8 +15,6 @@
 // Bulma
 //@import "~bulma/bulma";
 
-
-
 body {
     margin: 0;
     padding: 0;
@@ -48,6 +46,17 @@ body {
     height: 9vw;
     position: absolute;
 }
+.barn {
+    background-size: contain;
+    width: 9vw;
+    height: 9vw;
+    position: absolute;
+    background-image: url(/img/barn.png);
+}
+.barn.occupied {
+    background-image: url(/img/barn-occupied.png);
+}
+
 
 
 .crossroad {
@@ -113,4 +122,98 @@ body {
     }
 }
 
+
+$back-x: 0.7vw;
+$back-y: 0.15vw;
+
+.cards {
+    div {
+        margin-top: 3em;
+        width: 8vw;
+        height: 11.54vw;
+        background-size: contain;
+        background-repeat: no-repeat;
+        border-radius: 8px;
+        background-clip: padding-box;
+        box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
+        display: inline-block;
+        margin-right: 0.4vw;
+    }
+
+    div.back {
+        display: block;
+        position: absolute;
+        background-image: url(/img/card-back.jpg);
+    }
+
+    .nitro-1 {
+        background-image: url(/img/card-nitro-1.jpg);
+    }
+
+    .nitro-2 {
+        background-image: url(/img/card-nitro-1.jpg);
+    }
+
+    .rut {
+        background-image: url(/img/card-rut.jpg);
+    }
+
+    .hay-bale-1 {
+        background-image: url(/img/card-1-hay-bale.jpg);
+    }
+    .hay-bale-2 {
+        background-image: url(/img/card-2-hay-bales.jpg);
+    }
+    .dynamite {
+        background-image: url(/img/card-dynamite.jpg);
+    }
+    .high-voltage {
+        background-image: url(/img/card-high-voltage.jpg);
+    }
+    .watchdog {
+        background-image: url(/img/card-watchdog.jpg);
+    }
+    .helicopter {
+        background-image: url(/img/card-helicopter.jpg);
+    }
+    .bribe {
+        background-image: url(/img/card-bribe.jpg);
+    }
+
+    .z1 {
+        top: 0;
+        left: 0;
+        z-index: 6;
+    }
+
+    .z2 {
+        top: $back-y;
+        left: $back-x;
+        z-index: 5;
+    }
+
+    .z3 {
+        top: $back-y*2;
+        left: $back-x*2;
+        z-index: 4;
+    }
+
+    .z4 {
+        top: $back-y*3;
+        left: $back-x*3;
+        z-index: 3;
+    }
+
+    .z5 {
+        top: $back-y*4;
+        left: $back-x*4;
+        z-index: 2;
+    }
+
+    .z6 {
+        top: $back-y*5;
+        left: $back-x*5;
+        z-index: 1;
+    }
+}
 

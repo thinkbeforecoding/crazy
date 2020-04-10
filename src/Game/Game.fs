@@ -187,6 +187,14 @@ let parcel (Parcel pos) =
                    ]] 
         []
 
+let barn (Parcel pos) occupied = 
+    let x,y = Pix.ofTile pos |> Pix.rotate
+    div [ classBaseList "barn" [ "occupied", occupied ]
+          Style [ Left (sprintf "%fvw" x)
+                  Top (sprintf "%fvw" y)
+                   ]] 
+        []
+
 let drawplayer (x,y) =
     div [ ClassName "player"
           Style [ Left (sprintf "%fvw" x)
@@ -278,8 +286,41 @@ let moveView dispatch move =
     | Move.Move (dir,c) -> crossroad c (fun _ -> dispatch (Move (dir, c)))
     | Move.ImpossibleMove (_,c,e) -> blockedCrossroad   c e
     | Move.SelectCrossroad(c) -> crossroad c (fun _ -> dispatch (SelectFirstCrossroad c))
-    
-    
+   
+let cardName =
+    function
+    | Nitro One -> "card nitro-1"
+    | Nitro Two -> "card nitro-1"
+    | Rut -> "card rut"
+    | HayBale One -> "card hay-bale-1"
+    | HayBale Two -> "card hay-bale-2"
+    | Dynamite -> "card dynamite"
+    | HighVoltage -> "card high-voltage"
+    | Watchdog -> "card watchdog"
+    | Helicopter -> "card helicopter"
+    | Bribe -> "card bribe"
+
+let handView =
+    function 
+    | Public cards -> 
+       div [ ClassName "cards"; Style [ MarginTop "11vw"]]
+           [ for c in cards do
+               div [ ClassName (cardName c) ] []
+           ]
+    | Private cards ->
+        div [ ClassName "cards"]
+            [ for c in 1..cards do
+                div [ ClassName (sprintf "back z%d" c) ] []
+            ]
+
+let barnsView barns =
+    div [] 
+        [ for parcel in Field.parcels barns.Free do
+            barn parcel false
+          for parcel in Field.parcels barns.Occupied do
+            barn parcel true ]
+
+ 
 let view (model : Model) (dispatch : Msg -> unit) =
     div [ ClassName "board" ]
         [
@@ -289,8 +330,11 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 for _,p in Map.toSeq board.Players do
                     lazyViewWith sameField playerField p
 
+                lazyView barnsView board.Barns
+
                 for _,p in Map.toSeq board.Players do
                     lazyViewWith sameFence playerFences  p
+
                 for _,p in Map.toSeq board.Players do
                     playerTractor  p
 
@@ -301,7 +345,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 let player =  board.Players.[board.Table.Player]
                 div [ Style [Position PositionOptions.Fixed
                              Left 0
-                             Top 0
+                             Top "0px"
                              Padding "10px"
                              BackgroundColor "white"
                             ] ]
@@ -311,6 +355,9 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         
                        
                         div [Style [ MarginLeft "3em" ]] [ str board.Table.Names.[board.Table.Player] ]
+                        
+                        handView (Player.hand player)
+
                     ]
 
 

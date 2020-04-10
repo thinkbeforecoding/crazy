@@ -1,8 +1,5 @@
 namespace Shared
 
-open System.Collections.Generic
-
-
 
 [<Struct>]
 type Axe = Axe of int * int
@@ -16,6 +13,26 @@ type Axe = Axe of int * int
 
     member this.Q = match this with Axe(q,_) -> q 
     member this.R = match this with Axe(_,r) -> r 
+
+module Axe =
+    let N = Axe(0,-1)
+    let S = Axe(0,+1)
+
+    let NW = Axe(-1,0)
+    let NE = Axe(+1,-1) 
+
+    let SW = Axe(-1,+1)
+    let SE = Axe(+1,0)
+
+    let W2 = NW + SW
+    let E2 = NE + SE
+
+    let center = Axe(0,0)
+
+    
+
+    let cube (Axe(q,r)) =
+        q,r,-q-r
 
 type CrossroadSide = CLeft | CRight
 
@@ -49,6 +66,10 @@ type Field = Field of Parcel Set
 [<Struct>]
 type Fence = Fence of (Path*Direction) list
 
+type Barns =
+    { Free: Field
+      Occupied: Field }
+
 module Direction =
     let rev =
         function
@@ -61,19 +82,42 @@ type Power =
     | PowerDown
 
 
+type Card =
+    | Nitro of CardPower
+    | Rut
+    | HayBale of CardPower
+    | Dynamite
+    | HighVoltage
+    | Watchdog
+    | Helicopter
+    | Bribe
+and CardPower = One | Two
+
+type Hand =
+    | Private of int
+    | Public of Card list
+
 type Player =
     | Starting of Starting
     | Playing of Playing
 and Starting =
     { Color: Color
-      Parcel: Parcel}
+      Parcel: Parcel
+      Hand: Hand
+      }
 and Playing =
     { Color: Color
       Tractor: Crossroad
       Fence: Fence
       Field: Field
       Power: Power
-      Moves: int } 
+      Moves: Moves
+      Hand: Hand } 
+and Moves =
+    { Capacity: int
+      Done: int}
+
+
 type Table =
     { Players: string[]
       Names: Map<string,string>
@@ -97,7 +141,10 @@ type Board =
     | Board of PlayingBoard
 and PlayingBoard =
     { Players: Map<string, Player>
-      Table: Table  }
+      Table: Table
+      DrawPile: Card list
+      DiscardPile: Card list
+      Barns: Barns }
 
 
 
@@ -106,18 +153,23 @@ type PlayerState =
     | SPlaying of PlayingState
 and StartingState =
     { SColor: Color
-      SParcel: Parcel }
+      SParcel: Parcel
+      SHand: Hand }
 and PlayingState =
     { SColor: Color 
       STractor: Crossroad
       SFence: Fence
       SField: Parcel list
       SPower: Power
-      SMoves: int }
+      SMoves: Moves 
+      SHand: Hand }
 
 type BoardState = 
-    { SPlayers: (string*PlayerState) list 
+    { SPlayers: (string*PlayerState) []
       STable: STable
+      SDiscardPile: Card []
+      SFreeBarns: Parcel[]
+      SOccupiedBarns: Parcel[]
     }
 and STable =
     { SPlayers: string[]
@@ -125,25 +177,6 @@ and STable =
       SCurrent: int }
     
 
-module Axe =
-    let N = Axe(0,-1)
-    let S = Axe(0,+1)
-
-    let NW = Axe(-1,0)
-    let NE = Axe(+1,-1) 
-
-    let SW = Axe(-1,+1)
-    let SE = Axe(+1,0)
-
-    let W2 = NW + SW
-    let E2 = NE + SE
-
-    let center = Axe(0,0)
-
-    
-
-    let cube (Axe(q,r)) =
-        q,r,-q-r
 
 module Crossroad =
     let neighbor dir (Crossroad(tile, side)) =
@@ -427,10 +460,22 @@ module Field =
 
         
         
-        
+module Barns =
+    let empty = { Free = Field.empty; Occupied = Field.empty }
+
+    let intersectWith (field: Field) barns =
+        { Free = Field.interesect field barns.Free
+          Occupied = Field.interesect field barns.Occupied }
+
+    let init barns =
+        { Free = Field.ofParcels barns
+          Occupied = Field.empty }
 
 
 
+    let annex annexed barns =
+        { Free = barns.Free - annexed.Free
+          Occupied = barns.Occupied + (Field.interesect barns.Free annexed.Free) }
 
 
 
@@ -447,6 +492,29 @@ type Move =
     | ImpossibleMove of Direction * Crossroad * MoveBlocker
     | SelectCrossroad of Crossroad
 
+
+module Moves =
+    let empty = 
+        { Capacity = 0
+          Done = 0}
+
+    let startTurn fence  =
+        { Capacity = 
+            if Fence.givesAcceleration fence then
+                4
+            else
+                3
+          Done = 0 }
+
+    let canMove m =
+        m.Done < m.Capacity
+
+    let addCapacity n m =
+        { m with 
+            Capacity = min (m.Capacity + n)  5 }
+
+    let doMove m =
+        { m with Done = m.Done + 1}
 
 module Player =
     type Command =
@@ -487,6 +555,8 @@ module Player =
         {
            NewField: Parcel list
            LostFields: (string * Parcel list) list
+           FreeBarns: Parcel list
+           OccupiedBarns: Parcel list
         }
     and CutFence = 
         { Player: string }
@@ -515,13 +585,9 @@ module Player =
     let startTurn player =
         match player with
         | Playing p ->
-            Playing { p with
-                Moves = 
-                    if Fence.givesAcceleration p.Fence then
-                        4
-                    else
-                        3
-            }
+            Playing 
+                { p with
+                    Moves = Moves.startTurn p.Fence }
         | Starting _ -> player
 
     let color player =
@@ -529,8 +595,12 @@ module Player =
         | Playing p -> p.Color
         | Starting p -> p.Color
         
+    let hand player =
+        match player with
+        | Playing p -> p.Hand
+        | Starting p -> p.Hand
                     
-    let decide (otherPlayers: (string * Player) list) command player =
+    let decide (otherPlayers: (string * Player) list) barns command player =
         match player, command with
         | Starting _, SelectFirstCrossroad cmd ->
             [ FirstCrossroadSelected { Crossroad = cmd.Crossroad } ]
@@ -538,7 +608,7 @@ module Player =
             let dir = cmd.Direction
             let nextPos = Crossroad.neighbor dir player.Tractor
             let nextPath = Path.neighbor dir player.Tractor
-            if nextPos <> cmd.Destination || player.Moves <= 0 then
+            if nextPos <> cmd.Destination || not (Moves.canMove player.Moves) then
                 []
             else
                 match player.Power with
@@ -582,10 +652,15 @@ module Player =
                                                 color, Field.parcels lost
                                         |_ -> ()
                                     ] 
+
+                                let annexedBarns = 
+                                    barns |> Barns.intersectWith annexed
+
                                 Annexed {
                                     NewField = Field.parcels annexed
                                     LostFields = lostFields
-                                        }
+                                    FreeBarns = annexedBarns.Free |> Field.parcels
+                                    OccupiedBarns = annexedBarns.Occupied |> Field.parcels }
 
                                 for playerid, p in otherPlayers do
                                     match p with
@@ -625,33 +700,35 @@ module Player =
                       Fence = Fence.empty
                       Field = Field.create p.Parcel
                       Power = PowerUp
-                      Moves = 3; }
-        | Playing player, FenceDrawn e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.add (e.Path, e.Move) player.Fence; Moves = player.Moves-1 }
-        | Playing player, FenceRemoved e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.tail player.Fence ; Moves = player.Moves-1  }
-        | Playing player, FenceLooped e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.remove e.Loop player.Fence ; Moves = player.Moves-1  }
-        | Playing player, MovedInField e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.empty; Moves = player.Moves-1  }
-        | Playing player, MovedPowerless e -> Playing { player with Tractor = e.Crossroad; Moves = player.Moves-1  }
+                      Moves = Moves.startTurn Fence.empty
+                      Hand = p.Hand
+                      }
+        | Playing player, FenceDrawn e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.add (e.Path, e.Move) player.Fence; Moves = Moves.doMove player.Moves }
+        | Playing player, FenceRemoved e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.tail player.Fence ; Moves = Moves.doMove player.Moves }
+        | Playing player, FenceLooped e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.remove e.Loop player.Fence ; Moves = Moves.doMove player.Moves }
+        | Playing player, MovedInField e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.empty; Moves = Moves.doMove player.Moves  }
+        | Playing player, MovedPowerless e -> Playing { player with Tractor = e.Crossroad; Moves = Moves.doMove player.Moves  }
         | Playing player, PoweredUp -> Playing { player with Power = PowerUp }
         | Playing player, Annexed e -> Playing { player with Fence = Fence.empty; Field = player.Field + Field.ofParcels e.NewField}
         | _ -> player 
 
 
 
-    let exec otherPlayers cmd state =
+    let exec otherPlayers barns cmd state =
         state
-        |> decide otherPlayers cmd
+        |> decide otherPlayers barns cmd
         |> List.fold evolve state
 
     let move dir player =
         match player with
         | Playing p ->
             player
-            |> exec [] (Move {Direction = dir; Destination = p.Tractor })
+            |> exec [] Barns.empty (Move {Direction = dir; Destination = p.Tractor })
         | _ -> failwith "Not playing"
 
     let start color parcel pos =
-        Starting  { Parcel = parcel; Color = color }
-        |> exec [] (SelectFirstCrossroad { Crossroad = pos})
+        Starting  { Parcel = parcel; Color = color; Hand = Private 0 }
+        |> exec [] Barns.empty (SelectFirstCrossroad { Crossroad = pos})
 
 
     let possibleMove player dir =
@@ -663,7 +740,7 @@ module Player =
 
     let possibleMoves player =
         match player with
-        | Playing player when player.Moves >= 0 ->
+        | Playing player when Moves.canMove player.Moves ->
             [ Up;Down;Horizontal]
             |> List.collect (possibleMove player)
 
@@ -701,13 +778,33 @@ module Player =
            
         | _ -> Ok c
 
+    let takeCards cards player =
+        match player with
+        | Playing p ->
+            Playing 
+                { p with 
+                    Hand = 
+                        match p.Hand with
+                        | Public h -> Public (h @ cards)
+                        | Private h -> Private (h + cards.Length) }
+        | Starting p ->
+            Starting
+                { p with
+                    Hand = 
+                        match p.Hand with
+                        | Public h -> Public (h @ cards)
+                        | Private h -> Private (h + cards.Length) }
+
+
 
     let toState (p: Player) =
         match p with
         | Starting p -> 
             SStarting 
                 { SColor = p.Color
-                  SParcel = p.Parcel}
+                  SParcel = p.Parcel
+                  SHand = p.Hand
+                  }
         | Playing p ->
             SPlaying
                 { SColor = p.Color
@@ -718,6 +815,7 @@ module Player =
                     f |> Set.toList
                   SPower = p.Power
                   SMoves = p.Moves
+                  SHand = p.Hand
                   }
 
     let ofState (p: PlayerState) =
@@ -725,7 +823,8 @@ module Player =
         | SStarting p -> 
             Starting 
                 { Color = p.SColor
-                  Parcel = p.SParcel}
+                  Parcel = p.SParcel
+                  Hand = p.SHand }
         | SPlaying p ->
             Playing {
                 Color = p.SColor
@@ -734,7 +833,27 @@ module Player =
                 Field = Field (set p.SField)
                 Power = p.SPower
                 Moves = p.SMoves
+                Hand = p.SHand
             }
+
+module DrawPile =
+    let cards =
+        [ Nitro One,   6
+          Nitro Two,   3
+          Rut,         2
+          HayBale One, 4
+          HayBale Two, 3
+          Dynamite,    4
+          HighVoltage, 3
+          Watchdog,    2
+          Helicopter,  6
+          Bribe,       3]
+        |> List.collect (fun (c,n) -> [for i in 1..n -> c])
+
+
+    let shuffle cards =
+        let rand = System.Random()
+        List.sortBy (fun _ -> rand.Next()) cards
 
 module Board =
     let initialState = InitialState
@@ -747,8 +866,17 @@ module Board =
 
     type Event =
         | Played of string * Player.Event
-        | Started of (Color*string*string*Parcel) list 
+        | Started of Started
         | Next
+        | PlayerDrewCards of PlayerDrewCards
+    and Started =
+        { Players: (Color*string*string*Parcel) list 
+          DrawPile: Card list
+          Barns: Parcel list
+        }
+    and PlayerDrewCards =
+        { Player: string 
+          Cards: int}
         
     let otherPlayers playerid (board: PlayingBoard) =
         board.Players
@@ -761,37 +889,79 @@ module Board =
         
         match state, cmd with
         | InitialState, Start cmd ->
-            match cmd.Players with
-            | [ c1,u1,n1; c2,u2,n2 ] ->
-                [ Started [ c1, u1, n1, Parcel.center + 2 * Axe.N 
-                            c2, u2, n2, Parcel.center + 2 * Axe.S  ] ]
+            let players, barns =
+                match cmd.Players with
+                | [ c1,u1,n1; c2,u2,n2 ] ->
+                    [ c1, u1, n1, Parcel.center + 2 * Axe.N 
+                      c2, u2, n2, Parcel.center + 2 * Axe.S  ],
+                      [ Parcel.center
+                        Parcel.center + 3 * Axe.N 
+                        Parcel.center + 3 * Axe.S 
+                        Parcel.center + 3 * Axe.NE 
+                        Parcel.center + 3 * Axe.NW 
+                        Parcel.center + 3 * Axe.SE 
+                        Parcel.center + 3 * Axe.SW 
+                        Parcel.center + Axe.W2
+                        Parcel.center + Axe.E2
+                        Parcel.center + Axe.N + Axe.NE
+                        Parcel.center + Axe.N + Axe.NW
+                        Parcel.center + Axe.S + Axe.SE
+                        Parcel.center + Axe.S + Axe.SW
+                    ]
 
-            | [ c1,u1,n1; c2,u2,n2; c3,u3,n3 ] ->
-                [ Started [ c1, u1, n1, Parcel.center + 2 * Axe.N
-                            c2, u2, n2, Parcel.center + 2 * Axe.SW
-                            c3, u3, n3, Parcel.center + 2 * Axe.SE ] ]
-            | [ c1,u1,n1; c2,u2,n2; c3,u3,n3; c4,u4,n4 ] ->
-                [ Started [ c1, u1, n1, Parcel.center + Axe.N + Axe.NE
-                            c2, u2, n2, Parcel.center + 2 * Axe.NW
-                            c3, u3, n3, Parcel.center + Axe.SW + Axe.S
-                            c4, u4, n4, Parcel.center + 2 * Axe.SE ] ]
-            | _ ->
-                let playerCount = List.length cmd.Players
-                if playerCount < 2 then
-                    failwith "To few players"
-                else
-                    failwith "To many players"
+
+                | [ c1,u1,n1; c2,u2,n2; c3,u3,n3 ] ->
+                    [ c1, u1, n1, Parcel.center + 2 * Axe.N
+                      c2, u2, n2, Parcel.center + 2 * Axe.SW
+                      c3, u3, n3, Parcel.center + 2 * Axe.SE ],
+                        [ Parcel.center
+                          Parcel.center + 3 * Axe.N 
+                          Parcel.center + 3 * Axe.S 
+                          Parcel.center + 3 * Axe.NE 
+                          Parcel.center + 3 * Axe.NW 
+                          Parcel.center + 3 * Axe.SE 
+                          Parcel.center + 3 * Axe.SW 
+                          Parcel.center + Axe.W2
+                          Parcel.center + Axe.E2
+                          Parcel.center + Axe.N + Axe.NE
+                          Parcel.center + Axe.N + Axe.NW
+                          Parcel.center + Axe.S + Axe.SE
+                          Parcel.center + Axe.S + Axe.SW ]
+                | [ c1,u1,n1; c2,u2,n2; c3,u3,n3; c4,u4,n4 ] ->
+                    [ c1, u1, n1, Parcel.center + Axe.N + Axe.NE
+                      c2, u2, n2, Parcel.center + 2 * Axe.NW
+                      c3, u3, n3, Parcel.center + Axe.SW + Axe.S
+                      c4, u4, n4, Parcel.center + 2 * Axe.SE ],
+                      [  Parcel.center
+                         Parcel.center + Axe.N + Axe.NW
+                         Parcel.center + Axe.S + Axe.SE
+                         Parcel.center + 2 * Axe.NE
+                         Parcel.center + 2 * Axe.SW
+                         Parcel.center + 2 * Axe.N + Axe.NE
+                         Parcel.center + 2 * Axe.S + Axe.SW
+                         Parcel.center + Axe.E2 + Axe.SE
+                         Parcel.center + Axe.W2 + Axe.NW ]
+                | _ ->
+                    let playerCount = List.length cmd.Players
+                    if playerCount < 2 then
+                        failwith "To few players"
+                    else
+                        failwith "To many players"
+            [ Started {
+                Players = players
+                DrawPile = DrawPile.shuffle DrawPile.cards
+                Barns = barns } ] 
         | Board state,Play (playerid, cmd) ->
             let player = state.Players.[playerid]
             let others = otherPlayers playerid state
 
             if playerid = state.Table.Player then
                 let events = 
-                    Player.decide others cmd player
+                    Player.decide others state.Barns cmd player
 
                 let nextState = List.fold Player.evolve player events
                 match nextState with
-                | Playing { Moves = 0 } ->
+                | Playing p when not (Moves.canMove p.Moves) ->
                     [ for e in  events do
                         Played(playerid, e)
                       Next ]
@@ -803,12 +973,14 @@ module Board =
 
     let evolve (state: Board) event =
         match state,event with
-        | InitialState, Started players ->
+        | InitialState, Started s ->
             Board 
                 { Players =
-                    Map.ofList [ for c,u,n,p in players -> u, Starting { Color = c; Parcel = p}]
-                  Table =  Table.start [ for _,p,n,_ in players -> p,n ] 
-                }
+                    Map.ofList [ for c,u,n,p in s.Players -> u, Starting { Color = c; Parcel = p; Hand = Private 0}]
+                  Table =  Table.start [ for _,p,n,_ in s.Players -> p,n ] 
+                  DrawPile = s.DrawPile
+                  DiscardPile = []
+                  Barns = Barns.init s.Barns }
         | InitialState, _ -> state
         | Board _, Started _ -> state
         | Board board, Played (_, Player.CutFence { Player = playerid }) ->
@@ -832,9 +1004,25 @@ module Board =
                     { board with
                                 Players = Map.add playerid newP map.Players }
                 | _ -> map
-            
-            ) { board with Players = newMap }
+            ) { board with Players = newMap
+                           Barns =
+                               let annexedBarns =
+                                   { Free = e.FreeBarns |> Field.ofParcels
+                                     Occupied = e.OccupiedBarns |> Field.ofParcels }
+                               Barns.annex annexedBarns board.Barns }
             |> Board
+        | Board board, PlayerDrewCards e ->
+            let drawnCards = board.DrawPile |> List.truncate e.Cards
+            let newDrawPile = board.DrawPile |> List.skip e.Cards
+            let player = board.Players.[e.Player] |> Player.takeCards drawnCards
+            Board {
+                board with
+                    Players = Map.add e.Player player board.Players
+                    DrawPile = newDrawPile }
+
+            
+
+
         | Board board, Played (playerid,e) ->
             let player = Player.evolve board.Players.[playerid] e
             Board { board with
@@ -852,22 +1040,32 @@ module Board =
         | Board board ->
             { SPlayers =
                 board.Players
-                |> Map.toList
-                |> List.map (fun (playerid,p) -> playerid, Player.toState p)
+                |> Map.toSeq
+                |> Seq.map (fun (playerid,p) -> playerid, Player.toState p)
+                |> Seq.toArray
+
               STable = { SPlayers = board.Table.Players
                          SNames = [| for KeyValue(p,n) in board.Table.Names -> p,n |]
-                         SCurrent = board.Table.Current } }
-        | InitialState -> { SPlayers = []; STable = { SPlayers = null; SNames = null; SCurrent = 0} }
+                         SCurrent = board.Table.Current }
+              SDiscardPile = List.toArray board.DiscardPile
+              SFreeBarns = Field.parcels board.Barns.Free |> List.toArray
+              SOccupiedBarns = Field.parcels board.Barns.Occupied |> List.toArray
+                         }
+        | InitialState -> { SPlayers = [||]; STable = { SPlayers = null; SNames = null; SCurrent = 0}; SDiscardPile = [||]; SFreeBarns = null; SOccupiedBarns = null }
 
     let ofState (board: BoardState) =
         match board.SPlayers with
-        | [] -> 
+        | [||] -> 
             InitialState
         | _ ->
-            Board { Players = board.SPlayers |> List.map (fun (c,p) -> c, Player.ofState p) |> Map.ofList 
+            Board { Players = board.SPlayers |> Seq.map (fun (c,p) -> c, Player.ofState p) |> Map.ofSeq 
                     Table = { Players = board.STable.SPlayers
                               Names = Map.ofArray board.STable.SNames
-                              Current = board.STable.SCurrent } }
+                              Current = board.STable.SCurrent }
+                    DrawPile = [] 
+                    DiscardPile = Array.toList board.SDiscardPile
+                    Barns = { Free = Field.ofParcels board.SFreeBarns
+                              Occupied = Field.ofParcels board.SOccupiedBarns } }
         
     let possibleMoves playerid (board: Board) =
         match board, playerid with
