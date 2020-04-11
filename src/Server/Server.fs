@@ -266,8 +266,12 @@ let update claim clientDispatch msg (model: PlayerState) =
                                 Player.toPrivate player
                         )
                 }
-                
-            clientDispatch (Sync (Board.toState s, version))
+            let privateBoard =
+                match s with
+                | Board _ -> Board privateGame
+                | Won(p,_) -> Won(p, privateGame)
+                | InitialState -> InitialState
+            clientDispatch (Sync (Board.toState privateBoard, version))
             Connected {GameId = gameid; Color = color; Player = claim.sub } ,  Cmd.none
         | _ ->
             model, Cmd.none
