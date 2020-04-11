@@ -175,6 +175,20 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
 
 
     | Remote (Events (events, version) ) ->
+        for e in events do
+            match e with
+            |  Event.Started _ ->
+                match currentModel.Game with
+                | PageModel.NewGame { GameId = gameid }
+                | PageModel.JoinGame { GameId = gameid }
+                | PageModel.Started gameid ->
+                    Browser.Dom.console.log("starting " + gameid)
+                    Browser.Dom.document.location.replace("/game/" + gameid)
+                | _ -> 
+                    Browser.Dom.console.log(sprintf "Started but other state: %A" currentModel.Game)
+
+            | _ -> ()
+
         if version >= currentModel.Version then
             let newModel =
                 events

@@ -776,7 +776,7 @@ module Join =
                                     [ for ed in c.e do
                                         yield! deserialize (ed.c, ed.d) ]
                                 let gameid = c.p.Substring(5) 
-                                connections.SendClientIf (function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events (events, c.i))
+                                connections.SendClientIf (function SetupGame id | JoiningGame id | Started id when id = gameid -> true | _ -> false ) (Events (events, c.i))
                             
                         
                     } :> Task
