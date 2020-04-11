@@ -96,6 +96,28 @@ type Card =
     | Bribe
 and CardPower = One | Two
 
+type PlayCard =
+    | PlayNitro of CardPower
+    | PlayRut of string
+    | PlayHayBale of Crossroad list
+    | PlayDynamite of Path
+    | PlayHighVoltage
+    | PlayWatchdog
+    | PlayHelicopter of Crossroad
+    | PlayBribe of Parcel
+
+module Card =
+    let ofPlayCard =
+        function
+        | PlayNitro power -> Nitro power
+        | PlayRut _ -> Rut
+        | PlayHayBale cs -> if List.length cs < 2 then HayBale One else HayBale Two
+        | PlayDynamite _ -> Dynamite
+        | PlayHighVoltage -> HighVoltage
+        | PlayWatchdog -> Watchdog
+        | PlayHelicopter _ -> Helicopter
+        | PlayBribe _ -> Bribe
+
 type Hand =
     | Private of int
     | Public of Card list
@@ -110,7 +132,21 @@ module Hand =
         function
         | Public p -> p.Length
         | Private c -> c
-        
+
+
+    let contains card =
+        function
+        | Public p -> List.contains card p
+        | Private _ -> false
+       
+    let remove card =
+        function
+        | Public p -> 
+            let i = List.findIndex (fun c -> c = card) p
+            let left, right = List.splitAt i p
+            Public (left @ List.tail right)
+
+        | Private p -> Private(p-1)
 
 type Player =
     | Starting of Starting
@@ -127,7 +163,10 @@ and Playing =
       Field: Field
       Power: Power
       Moves: Moves
-      Hand: Hand } 
+      Hand: Hand 
+      Watched: bool
+      HighVoltage: bool
+      } 
 and Moves =
     { Capacity: int
       Done: int}
@@ -179,7 +218,10 @@ and PlayingState =
       SField: Parcel list
       SPower: Power
       SMoves: Moves 
-      SHand: Hand }
+      SHand: Hand
+      SHighVoltage: bool
+      SWatched: bool
+      }
 
 type BoardState = 
     { SPlayers: (string*PlayerState) []
@@ -308,9 +350,12 @@ module Fence =
             }
         loop tractor paths 
 
-    let protection tractor fence =
-        fenceCrossroads tractor fence
-        |> Seq.truncate 2
+    let protection player fence =
+        let fence = fenceCrossroads player.Tractor fence
+        if player.HighVoltage then
+            fence
+        else
+            fence |> Seq.truncate 2
 
     let start tractor (Fence paths) =
         let rec loop pos paths =
@@ -540,6 +585,7 @@ module Player =
         | Start of Start
         | SelectFirstCrossroad of SelectFirstCrossroad
         | Move of Move
+        | PlayCard of PlayCard
     and Start =
         { Parcel: Parcel }
     and SelectFirstCrossroad =
@@ -558,6 +604,10 @@ module Player =
         | Annexed of Annexed
         | CutFence of CutFence
         | PoweredUp
+        | CardPlayed of PlayCard
+        | SpedUp of SpedUp
+        | HighVoltaged
+        | Watched
     and Started =
         { Parcel : Parcel }
     and FirstCrossroadSelected =
@@ -579,10 +629,14 @@ module Player =
         }
     and CutFence = 
         { Player: string }
+    and SpedUp =
+        { Speed: int }
 
     let isCut tractor player =
         match player with
         | Playing player ->
+            not player.HighVoltage
+            &&
             Fence.fenceCrossroads player.Tractor player.Fence
             |> Seq.contains tractor
         | _ -> false
@@ -606,7 +660,9 @@ module Player =
         | Playing p ->
             Playing 
                 { p with
-                    Moves = Moves.startTurn p.Fence }
+                    Moves = Moves.startTurn p.Fence
+                    HighVoltage = false
+                    Watched = false }
         | Starting _ -> player
 
     let color player =
@@ -629,6 +685,12 @@ module Player =
         match player with
         | Playing p -> Field.size p.Field
         | Starting p -> 1
+
+
+    let watchedField player =
+        match player with
+        | Playing ({ Watched = true; Field = field }) -> field
+        | _ -> Field.empty
                     
     let decide (otherPlayers: (string * Player) list) barns command player =
         match player, command with
@@ -671,7 +733,13 @@ module Player =
                               yield! decideCut otherPlayers nextPos
                               if endInField && not pathInField && not inFallow then
                                 let nextFence = Fence.add (nextPath, dir) player.Fence
-                                let annexed = annexation player.Field nextFence nextPos
+                                let baseAnnexed = 
+                                    annexation player.Field nextFence nextPos
+
+                                let annexed = 
+                                    otherPlayers
+                                    |> List.fold (fun anx (_,p) ->
+                                        anx - watchedField p) baseAnnexed
 
                                 let lostFields = 
                                     [ for color,p in otherPlayers do
@@ -718,6 +786,25 @@ module Player =
                             // an maybe you cut someone just there
                             yield! decideCut otherPlayers nextPos
                     ]
+        | Playing player, PlayCard card ->
+            let c = Card.ofPlayCard card
+            if Hand.contains c player.Hand then
+                match card with
+                | PlayNitro power ->
+                        [ CardPlayed card
+                          SpedUp {  Speed = match power with One -> 1 | Two -> 2 }
+                        ]
+
+                | PlayHighVoltage ->
+                        [ CardPlayed card
+                          HighVoltaged ]
+                | PlayWatchdog ->
+                        [ CardPlayed card
+                          Watched ]
+                | _ -> []
+            else 
+                []
+
                     
         | _ -> failwith "Invalid operation"      
 
@@ -732,6 +819,8 @@ module Player =
                       Power = PowerUp
                       Moves = Moves.startTurn Fence.empty
                       Hand = p.Hand
+                      HighVoltage = false
+                      Watched = false
                       }
         | Playing player, FenceDrawn e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.add (e.Path, e.Move) player.Fence; Moves = Moves.doMove player.Moves }
         | Playing player, FenceRemoved e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.tail player.Fence ; Moves = Moves.doMove player.Moves }
@@ -740,6 +829,14 @@ module Player =
         | Playing player, MovedPowerless e -> Playing { player with Tractor = e.Crossroad; Moves = Moves.doMove player.Moves  }
         | Playing player, PoweredUp -> Playing { player with Power = PowerUp }
         | Playing player, Annexed e -> Playing { player with Fence = Fence.empty; Field = player.Field + Field.ofParcels e.NewField}
+        | Playing player, HighVoltaged -> Playing { player with HighVoltage = true}
+        | Playing player, Watched -> Playing { player with Watched = true}
+        | Playing player, SpedUp e -> Playing { player with Moves = player.Moves |> Moves.addCapacity e.Speed }
+        | Playing player, CardPlayed card ->
+            Playing { player with
+                        Hand = 
+                            player.Hand 
+                            |> Hand.remove (Card.ofPlayCard card) }
         | _ -> player 
 
 
@@ -792,7 +889,7 @@ module Player =
     let checkProtection player c =
         let isOnProtection =
             player.Fence
-            |> Fence.protection player.Tractor
+            |> Fence.protection player
             |> Seq.exists (fun p -> p = c)
         if isOnProtection then
             Error(c, Protection)
@@ -848,6 +945,8 @@ module Player =
                   SPower = p.Power
                   SMoves = p.Moves
                   SHand = p.Hand
+                  SHighVoltage = p.HighVoltage
+                  SWatched = p.Watched
                   }
 
     let ofState (p: PlayerState) =
@@ -866,6 +965,8 @@ module Player =
                 Power = p.SPower
                 Moves = p.SMoves
                 Hand = p.SHand
+                HighVoltage = p.SHighVoltage
+                Watched = p.SWatched
             }
 
 module DrawPile =

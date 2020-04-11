@@ -109,6 +109,10 @@ let serialize =
     | Board.Event.Played (playerid, Player.Event.FenceRemoved e ) -> "FenceRemoved" , box { Player = playerid; Event = e }
     | Board.Event.Played (playerid, Player.Event.MovedPowerless e ) -> "MovedPowerless" , box { Player = playerid; Event = e }
     | Board.Event.Played (playerid, Player.Event.PoweredUp  ) -> "PoweredUp" , box { Player = playerid; Event = null }
+    | Board.Event.Played (playerid, Player.Event.CardPlayed e  ) -> "CardPlayed" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.HighVoltaged  ) -> "HighVoltaged" , box { Player = playerid; Event = null }
+    | Board.Event.Played (playerid, Player.Event.Watched  ) -> "Watched" , box { Player = playerid; Event = null }
+    | Board.Event.Played (playerid, Player.Event.SpedUp e  ) -> "SpedUp" , box { Player = playerid; Event = e }
     | Board.Event.Next  -> "Next" , null
     | Board.Event.PlayerDrewCards e  -> "PlayerDrewCards" , box e
     | Board.Event.GameWon e  -> "GameWon" , box e
@@ -125,6 +129,10 @@ let deserialize =
     | "FenceRemoved", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.FenceRemoved e)]
     | "MovedPowerless", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.MovedPowerless e)]
     | "PoweredUp", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.PoweredUp )]
+    | "CardPlayed", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.CardPlayed e)]
+    | "HighVoltaged", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.HighVoltaged )]
+    | "Watched", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Watched )]
+    | "SpedUp", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.SpedUp e)]
     | "Next", _ -> [ Board.Next]
     | "PlayerDrewCards", JObj e -> [ Board.PlayerDrewCards e ]
     | "GameWon", JObj e -> [ Board.GameWon e ]

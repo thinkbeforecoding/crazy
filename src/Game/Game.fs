@@ -72,6 +72,7 @@ type Model = {
     Synched: Board
     Version: int
     PlayerId: string option
+    CardAction: (int* Card) option
     Moves: Move list 
     Message: string
     Error : string
@@ -81,7 +82,10 @@ type Model = {
 // the state of the application changes *only* in reaction to these events
 type Msg =
     | Move of Direction * Crossroad
+    | PlayCard of PlayCard
     | SelectFirstCrossroad of Crossroad
+    | SelectCard of Card * int
+    | CancelCard
     | Remote of ClientMsg
     | ConnectionLost
 
@@ -98,6 +102,7 @@ let init () : Model * Cmd<Msg> =
       Version = -1
       Moves = []
       PlayerId = None
+      CardAction = None
       Message = "Init from client"
       Error = ""
     }, Cmd.none
@@ -116,6 +121,7 @@ let handleCommand (model : Model) command =
                 Board = newState
                 LocalVersion = model.LocalVersion + 1
                 Moves = Board.possibleMoves model.PlayerId newState
+                CardAction = None
             } , Cmd.bridgeSend(Command command)
     | None -> model, Cmd.none
 
@@ -128,6 +134,15 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | Move(dir,crossroad) ->
         Player.Move { Direction = dir; Destination = crossroad }
         |> handleCommand currentModel
+    | SelectCard(card,i) ->
+        { currentModel with
+            CardAction = Some (i,card) }, Cmd.none
+    | CancelCard ->
+        { currentModel with
+            CardAction = None }, Cmd.none
+    | PlayCard(card) ->
+        Player.PlayCard card
+        |> handleCommand { currentModel with CardAction = None}
     | ConnectionLost ->
         { currentModel with Message = "Connection lost"}, Cmd.none
     | Remote (SyncPlayer playerid) ->
@@ -300,12 +315,32 @@ let cardName =
     | Helicopter -> "card helicopter"
     | Bribe -> "card bribe"
 
-let handView =
+let handView dispatch cardAction =
     function 
     | Public cards -> 
        div [ ClassName "cards" ]
-           [ for c in cards do
-               div [ ClassName (cardName c) ] []
+           [ for i,c in List.indexed cards do
+               div [ ClassName (cardName c)
+                     match cardAction with
+                     | Some(index, _) when index = i -> ()
+                     | _ ->
+                         OnClick (fun _ -> dispatch (SelectCard(c,i)))
+               ] [
+                match cardAction with
+                | Some(index, Nitro power) when index = i ->
+                    button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str "Play" ]
+                | Some(index, HighVoltage ) when index = i ->
+                    button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str "Play" ]
+                | Some(index, Watchdog ) when index = i ->
+                    button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str "Play" ]
+
+                | _ -> ()
+
+
+
+
+               
+               ]
            ]
     | Private cards ->
         div [ ClassName "cards"]
@@ -369,7 +404,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                        
                         div [Style [ MarginLeft "3em" ]] [ str board.Table.Names.[board.Table.Player] ]
                         
-                        handView (Player.hand player)
+                        handView dispatch model.CardAction (Player.hand player)
 
                         goalView board
                     ]
