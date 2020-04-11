@@ -86,6 +86,7 @@ type Msg =
     | SelectFirstCrossroad of Crossroad
     | SelectCard of Card * int
     | CancelCard
+    | EndTurn
     | Remote of ClientMsg
     | ConnectionLost
 
@@ -142,6 +143,9 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
             CardAction = None }, Cmd.none
     | PlayCard(card) ->
         Player.PlayCard card
+        |> handleCommand { currentModel with CardAction = None}
+    | EndTurn ->
+        Player.EndTurn
         |> handleCommand { currentModel with CardAction = None}
     | ConnectionLost ->
         { currentModel with Message = "Connection lost"}, Cmd.none
@@ -301,7 +305,8 @@ let moveView dispatch move =
     | Move.Move (dir,c) -> crossroad c (fun _ -> dispatch (Move (dir, c)))
     | Move.ImpossibleMove (_,c,e) -> blockedCrossroad   c e
     | Move.SelectCrossroad(c) -> crossroad c (fun _ -> dispatch (SelectFirstCrossroad c))
-   
+
+       
 let cardName =
     function
     | Nitro One -> "card nitro-1"
@@ -378,6 +383,18 @@ let goalView board =
                 p [] [ str (sprintf "%s: %d parcels left" board.Table.Names.[playerid] (c - Player.fieldTotalSize player)) ]
             ]
 
+let endTurnView dispatch playerId board =
+    if playerId = Some board.Table.Player then
+        match  board.Players.[board.Table.Player] with
+        | Playing player when 
+             not (Moves.canMove player.Moves) && Hand.canPlay player.Hand ->
+               [ crossroad player.Tractor (fun _ -> dispatch EndTurn) ]
+                
+        | _ -> []
+    else
+        []
+    
+
 let view (model : Model) (dispatch : Msg -> unit) =
     div [ ClassName "board" ]
         [
@@ -389,8 +406,10 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 for m in model.Moves do
                     moveView dispatch m
 
-                
+                yield! endTurnView dispatch model.PlayerId board
+
                 let player =  board.Players.[board.Table.Player]
+
                 div [ Style [Position PositionOptions.Fixed
                              Left 0
                              Top "0px"

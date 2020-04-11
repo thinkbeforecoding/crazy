@@ -148,6 +148,13 @@ module Hand =
 
         | Private p -> Private(p-1)
 
+    let canPlay =
+        function
+        | Public p -> 
+            p |> List.isEmpty |> not
+        | Private p -> p > 0
+
+
 type Player =
     | Starting of Starting
     | Playing of Playing
@@ -586,6 +593,7 @@ module Player =
         | SelectFirstCrossroad of SelectFirstCrossroad
         | Move of Move
         | PlayCard of PlayCard
+        | EndTurn
     and Start =
         { Parcel: Parcel }
     and SelectFirstCrossroad =
@@ -1120,6 +1128,16 @@ module Board =
                 DrawPile = DrawPile.shuffle DrawPile.cards
                 Barns = barns 
                 Goal = goal } ] 
+        | Board state, Play(playerId, Player.EndTurn) ->
+            if state.Table.Player = playerId then
+                let player = state.Players.[playerId]
+                match player with
+                | Playing p when not (Moves.canMove p.Moves) -> 
+                    [ Next ]
+                | _ -> []
+            else
+                []
+            
         | Board state,Play (playerid, cmd) ->
             let player = state.Players.[playerid]
             let others = otherPlayers playerid state
@@ -1149,14 +1167,14 @@ module Board =
                                 PlayerDrewCards 
                                     { Player = playerid
                                       Cards = Public (state.DrawPile |> DrawPile.take cardsToTake) }
-
-                            match nextState with
-                            | Playing p when not (Moves.canMove p.Moves) ->
-                                Next 
-                            | _ -> ()
+                            else
+                                match nextState with
+                                | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) ->
+                                    Next 
+                                | _ -> ()
                   | _ -> 
                       match nextState with
-                      | Playing p when not (Moves.canMove p.Moves) ->
+                      | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) ->
                               Next 
                       | _ -> ()
                 ]

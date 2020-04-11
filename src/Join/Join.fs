@@ -386,7 +386,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                     mainTitle "Login"
                     div []
                         [ label [] [ str "Email" ]
-                          input [ Type "text"; Id "email" ] ]
+                          input [ Type "email"; Id "email" ] ]
                     button [ OnClick (fun _ ->
                         let email = Browser.Dom.document.getElementById("email") :?> Browser.Types.HTMLInputElement
                         dispatch (Login email.value)
@@ -407,7 +407,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
                     div []
                         [ label [] [ str "Email" ]
-                          input [ Type "text" ; Id "email" ] ]
+                          input [ Type "email" ; Id "email" ] ]
                     div []
                         [ label [] [ str "Name" ]
                           input [ Type "text"; Id "name" ] ]
