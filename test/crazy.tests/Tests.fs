@@ -69,6 +69,10 @@ let ``Fence move``() =
                                   Path (Axe.NW, BN), Horizontal
                                   Path(Axe.NW, BNE), Up ]
                   Field = Field.create (Parcel Axe.center)
+                  Moves = { Capacity = 0; Done = 0 }
+                  Hand = Hand.Public []
+                  Watched = false
+                  HighVoltage = false
                   Power = PowerUp}
 
                       @>
@@ -88,6 +92,10 @@ let ``Fence move reverse``() =
                   Tractor = Crossroad(Axe.N, CLeft)
                   Fence = Fence [ Path (Axe.NW, BNE), Up ]
                   Field = Field.create (Parcel Axe.center)
+                  Moves = { Capacity = 0; Done = 0 }
+                  Hand = Hand.Public []
+                  Watched = false
+                  HighVoltage = false
                   Power = PowerUp} @>
 
 
@@ -107,6 +115,10 @@ let ``Loops are deleted``() =
                   Tractor = Crossroad(Axe.E2, CLeft)
                   Fence = Fence [ Path (Axe.SE, BN), Horizontal ]
                   Field = Field.create (Parcel Axe.center)
+                  Moves = { Capacity = 0; Done = 0 }
+                  Hand = Hand.Public []
+                  Watched = false
+                  HighVoltage = false
                   Power = PowerUp} @>
 
 [<Fact>]

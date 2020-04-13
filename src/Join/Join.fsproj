@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <DefineConstants>FABLE_COMPILER</DefineConstants>
+    <WarningsAsErrors>25</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <None Include="index.html" />

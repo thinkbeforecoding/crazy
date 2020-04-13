@@ -20,6 +20,7 @@ open FSharp.Data.UnitSystems.SI.UnitSymbols
 
 let tryGetEnv = System.Environment.GetEnvironmentVariable >> function null | "" -> None | x -> Some x
 
+printfn "Starting instance: %s" Environment.MachineName
 
 type ServerConfig =
     { Domain: string
@@ -161,7 +162,7 @@ let gameRunner container gameid =
                         async {
                             
                             let events = Board.decide cmd board 
-                            let newBoard = List.fold Board.evolve state events
+                            let newBoard = List.fold Board.evolve board events
 
 
 
@@ -293,6 +294,45 @@ let update claim clientDispatch msg (model: PlayerState) =
 
             model, Cmd.none
         | NotConnected -> model, Cmd.none
+
+let handleGame gameId i events =
+    match events with
+    | [Board.Started e] ->
+
+        Events ([ Board.Started { e with DrawPile = [] } ], i)
+        |> connections.SendClientIf (function Connected c when c.GameId = gameId -> true  | _ -> false )
+    | _ ->
+        let drawingPlayers =
+            events
+            |> List.choose (function
+                | Board.PlayerDrewCards e -> Some e.Player
+                | _ -> None)
+            |> set
+
+        for drawingPlayer in drawingPlayers do
+            let personalEvents =
+                events
+                |> List.map (
+                    function
+                    | Board.PlayerDrewCards e when e.Player <> drawingPlayer ->
+                        Board.PlayerDrewCards { e with Cards = Hand.toPrivate e.Cards }
+                    | e -> e
+                )
+            connections.SendClientIf (function | Connected c when c.GameId = gameId && c.Player = drawingPlayer -> true  | _ -> false) 
+                (Events (personalEvents, i ))
+
+        let privateEvents =
+                events
+                |> List.map (
+                    function
+                    | Board.PlayerDrewCards e ->
+                        Board.PlayerDrewCards { e with Cards = Hand.toPrivate e.Cards }
+                    | e -> e
+                )
+
+
+        connections.SendClientIf (function | Connected c when c.GameId = gameId && not (Set.contains c.Player drawingPlayers ) -> true  | _ -> false)
+            (Events (privateEvents, i ))
 
 
 module Template =
@@ -622,22 +662,19 @@ module Join =
                             async {
                                 let events = decide cmd state 
 
-                                if List.isEmpty events then
-                                    return state, expectedVersion
-                                else
-                                    let! result =
-                                        EventStore.append serialize container stream expectedVersion events
-                                        |> Async.AwaitTask
-                                    match result with
-                                    | Ok nextExpectedVersion ->
-                                        let newState = List.fold evolve state events
-                                        reply (events, nextExpectedVersion)
-                                        return (newState, nextExpectedVersion)
-                                    | Error e ->
-                                        let! newState, nextExpectedVersion =
-                                           EventStore.fold deserialize container evolve stream state expectedVersion
-                                           |> Async.AwaitTask
-                                        return! exec newState nextExpectedVersion 
+                                let! result =
+                                    EventStore.append serialize container stream expectedVersion events
+                                    |> Async.AwaitTask
+                                match result with
+                                | Ok nextExpectedVersion ->
+                                    let newState = List.fold evolve state events
+                                    reply (events, nextExpectedVersion)
+                                    return (newState, nextExpectedVersion)
+                                | Error e ->
+                                    let! newState, nextExpectedVersion =
+                                       EventStore.fold deserialize container evolve stream state expectedVersion
+                                       |> Async.AwaitTask
+                                    return! exec newState nextExpectedVersion 
                             }
 
                         let! newState, nextExpectedVersion =  exec state expectedVersion
@@ -770,31 +807,20 @@ module Join =
 
         | _ -> model, Cmd.none
 
-    let subsJoin =
-        let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
+
+    let handleJoin gameid i events =
+        connections.SendClientIf (function SetupGame id | JoiningGame id | Started id when id = gameid -> true | _ -> false ) (Events (events, i))
         
-        let container = client.GetContainer("crazyfarmers", "crazyfarmers")
-        let feed =
-           container.GetChangeFeedProcessorBuilder<EventStore.BatchData>("join-" + Environment.MachineName,
-                fun changes ct ->
-                    task {
-                        for c in changes do
-                            if c.p.StartsWith("join-") then
-                                let events = 
-                                    [ for ed in c.e do
-                                        yield! deserialize (ed.c, ed.d) ]
-                                let gameid = c.p.Substring(5) 
-                                connections.SendClientIf (function SetupGame id | JoiningGame id | Started id when id = gameid -> true | _ -> false ) (Events (events, c.i))
-                            
-                        
-                    } :> Task
-            )
-            .WithLeaseContainer(client.GetContainer("crazyfarmers", "subscriptions"))
-            .WithInstanceName(Environment.MachineName)
-            .WithPollInterval(TimeSpan.FromMilliseconds 500.)
-            .Build()
-        feed.StartAsync() |> Async.AwaitTask |> Async.RunSynchronously
+let subs = 
+    let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
+    let container = client.GetContainer("crazyfarmers", "crazyfarmers")
+
+    EventStore.subscription client container ("game-"+Environment.MachineName)
+        [ EventStore.handler "game-" deserialize handleGame
+          EventStore.handler "join-" Join.deserialize Join.handleJoin ]
         
+
+
         
 
 let joinGame claim  =
@@ -824,66 +850,6 @@ let configureServices (services : IServiceCollection) =
     services.AddGiraffe() |> ignore
     services.AddSingleton<Giraffe.Serialization.Json.IJsonSerializer>(Thoth.Json.Giraffe.ThothSerializer()) |> ignore
 
-
-let subsGame =
-    let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
-    
-    let container = client.GetContainer("crazyfarmers", "crazyfarmers")
-    let feed =
-       container.GetChangeFeedProcessorBuilder<EventStore.BatchData>("game-"+Environment.MachineName,
-            fun changes ct ->
-                task {
-                    for c in changes do
-                        if c.p.StartsWith("game-") then
-                            let events = 
-                                [ for ed in c.e do
-                                    yield! deserialize (ed.c, ed.d) ]
-                            let gameId = c.p.Substring(5) 
-
-                            match events with
-                            | [Board.Started e] ->
-
-                                Events ([ Board.Started { e with DrawPile = [] } ], c.i)
-                                |> connections.SendClientIf (function Connected c when c.GameId = gameId -> true  | _ -> false )
-                            | _ ->
-                                let drawingPlayers =
-                                    events
-                                    |> List.choose (function
-                                        | Board.PlayerDrewCards e -> Some e.Player
-                                        | _ -> None)
-                                    |> set
-
-                                for drawingPlayer in drawingPlayers do
-                                    let personalEvents =
-                                        events
-                                        |> List.map (
-                                            function
-                                            | Board.PlayerDrewCards e when e.Player <> drawingPlayer ->
-                                                Board.PlayerDrewCards { e with Cards = Hand.toPrivate e.Cards }
-                                            | e -> e
-                                        )
-                                    connections.SendClientIf (function | Connected c when c.GameId = gameId && c.Player = drawingPlayer -> true  | _ -> false) 
-                                        (Events (personalEvents, c.i ))
-
-                                let privateEvents =
-                                        events
-                                        |> List.map (
-                                            function
-                                            | Board.PlayerDrewCards e ->
-                                                Board.PlayerDrewCards { e with Cards = Hand.toPrivate e.Cards }
-                                            | e -> e
-                                        )
-
-
-                                connections.SendClientIf (function | Connected c when c.GameId = gameId && not (Set.contains c.Player drawingPlayers ) -> true  | _ -> false)
-                                    (Events (privateEvents, c.i ))
-                } :> Task
-        )
-        .WithLeaseContainer(client.GetContainer("crazyfarmers", "subscriptions"))
-        .WithInstanceName(Environment.MachineName)
-        .WithPollInterval(TimeSpan.FromMilliseconds 500.)
-        .Build()
-    feed.StartAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
 
 WebHost

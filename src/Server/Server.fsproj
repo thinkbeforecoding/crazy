@@ -4,6 +4,12 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.1</TargetFramework>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+      <WarningsAsErrors>3239;25</WarningsAsErrors>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+      <WarningsAsErrors>3239;25</WarningsAsErrors>
+    </PropertyGroup>
     <ItemGroup>
         <None Include="paket.references" />
         <Compile Include="Bridge.fs" />

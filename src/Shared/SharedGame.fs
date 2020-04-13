@@ -1182,6 +1182,7 @@ module Board =
                 []
         | _ -> []
 
+
     let evolve (state: Board) event =
         match state,event with
         | InitialState, Started s ->

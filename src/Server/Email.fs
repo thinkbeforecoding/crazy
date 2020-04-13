@@ -48,14 +48,17 @@ let smtpConfig =
 
 
 let sendCode baseUri email userid code =
-    let msg = MimeMessage()
-    msg.From.Add(MailboxAddress("Crazy Farmers","no-reply@thefreaky42.com"))
-    msg.To.Add(MailboxAddress(email))
-    msg.Subject <- "Crazy Farmers"
-    msg.Body <- TextPart("html", Text = renderToString (mailContent baseUri userid code))
+    try
+        let msg = MimeMessage()
+        msg.From.Add(MailboxAddress("Crazy Farmers","no-reply@thefreaky42.com"))
+        msg.To.Add(MailboxAddress(email))
+        msg.Subject <- "Crazy Farmers"
+        msg.Body <- TextPart("html", Text = renderToString (mailContent baseUri userid code))
 
-    let client = new SmtpClient()
-    client.Connect(smtpConfig.Host,smtpConfig.Port  ,true)
-    client.Authenticate(smtpConfig.User,smtpConfig.Password)
-    client.Send(msg)
+        let client = new SmtpClient()
+        client.Connect(smtpConfig.Host,smtpConfig.Port  ,true)
+        client.Authenticate(smtpConfig.User,smtpConfig.Password)
+        client.Send(msg)
+    with 
+    | ex -> printfn "Error while sending email:\n%O" ex
 
