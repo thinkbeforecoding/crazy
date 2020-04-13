@@ -35,6 +35,7 @@ body {
 }
 .player {
     background-size: contain;
+    background-repeat: no-repeat;
     width: 2.5vw;
     height: 2.5vw;
     position: absolute;
@@ -42,6 +43,7 @@ body {
 
 .tile {
     background-size: contain;
+    background-repeat: no-repeat;
     width: 9vw;
     height: 9vw;
     position: absolute;
@@ -180,6 +182,7 @@ $back-y: 0.15vw;
     .bribe {
         background-image: url(/img/card-bribe.jpg);
     }
+
 
     .z1 {
         top: 0;

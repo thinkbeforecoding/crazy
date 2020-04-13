@@ -113,7 +113,9 @@ let serialize =
     | Board.Event.Played (playerid, Player.Event.CardPlayed e  ) -> "CardPlayed" , box { Player = playerid; Event = e }
     | Board.Event.Played (playerid, Player.Event.HighVoltaged  ) -> "HighVoltaged" , box { Player = playerid; Event = null }
     | Board.Event.Played (playerid, Player.Event.Watched  ) -> "Watched" , box { Player = playerid; Event = null }
+    | Board.Event.Played (playerid, Player.Event.Rutted  ) -> "Rutted" , box { Player = playerid; Event = null }
     | Board.Event.Played (playerid, Player.Event.SpedUp e  ) -> "SpedUp" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.BonusDiscarded e  ) -> "BonusDiscarded" , box { Player = playerid; Event = e }
     | Board.Event.Next  -> "Next" , null
     | Board.Event.PlayerDrewCards e  -> "PlayerDrewCards" , box e
     | Board.Event.GameWon e  -> "GameWon" , box e
@@ -133,7 +135,9 @@ let deserialize =
     | "CardPlayed", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.CardPlayed e)]
     | "HighVoltaged", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.HighVoltaged )]
     | "Watched", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Watched )]
+    | "Rutted", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Rutted )]
     | "SpedUp", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.SpedUp e)]
+    | "BonusDiscarded", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.BonusDiscarded e)]
     | "Next", _ -> [ Board.Next]
     | "PlayerDrewCards", JObj e -> [ Board.PlayerDrewCards e ]
     | "GameWon", JObj e -> [ Board.GameWon e ]
@@ -197,7 +201,6 @@ let gameRunner container gameid =
     )
 
      
-
 let runner =
     let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
     let container = client.GetContainer("crazyfarmers","crazyfarmers")

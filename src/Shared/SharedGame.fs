@@ -162,6 +162,7 @@ and Starting =
     { Color: Color
       Parcel: Parcel
       Hand: Hand
+      Bonus: Bonus
       }
 and Playing =
     { Color: Color
@@ -171,12 +172,20 @@ and Playing =
       Power: Power
       Moves: Moves
       Hand: Hand 
-      Watched: bool
-      HighVoltage: bool
+      Bonus: Bonus
       } 
 and Moves =
     { Capacity: int
       Done: int}
+and Bonus =
+    { NitroOne: int
+      NitroTwo: int
+      Watched: bool
+      HighVoltage: bool
+      Rutted: int
+      Helicopter: int
+      }
+
 
 
 type Table =
@@ -196,6 +205,55 @@ type Table =
           Names = Map.ofList players
           }
 
+
+module Bonus =
+    let empty =
+        { NitroOne = 0
+          NitroTwo = 0
+          Watched = false
+          HighVoltage = false
+          Rutted = 0
+          Helicopter = 0
+          }
+
+    let startTurn bonus =
+        [ if bonus.HighVoltage then
+            HighVoltage
+          if bonus.Watched then
+             Watchdog
+
+        ]
+
+    let endTurn bonus =
+        [ for _ in 1..bonus.NitroOne do
+            Nitro One
+          for _ in 1..bonus.NitroTwo do
+            Nitro Two
+          for _ in 1..bonus.Rutted do
+            Rut
+          for _ in 1..bonus.Helicopter do
+            Helicopter
+        ]
+
+    let moveCapacityChange bonus =
+        bonus.Rutted * -2
+
+
+    let discard card bonus =
+        match card with
+        | Nitro One ->
+            { bonus with NitroOne = bonus.NitroOne - 1  }
+        | Nitro Two ->
+            { bonus with NitroTwo = bonus.NitroTwo - 1 }
+        | Watchdog ->
+            { bonus with Watched = false}
+        | HighVoltage ->
+            { bonus with HighVoltage = false }
+        | Rut ->
+            { bonus with Rutted = bonus.Rutted - 1}
+        | Helicopter ->
+            { bonus with Helicopter = bonus.Helicopter - 1 }
+        | _ -> bonus
 
 type Board = 
     | InitialState
@@ -217,7 +275,8 @@ type PlayerState =
 and StartingState =
     { SColor: Color
       SParcel: Parcel
-      SHand: Hand }
+      SHand: Hand
+      SBonus: Bonus}
 and PlayingState =
     { SColor: Color 
       STractor: Crossroad
@@ -226,8 +285,7 @@ and PlayingState =
       SPower: Power
       SMoves: Moves 
       SHand: Hand
-      SHighVoltage: bool
-      SWatched: bool
+      SBonus: Bonus
       }
 
 type BoardState = 
@@ -359,7 +417,7 @@ module Fence =
 
     let protection player fence =
         let fence = fenceCrossroads player.Tractor fence
-        if player.HighVoltage then
+        if player.Bonus.HighVoltage then
             fence
         else
             fence |> Seq.truncate 2
@@ -569,12 +627,14 @@ module Moves =
         { Capacity = 0
           Done = 0}
 
-    let startTurn fence  =
+    let startTurn fence bonus =
         { Capacity = 
-            if Fence.givesAcceleration fence then
-                4
-            else
-                3
+            let baseMoves = 
+                if Fence.givesAcceleration fence then
+                    4
+                else
+                    3
+            baseMoves + Bonus.moveCapacityChange bonus
           Done = 0 }
 
     let canMove m =
@@ -614,7 +674,9 @@ module Player =
         | PoweredUp
         | CardPlayed of PlayCard
         | SpedUp of SpedUp
+        | Rutted
         | HighVoltaged
+        | BonusDiscarded of Card
         | Watched
     and Started =
         { Parcel : Parcel }
@@ -643,7 +705,7 @@ module Player =
     let isCut tractor player =
         match player with
         | Playing player ->
-            not player.HighVoltage
+            not player.Bonus.HighVoltage
             &&
             Fence.fenceCrossroads player.Tractor player.Fence
             |> Seq.contains tractor
@@ -668,9 +730,7 @@ module Player =
         | Playing p ->
             Playing 
                 { p with
-                    Moves = Moves.startTurn p.Fence
-                    HighVoltage = false
-                    Watched = false }
+                    Moves = Moves.startTurn p.Fence p.Bonus }
         | Starting _ -> player
 
     let color player =
@@ -682,6 +742,11 @@ module Player =
         match player with
         | Playing p -> p.Hand
         | Starting p -> p.Hand
+
+    let bonus player =
+        match player with
+        | Playing p -> p.Bonus
+        | Starting p -> p.Bonus
 
 
     let toPrivate player =
@@ -697,7 +762,7 @@ module Player =
 
     let watchedField player =
         match player with
-        | Playing ({ Watched = true; Field = field }) -> field
+        | Playing ({ Bonus = { Watched = true }; Field = field }) -> field
         | _ -> Field.empty
                     
     let decide (otherPlayers: (string * Player) list) barns command player =
@@ -809,6 +874,8 @@ module Player =
                 | PlayWatchdog ->
                         [ CardPlayed card
                           Watched ]
+                | PlayRut _ ->
+                    [ CardPlayed card ]
                 | _ -> []
             else 
                 []
@@ -825,10 +892,9 @@ module Player =
                       Fence = Fence.empty
                       Field = Field.create p.Parcel
                       Power = PowerUp
-                      Moves = Moves.startTurn Fence.empty
+                      Moves = Moves.startTurn Fence.empty p.Bonus
                       Hand = p.Hand
-                      HighVoltage = false
-                      Watched = false
+                      Bonus = p.Bonus
                       }
         | Playing player, FenceDrawn e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.add (e.Path, e.Move) player.Fence; Moves = Moves.doMove player.Moves }
         | Playing player, FenceRemoved e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.tail player.Fence ; Moves = Moves.doMove player.Moves }
@@ -837,14 +903,19 @@ module Player =
         | Playing player, MovedPowerless e -> Playing { player with Tractor = e.Crossroad; Moves = Moves.doMove player.Moves  }
         | Playing player, PoweredUp -> Playing { player with Power = PowerUp }
         | Playing player, Annexed e -> Playing { player with Fence = Fence.empty; Field = player.Field + Field.ofParcels e.NewField}
-        | Playing player, HighVoltaged -> Playing { player with HighVoltage = true}
-        | Playing player, Watched -> Playing { player with Watched = true}
+        | Playing player, HighVoltaged -> Playing { player with Bonus = { player.Bonus with  HighVoltage = true}}
+        | Playing player, Watched -> Playing { player with Bonus = { player.Bonus with  Watched = true }}
+        | Playing player, Rutted -> Playing { player with Bonus = { player.Bonus with  Rutted = player.Bonus.Rutted + 1 }}
         | Playing player, SpedUp e -> Playing { player with Moves = player.Moves |> Moves.addCapacity e.Speed }
         | Playing player, CardPlayed card ->
             Playing { player with
                         Hand = 
                             player.Hand 
                             |> Hand.remove (Card.ofPlayCard card) }
+
+        |  Playing player, BonusDiscarded e ->
+            Playing { player with
+                        Bonus = player.Bonus |> Bonus.discard e }
         | _ -> player 
 
 
@@ -862,7 +933,7 @@ module Player =
         | _ -> failwith "Not playing"
 
     let start color parcel pos =
-        Starting  { Parcel = parcel; Color = color; Hand = Public [] }
+        Starting  { Parcel = parcel; Color = color; Hand = Public []; Bonus = Bonus.empty  }
         |> exec [] Barns.empty (SelectFirstCrossroad { Crossroad = pos})
 
 
@@ -941,6 +1012,7 @@ module Player =
                 { SColor = p.Color
                   SParcel = p.Parcel
                   SHand = p.Hand
+                  SBonus = p.Bonus
                   }
         | Playing p ->
             SPlaying
@@ -953,8 +1025,7 @@ module Player =
                   SPower = p.Power
                   SMoves = p.Moves
                   SHand = p.Hand
-                  SHighVoltage = p.HighVoltage
-                  SWatched = p.Watched
+                  SBonus = p.Bonus
                   }
 
     let ofState (p: PlayerState) =
@@ -963,7 +1034,8 @@ module Player =
             Starting 
                 { Color = p.SColor
                   Parcel = p.SParcel
-                  Hand = p.SHand }
+                  Hand = p.SHand
+                  Bonus = p.SBonus}
         | SPlaying p ->
             Playing {
                 Color = p.SColor
@@ -973,8 +1045,7 @@ module Player =
                 Power = p.SPower
                 Moves = p.SMoves
                 Hand = p.SHand
-                HighVoltage = p.SHighVoltage
-                Watched = p.SWatched
+                Bonus = p.SBonus
             }
 
 module DrawPile =
@@ -989,12 +1060,15 @@ module DrawPile =
           Watchdog,    2
           Helicopter,  6
           Bribe,       3]
-        |> List.collect (fun (c,n) -> [for i in 1..n -> c])
+        |> List.collect (fun (c,n) -> [for _ in 1..n -> c])
 
 
     let shuffle cards =
         let rand = System.Random()
-        List.sortBy (fun _ -> rand.Next()) cards
+        //List.sortBy (fun _ -> rand.Next()) cards
+        List.sortBy (function
+            | Rut -> System.Int32.MinValue
+            | _ -> rand.Next()) cards
 
 
     let remove cards pile =
@@ -1056,6 +1130,20 @@ module Board =
             |> Map.toList
             |> List.tryFind (fun (_, p) -> Player.fieldTotalSize p >= goal)
 
+
+    let next state =
+        let playerId = state.Table.Player
+        let player = state.Players.[playerId]
+        let nextPlayerId = state.Table.Next.Player 
+        let nextPlayer = state.Players.[nextPlayerId]
+        [ yield! 
+           Bonus.endTurn (Player.bonus player)
+           |> List.map (fun c -> Played(playerId, Player.BonusDiscarded c))
+          yield Next
+          yield! 
+           Bonus.startTurn (Player.bonus nextPlayer)
+           |> List.map (fun c -> Played(nextPlayerId, Player.BonusDiscarded c))
+                       ]
 
 
     let decide cmd (state: Board) =
@@ -1133,7 +1221,7 @@ module Board =
                 let player = state.Players.[playerId]
                 match player with
                 | Playing p when not (Moves.canMove p.Moves) -> 
-                    [ Next ]
+                    next state
                 | _ -> []
             else
                 []
@@ -1146,8 +1234,15 @@ module Board =
                 let events = 
                     Player.decide others state.Barns cmd player
 
+
+
                 [ for e in events do
                     Played(playerid,e)
+
+                  match List.tryPick (function Player.CardPlayed (PlayRut victim) -> Some victim | _ -> None) events  with
+                  | Some victim ->
+                    Played(victim, Player.Rutted)
+                  | _ -> ()
                   
                   let nextState = List.fold Player.evolve player events
 
@@ -1170,12 +1265,12 @@ module Board =
                             else
                                 match nextState with
                                 | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) ->
-                                    Next 
+                                    yield! next state 
                                 | _ -> ()
                   | _ -> 
                       match nextState with
                       | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) ->
-                              Next 
+                              yield! next state 
                       | _ -> ()
                 ]
             else
@@ -1188,7 +1283,7 @@ module Board =
         | InitialState, Started s ->
             Board 
                 { Players =
-                    Map.ofList [ for c,u,n,p in s.Players -> u, Starting { Color = c; Parcel = p; Hand = Public []}]
+                    Map.ofList [ for c,u,n,p in s.Players -> u, Starting { Color = c; Parcel = p; Hand = Public []; Bonus = Bonus.empty}]
                   Table =  Table.start [ for _,p,n,_ in s.Players -> p,n ] 
                   DrawPile = s.DrawPile
                   DiscardPile = []

@@ -320,7 +320,7 @@ let cardName =
     | Helicopter -> "card helicopter"
     | Bribe -> "card bribe"
 
-let handView dispatch cardAction =
+let handView dispatch otherPlayers cardAction =
     function 
     | Public cards -> 
        div [ ClassName "cards" ]
@@ -334,6 +334,12 @@ let handView dispatch cardAction =
                 match cardAction with
                 | Some(index, Nitro power) when index = i ->
                     button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str "Play" ]
+                | Some(index, Rut) when index = i ->
+                    for playerId, player in otherPlayers do
+                          div [ OnClick (fun _ -> dispatch (PlayCard (PlayRut playerId)))
+                                ClassName (colorName (Player.color player)) ] [
+                                    div [ ClassName "player"] []
+                                ] 
                 | Some(index, HighVoltage ) when index = i ->
                     button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str "Play" ]
                 | Some(index, Watchdog ) when index = i ->
@@ -422,8 +428,11 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         
                        
                         div [Style [ MarginLeft "3em" ]] [ str board.Table.Names.[board.Table.Player] ]
+
+                        let otherPlayers =
+                            Board.otherPlayers board.Table.Player board
                         
-                        handView dispatch model.CardAction (Player.hand player)
+                        handView dispatch otherPlayers  model.CardAction (Player.hand player)
 
                         goalView board
                     ]
