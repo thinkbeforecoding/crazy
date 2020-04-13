@@ -1065,10 +1065,7 @@ module DrawPile =
 
     let shuffle cards =
         let rand = System.Random()
-        //List.sortBy (fun _ -> rand.Next()) cards
-        List.sortBy (function
-            | Rut -> System.Int32.MinValue
-            | _ -> rand.Next()) cards
+        List.sortBy (fun _ -> rand.Next()) cards
 
 
     let remove cards pile =
@@ -1302,6 +1299,7 @@ module Board =
                 Board { board with
                             Players = Map.add playerid cutPlayer board.Players }
             | _ -> state
+
         | Board board, Played (playerid, Player.Annexed e ) ->
             let annexedPlayer = Player.evolve board.Players.[playerid] (Player.Annexed e)
             let newMap = Map.add playerid annexedPlayer board.Players
@@ -1328,13 +1326,20 @@ module Board =
                     Players = Map.add e.Player player board.Players
                     DrawPile = newDrawPile }
 
-            
+ 
 
 
         | Board board, Played (playerid,e) ->
             let player = Player.evolve board.Players.[playerid] e
+            let newDiscardPile =
+                match e with
+                | Player.BonusDiscarded card ->
+                    card :: board.DiscardPile
+                | _ -> board.DiscardPile
+
             Board { board with
-                       Players = Map.add playerid player board.Players }
+                       Players = Map.add playerid player board.Players
+                       DiscardPile = newDiscardPile }
         | Board board, Next ->
             let nextTable = board.Table.Next
             let player = Player.startTurn board.Players.[nextTable.Player]
