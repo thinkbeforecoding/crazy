@@ -54,6 +54,7 @@ body {
     height: 9vw;
     position: absolute;
     background-image: url(/img/barn.png);
+    background-repeat: no-repeat;
 }
 .barn.occupied {
     background-image: url(/img/barn-occupied.png);
@@ -65,6 +66,21 @@ body {
     width: 2.5vw;
     height: 2.5vw;
     position: absolute;
+}
+
+.hay-bale {
+    background-image: url(/img/hay-bale.png);
+    background-repeat: no-repeat;
+    background-size: contain;
+    position: absolute;
+
+    width: 3vw;
+    height: 3vw;
+}
+.path {
+    position: absolute;
+    width: 3vw;
+    height: 3vw;
 }
 
 .blue {

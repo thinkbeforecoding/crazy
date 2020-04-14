@@ -99,7 +99,7 @@ and CardPower = One | Two
 type PlayCard =
     | PlayNitro of CardPower
     | PlayRut of string
-    | PlayHayBale of Crossroad list
+    | PlayHayBale of Path list
     | PlayDynamite of Path
     | PlayHighVoltage
     | PlayWatchdog
@@ -265,7 +265,9 @@ and PlayingBoard =
       DrawPile: Card list
       DiscardPile: Card list
       Barns: Barns
-      Goal: Goal }
+      HayBales: Path Set
+      Goal: Goal
+      }
 
 
 
@@ -294,6 +296,7 @@ type BoardState =
       SDiscardPile: Card []
       SFreeBarns: Parcel[]
       SOccupiedBarns: Parcel[]
+      SHayBales: Path[]
       SGoal: Goal
       SWinner: string
     }
@@ -372,6 +375,19 @@ module Path =
     let ofMoves moves start =
         List.mapFold (fun pos move -> (neighbor move pos, move), Crossroad.neighbor move pos) start moves
 
+    let allInnerPaths =
+        set [ for q in -3 .. 3 do
+                for r in max -2 (-2-q) .. min 3 (3-q)  do
+                    Path(Axe(q,r), BN)
+
+              for q in -3 .. 2 do
+                for r in max -2 (-3-q) .. min 3 (3-q)  do
+                    Path(Axe(q,r), BNE)
+
+              for q in -2 .. 3 do
+                for r in max -3 (-2-q) .. min 3 (3-q) do
+                    Path(Axe(q,r), BNW) ]
+        
 
 type LMax =  
     { Max: Axe
@@ -423,6 +439,9 @@ module Fence =
                     yield! loop next tail
             }
         loop tractor paths 
+
+    let fencePaths (Fence paths) =
+        paths |> List.map fst
 
     let protection player fence =
         let fence = fenceCrossroads player.Tractor fence
@@ -495,7 +514,6 @@ module Field =
         |> Seq.collect Parcel.crossroads
         |> set
 
-   
     let fill (paths: (Path * Direction) list) =
         let sortedPaths = 
             paths
@@ -630,6 +648,7 @@ type MoveBlocker =
     | Tractor
     | Protection
     | PhytosanitaryProducts
+    | HayBaleOnPath
 
 
 type Move =
@@ -906,6 +925,9 @@ module Player =
                 | PlayHelicopter crossroad ->
                     [  CardPlayed card
                        Heliported crossroad ]
+                | PlayHayBale _ 
+                | PlayDynamite _ ->
+                    [ CardPlayed card ]
 
                 | _ -> []
             else 
@@ -1140,6 +1162,8 @@ module Board =
         | Next
         | PlayerDrewCards of PlayerDrewCards
         | GameWon of string
+        | HayBalesPlaced of Path list
+        | HayBaleDynamited of Path
     and Started =
         { Players: (Color*string*string*Parcel) list 
           DrawPile: Card list
@@ -1286,10 +1310,15 @@ module Board =
                 [ for e in events do
                     Played(playerid,e)
 
-                  match List.tryPick (function Player.CardPlayed (PlayRut victim) -> Some victim | _ -> None) events  with
-                  | Some victim ->
-                    Played(victim, Player.Rutted)
-                  | _ -> ()
+                  for e in events do
+                    match e with
+                    | Player.CardPlayed (PlayRut victim) -> 
+                        Played(victim, Player.Rutted)
+                    | Player.CardPlayed (PlayHayBale bales) ->
+                        HayBalesPlaced bales
+                    | Player.CardPlayed (PlayDynamite bale) ->
+                        HayBaleDynamited bale
+                    | _ -> ()
                   
                   let nextState = List.fold Player.evolve player events
 
@@ -1335,6 +1364,7 @@ module Board =
                   DrawPile = s.DrawPile
                   DiscardPile = []
                   Barns = Barns.init s.Barns
+                  HayBales = Set.empty
                   Goal = s.Goal }
         | InitialState, _ -> state
         | Board _, Started _ -> state
@@ -1376,9 +1406,14 @@ module Board =
                     Players = Map.add e.Player player board.Players
                     DrawPile = newDrawPile }
 
- 
-
-
+        | Board board, HayBalesPlaced p ->
+            Board {
+                board with
+                    HayBales = board.HayBales + set p }
+        | Board board, HayBaleDynamited p ->
+            Board {
+                board with
+                    HayBales = board.HayBales |> Set.remove p }
         | Board board, Played (playerid,e) ->
             let player = Player.evolve board.Players.[playerid] e
             let newDiscardPile =
@@ -1414,6 +1449,7 @@ module Board =
               SDiscardPile = List.toArray board.DiscardPile
               SFreeBarns = Field.parcels board.Barns.Free |> List.toArray
               SOccupiedBarns = Field.parcels board.Barns.Occupied |> List.toArray
+              SHayBales = Set.toArray board.HayBales
               SGoal = board.Goal
               SWinner = null
                          }
@@ -1423,6 +1459,7 @@ module Board =
               SDiscardPile = [||]
               SFreeBarns = null
               SOccupiedBarns = null
+              SHayBales = null
               SGoal = Common 0
               SWinner = null }
         | Won(player, board) ->
@@ -1438,6 +1475,7 @@ module Board =
               SDiscardPile = List.toArray board.DiscardPile
               SFreeBarns = Field.parcels board.Barns.Free |> List.toArray
               SOccupiedBarns = Field.parcels board.Barns.Occupied |> List.toArray
+              SHayBales = Set.toArray board.HayBales
               SGoal = board.Goal
               SWinner = player }
 
@@ -1457,26 +1495,36 @@ module Board =
                     DiscardPile = Array.toList board.SDiscardPile
                     Barns = { Free = Field.ofParcels board.SFreeBarns
                               Occupied = Field.ofParcels board.SOccupiedBarns }
+                    HayBales = set board.SHayBales
                     Goal = board.SGoal }
             match board.SWinner with
             | null -> Board state
             | winner -> Won(winner, state) 
         
+
     let possibleMoves playerid (board: Board) =
         match board, playerid with
         | Board board, Some playerid ->
             match Map.tryFind playerid board.Players with
-            | Some ((Playing _) as player)->
+            | Some ((Playing p) as player)->
                 let otherPlayers =
                     otherPlayers playerid board
                     |> List.map snd
                 let check = 
                     Player.checkMove (Player.bonus player)
+
+
+                    
                 [ 
                     for dir,m in Player.possibleMoves player do
-                        match Seq.fold (fun c p -> Player.bindMove (check p) c) m otherPlayers with
-                        | Ok c -> Move(dir, c)
-                        | Error (c,e) -> ImpossibleMove(dir, c, e) ]
+                        let path = Path.neighbor dir p.Tractor
+                        if Set.contains path board.HayBales then
+                            let c = Crossroad.neighbor dir p.Tractor
+                            ImpossibleMove(dir, c, MoveBlocker.HayBaleOnPath)
+                        else
+                            match Seq.fold (fun c p -> Player.bindMove (check p) c) m otherPlayers with
+                            | Ok c -> Move(dir, c)
+                            | Error (c,e) -> ImpossibleMove(dir, c, e) ]
             | Some (Starting { Parcel = Parcel p}) ->
                 [ SelectCrossroad (Crossroad (p, CLeft))
                   SelectCrossroad (Crossroad (p,CRight))

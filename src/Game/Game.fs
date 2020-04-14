@@ -61,6 +61,15 @@ module Pix =
         x+dx, y+dy
         
 
+type CardExt =
+    | NoExt
+    | FirstHayBale of Path
+
+type CardAction = 
+    { Index: int
+      Card: Card
+      Ext: CardExt }
+
 
 // The model holds data that you want to keep track of while the application is running
 // in this case, we are keeping track of a counter
@@ -72,7 +81,7 @@ type Model = {
     Synched: Board
     Version: int
     PlayerId: string option
-    CardAction: (int* Card) option
+    CardAction: CardAction option
     Moves: Move list 
     Message: string
     Error : string
@@ -85,6 +94,7 @@ type Msg =
     | PlayCard of PlayCard
     | SelectFirstCrossroad of Crossroad
     | SelectCard of Card * int
+    | SelectHayBale of Path
     | CancelCard
     | EndTurn
     | Remote of ClientMsg
@@ -137,13 +147,18 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         |> handleCommand currentModel
     | SelectCard(card,i) ->
         { currentModel with
-            CardAction = Some (i,card) }, Cmd.none
+            CardAction = Some { Index = i; Card = card; Ext = NoExt} }, Cmd.none
     | CancelCard ->
         { currentModel with
             CardAction = None }, Cmd.none
     | PlayCard(card) ->
         Player.PlayCard card
         |> handleCommand { currentModel with CardAction = None}
+    | SelectHayBale bale ->
+        { currentModel with
+            CardAction = 
+                currentModel.CardAction
+                |> Option.map (fun c -> { c with Ext = FirstHayBale bale })}, Cmd.none
     | EndTurn ->
         Player.EndTurn
         |> handleCommand { currentModel with CardAction = None}
@@ -255,6 +270,25 @@ let singleFence path =
                   Top (sprintf "%fvw" y) ]] 
         []
 
+let haybale p =
+    let x,y = Pix.ofFence p |> Pix.translate (0.2,-0.8) |> Pix.rotate
+    div [ ClassName "hay-bale"
+          Style [ Left (sprintf "%fvw" x)
+                  Top (sprintf "%fvw" y) ]
+          ]
+        []
+
+let path p f =
+    let x,y = Pix.ofFence p |> Pix.translate (0.2,-0.8) |> Pix.rotate
+    div [ ClassName "path"
+          Style [ Left (sprintf "%fvw" x)
+                  Top (sprintf "%fvw" y) ]
+          OnClick f
+
+          ]
+        []
+
+
 let sameField x y =
     match x,y with
     | Playing px, Playing py -> px.Field = py.Field
@@ -328,29 +362,37 @@ let handView dispatch player otherPlayers cardAction =
            [ for i,c in List.indexed cards do
                div [ ClassName (cardName c)
                      match cardAction with
-                     | Some(index, _) when index = i -> ()
+                     | Some { Index = index } when index = i -> ()
                      | _ ->
                          OnClick (fun _ -> dispatch (SelectCard(c,i)))
                ] [
+
                 match cardAction with
-                | Some(index, Nitro power) when index = i ->
+                | Some { Index = index; Card = Nitro power} when index = i ->
                     button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str "Play" ]
-                | Some(index, Rut) when index = i ->
+                | Some { Index = index; Card = Rut } when index = i ->
                     for playerId, player in otherPlayers do
                           div [ OnClick (fun _ -> dispatch (PlayCard (PlayRut playerId)))
                                 ClassName (colorName (Player.color player)) ] [
                                     div [ ClassName "player"] []
                                 ] 
-                | Some(index, HighVoltage ) when index = i ->
+                | Some { Index = index; Card = HighVoltage } when index = i ->
                     button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str "Play" ]
-                | Some(index, Watchdog ) when index = i ->
+                | Some { Index = index; Card = Watchdog } when index = i ->
                     button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str "Play" ]
-                | Some(index, Helicopter) when index = i ->
+                | Some { Index = index; Card = Helicopter } when index = i ->
                     if Fence.isEmpty (Player.fence player) then
                         div [] [ str "Select a destination in your field" ]
                     else
                         div [] [ str "Cannot be played with a fence" ]
-
+                | Some { Index = index; Card = HayBale One } when index = i ->
+                    div [] [ str "Select a free path for the hay bale" ]
+                | Some { Index = index; Card = HayBale Two; Ext = NoExt } when index = i ->
+                    div [] [ str "Select a  free paths for the first hay bale" ]
+                | Some { Index = index; Card = HayBale Two; Ext = FirstHayBale _ } when index = i ->
+                    div [] [ str "Select a free paths for the second hay bales" ]
+                | Some { Index = index; Card = Dynamite } when index = i ->
+                    div [] [ str "Select a hay bale to blow up" ]
 
                 | _ -> ()
 
@@ -373,6 +415,12 @@ let barnsView barns =
           for parcel in Field.parcels barns.Occupied do
             barn parcel true ]
 
+let hayBalesView board =
+    div []
+        [ for p in board.HayBales do
+            haybale p
+        ]
+
 let boardView board =
    [ for _,p in Map.toSeq board.Players do
          lazyViewWith sameField playerField p
@@ -383,7 +431,10 @@ let boardView board =
          lazyViewWith sameFence playerFences  p
 
      for _,p in Map.toSeq board.Players do
-         playerTractor  p ]
+         playerTractor  p
+         
+     hayBalesView board
+         ]
 
 let goalView board =
     match board.Goal with
@@ -417,14 +468,38 @@ let helicopterDestinations player board =
                 | _ -> ()
                       ])
 
+let hayBaleDestinations board =
+    Path.allInnerPaths 
+        - Set.unionMany 
+            [ for KeyValue(_,p) in board.Players do
+                p  |> Player.fence |> Fence.fencePaths |> set ]
+        - board.HayBales
+
+    
+
 
 let boardCardActionView dispatch player board  cardAction =
     match cardAction with
-    | Some (_, Helicopter) ->
+    | Some { Card = Helicopter} ->
         [ for c in helicopterDestinations player board do
             crossroad c (fun _ -> dispatch (PlayCard (PlayHelicopter c))) ]
+    | Some { Card =  HayBale One } ->
+        [ for p in hayBaleDestinations board do
+            path p (fun _ -> dispatch (PlayCard (PlayHayBale [ p ]))) ]
+    | Some {Card = HayBale Two; Ext = NoExt } ->
+        [ for p in hayBaleDestinations board do
+            path p (fun _ -> dispatch (SelectHayBale p) ) ]
+    | Some {Card = HayBale Two; Ext = FirstHayBale fp } ->
+        [ haybale fp
+          for p in hayBaleDestinations board do
+            path p (fun _ -> dispatch (PlayCard (PlayHayBale [fp; p])) ) ]
+    | Some { Card =  Dynamite}  ->
+        [ for p in board.HayBales do
+            path p (fun _ -> dispatch (PlayCard (PlayDynamite p))) ]
+
     | _ ->
         []
+
 
 let view (model : Model) (dispatch : Msg -> unit) =
     div [ ClassName "board" ]
@@ -442,6 +517,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 let player =  board.Players.[board.Table.Player]
 
                 yield! boardCardActionView dispatch player board model.CardAction
+
+
 
                 div [ Style [Position PositionOptions.Fixed
                              Left 0
@@ -495,7 +572,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
             //                  Top (sprintf "%fvw" (py+2.5))
             //                  BackgroundColor "white"
             //                   ]] 
-            //        [ str (sprintf "%d,%d,%d" x y z) ]
+            //        [ //str (sprintf "%d,%d,%d" x y z)
+            //          str (sprintf "%d, %d" q r) ]
         ]
 
 

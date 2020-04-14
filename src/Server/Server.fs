@@ -119,6 +119,8 @@ let serialize =
     | Board.Event.Played (playerid, Player.Event.BonusDiscarded e  ) -> "BonusDiscarded" , box { Player = playerid; Event = e }
     | Board.Event.Next  -> "Next" , null
     | Board.Event.PlayerDrewCards e  -> "PlayerDrewCards" , box e
+    | Board.Event.HayBalesPlaced e  -> "HayBalesPlaced" , box e
+    | Board.Event.HayBaleDynamited e  -> "HayBaleDynamited" , box e
     | Board.Event.GameWon e  -> "GameWon" , box e
 
 let deserialize =
@@ -142,6 +144,8 @@ let deserialize =
     | "BonusDiscarded", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.BonusDiscarded e)]
     | "Next", _ -> [ Board.Next]
     | "PlayerDrewCards", JObj e -> [ Board.PlayerDrewCards e ]
+    | "HayBalesPlaced", JObj e -> [ Board.HayBalesPlaced e ]
+    | "HayBaleDynamited", JObj e -> [ Board.HayBaleDynamited e ]
     | "GameWon", JObj e -> [ Board.GameWon e ]
     | _ -> []
 
