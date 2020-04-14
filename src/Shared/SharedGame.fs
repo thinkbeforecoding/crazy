@@ -354,6 +354,20 @@ module Parcel =
           Crossroad(p+Axe.SW, CRight)
           Crossroad(p+Axe.SE, CLeft) ]
 
+    let isOnBoard (Parcel p) =
+        let x,y,z = Axe.cube p
+        abs x <= 3 && abs y <= 3 && abs z <= 3
+
+    let neighbors (Parcel p) =
+        [ Parcel (p + Axe.N)
+          Parcel (p + Axe.NE)
+          Parcel (p + Axe.SE)
+          Parcel (p + Axe.S)
+          Parcel (p + Axe.SW)
+          Parcel (p + Axe.NW) ]
+        |> List.filter isOnBoard
+
+
 module Path =
     let neighbor dir (Crossroad(tile, side)) =
         match side, dir with
@@ -506,8 +520,18 @@ module Field =
     let contains parcel (Field parcels) =
         Set.contains (Parcel parcel) parcels
 
+    let containsParcel parcel (Field parcels) =
+        Set.contains parcel parcels
+
+
     let interesect (Field x) (Field y) =
         Field(Set.intersect x y)
+
+    let unionMany (fields: Field list)=
+        fields
+        |> List.collect parcels
+        |> set
+        |> Field
 
     let crossroads (Field parcels) =
         parcels
@@ -530,8 +554,12 @@ module Field =
         ]
         |> set |> Field
 
- 
-
+    let borderTiles (Field parcels) =
+        (parcels
+         |> Seq.collect Parcel.neighbors
+         |> set)
+        - parcels
+        |> Field
 
     let counterclock field (Crossroad(tile,side)) =
         match side with
@@ -714,6 +742,7 @@ module Player =
         | BonusDiscarded of Card
         | Watched
         | Heliported of Crossroad
+        | Bribed of Bribed
     and Started =
         { Parcel : Parcel }
     and FirstCrossroadSelected =
@@ -737,6 +766,9 @@ module Player =
         { Player: string }
     and SpedUp =
         { Speed: int }
+    and Bribed = 
+        { Parcel: Parcel
+          Victim: string}
 
     let isCut tractor player =
         match player with
@@ -927,9 +959,17 @@ module Player =
                        Heliported crossroad ]
                 | PlayHayBale _ 
                 | PlayDynamite _ ->
-                    [ CardPlayed card ]
+                    [ CardPlayed card
+                      BonusDiscarded (Card.ofPlayCard card) ]
+                | PlayBribe parcel ->
 
-                | _ -> []
+                    [ CardPlayed card
+                      for playerId, player in otherPlayers do
+                        if field player |> Field.containsParcel parcel then
+                          Bribed { Parcel = parcel; Victim = playerId }
+                      BonusDiscarded (Card.ofPlayCard card) ]
+
+
             else 
                 []
 
@@ -961,6 +1001,7 @@ module Player =
         | Playing player, Rutted -> Playing { player with Bonus = { player.Bonus with  Rutted = player.Bonus.Rutted + 1 }}
         | Playing player, SpedUp e -> Playing { player with Moves = player.Moves |> Moves.addCapacity e.Speed }
         | Playing player, Heliported e -> Playing { player with Tractor = e; Bonus = { player.Bonus with Heliported = player.Bonus.Heliported + 1}  }
+        | Playing player, Bribed p -> Playing { player with Field = player.Field + Field.ofParcels [p.Parcel] }
 
         | Playing player, CardPlayed card ->
             Playing { player with
@@ -1414,6 +1455,20 @@ module Board =
             Board {
                 board with
                     HayBales = board.HayBales |> Set.remove p }
+        | Board board, Played(playerid,(Player.Bribed p as e)) ->
+            let newPlayer = Player.evolve board.Players.[playerid] e
+            let newVictim = 
+                match board.Players.[p.Victim] with
+                | Starting p -> Starting p
+                | Playing victim -> Playing { victim with Field = victim.Field - Field.ofParcels [p.Parcel] }
+            Board {
+                board with
+                    Players =
+                        board.Players
+                        |> Map.add playerid newPlayer
+                        |> Map.add p.Victim newVictim 
+            }
+
         | Board board, Played (playerid,e) ->
             let player = Player.evolve board.Players.[playerid] e
             let newDiscardPile =

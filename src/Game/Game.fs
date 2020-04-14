@@ -221,6 +221,16 @@ let parcel (Parcel pos) attr =
                    ]]  @ attr)
           
         []
+let tile (Parcel pos) f = 
+    let x,y = Pix.ofTile pos |> Pix.rotate
+    div ([ ClassName "tile"
+           Style [ Left (sprintf "%fvw" x)
+                   Top (sprintf "%fvw" y)
+                   ]
+           OnClick f
+                   ]   )
+          
+        []
 
 let barn (Parcel pos) occupied = 
     let x,y = Pix.ofTile pos |> Pix.rotate
@@ -393,7 +403,8 @@ let handView dispatch player otherPlayers cardAction =
                     div [] [ str "Select a free paths for the second hay bales" ]
                 | Some { Index = index; Card = Dynamite } when index = i ->
                     div [] [ str "Select a hay bale to blow up" ]
-
+                | Some { Index = index; Card = Bribe } when index = i ->
+                    div [] [ str "Select a parcel on the border of your field to take over" ]
                 | _ -> ()
 
 
@@ -475,6 +486,21 @@ let hayBaleDestinations board =
                 p  |> Player.fence |> Fence.fencePaths |> set ]
         - board.HayBales
 
+let bribeParcels board =
+    let player = board.Players.[board.Table.Player]
+    let border = Field.borderTiles (Player.field player) 
+    let barns = board.Barns.Free + board.Barns.Occupied
+
+    let otherPlayersFields =
+         Board.otherPlayers board.Table.Player board
+         |> List.map (snd >> Player.field)
+         |> Field.unionMany
+
+    (Field.interesect border otherPlayersFields) - barns
+
+
+
+
     
 
 
@@ -496,7 +522,9 @@ let boardCardActionView dispatch player board  cardAction =
     | Some { Card =  Dynamite}  ->
         [ for p in board.HayBales do
             path p (fun _ -> dispatch (PlayCard (PlayDynamite p))) ]
-
+    | Some { Card =  Bribe}  ->
+        [ for p in bribeParcels board |> Field.parcels do
+            tile p (fun _ -> dispatch (PlayCard (PlayBribe p))) ]
     | _ ->
         []
 
