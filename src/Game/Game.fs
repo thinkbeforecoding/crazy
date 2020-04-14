@@ -198,12 +198,13 @@ let colorName color =
     | Red -> "red"
     
 
-let parcel (Parcel pos) = 
+let parcel (Parcel pos) attr = 
     let x,y = Pix.ofTile pos |> Pix.rotate
-    div [ ClassName "tile"
-          Style [ Left (sprintf "%fvw" x)
-                  Top (sprintf "%fvw" y)
-                   ]] 
+    div ([ ClassName "tile"
+           Style [ Left (sprintf "%fvw" x)
+                   Top (sprintf "%fvw" y)
+                   ]]  @ attr)
+          
         []
 
 let barn (Parcel pos) occupied = 
@@ -272,10 +273,10 @@ let playerField  p =
             div [ ClassName (colorName p.Color)]
                 [ let (Field parcels) = p.Field
                   for p in parcels do
-                        parcel p ]
+                        parcel p [] ]
         | Starting { Parcel = p; Color = color } ->
             div [ ClassName (colorName color) ]
-                [ parcel p ] 
+                [ parcel p [] ] 
 let playerFences  p =
     match p with
     | Playing p ->
@@ -320,7 +321,7 @@ let cardName =
     | Helicopter -> "card helicopter"
     | Bribe -> "card bribe"
 
-let handView dispatch otherPlayers cardAction =
+let handView dispatch player otherPlayers cardAction =
     function 
     | Public cards -> 
        div [ ClassName "cards" ]
@@ -344,6 +345,12 @@ let handView dispatch otherPlayers cardAction =
                     button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str "Play" ]
                 | Some(index, Watchdog ) when index = i ->
                     button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str "Play" ]
+                | Some(index, Helicopter) when index = i ->
+                    if Fence.isEmpty (Player.fence player) then
+                        div [] [ str "Select a destination in your field" ]
+                    else
+                        div [] [ str "Cannot be played with a fence" ]
+
 
                 | _ -> ()
 
@@ -399,7 +406,25 @@ let endTurnView dispatch playerId board =
         | _ -> []
     else
         []
-    
+
+let helicopterDestinations player board =
+    Field.crossroads (Player.field player) 
+    - (set [ for _,p in Map.toSeq board.Players do
+                match p with
+                | Playing p ->
+                      p.Tractor
+                      yield! Fence.fenceCrossroads p.Tractor p.Fence
+                | _ -> ()
+                      ])
+
+
+let boardCardActionView dispatch player board  cardAction =
+    match cardAction with
+    | Some (_, Helicopter) ->
+        [ for c in helicopterDestinations player board do
+            crossroad c (fun _ -> dispatch (PlayCard (PlayHelicopter c))) ]
+    | _ ->
+        []
 
 let view (model : Model) (dispatch : Msg -> unit) =
     div [ ClassName "board" ]
@@ -415,6 +440,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 yield! endTurnView dispatch model.PlayerId board
 
                 let player =  board.Players.[board.Table.Player]
+
+                yield! boardCardActionView dispatch player board model.CardAction
 
                 div [ Style [Position PositionOptions.Fixed
                              Left 0
@@ -432,7 +459,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         let otherPlayers =
                             Board.otherPlayers board.Table.Player board
                         
-                        handView dispatch otherPlayers  model.CardAction (Player.hand player)
+                        handView dispatch player otherPlayers  model.CardAction (Player.hand player)
 
                         goalView board
                     ]

@@ -183,7 +183,7 @@ and Bonus =
       Watched: bool
       HighVoltage: bool
       Rutted: int
-      Helicopter: int
+      Heliported: int
       }
 
 
@@ -213,7 +213,7 @@ module Bonus =
           Watched = false
           HighVoltage = false
           Rutted = 0
-          Helicopter = 0
+          Heliported = 0
           }
 
     let startTurn bonus =
@@ -231,7 +231,7 @@ module Bonus =
             Nitro Two
           for _ in 1..bonus.Rutted do
             Rut
-          for _ in 1..bonus.Helicopter do
+          for _ in 1..bonus.Heliported do
             Helicopter
         ]
 
@@ -252,7 +252,7 @@ module Bonus =
         | Rut ->
             { bonus with Rutted = bonus.Rutted - 1}
         | Helicopter ->
-            { bonus with Helicopter = bonus.Helicopter - 1 }
+            { bonus with Heliported = bonus.Heliported - 1 }
         | _ -> bonus
 
 type Board = 
@@ -343,6 +343,14 @@ module Crossroad =
 module Parcel =
     let center = Parcel Axe.center
 
+    let crossroads (Parcel p) =
+        [ Crossroad(p, CLeft)
+          Crossroad(p, CRight)
+          Crossroad(p+Axe.NW, CRight)
+          Crossroad(p+Axe.NE, CLeft)
+          Crossroad(p+Axe.SW, CRight)
+          Crossroad(p+Axe.SE, CLeft) ]
+
 module Path =
     let neighbor dir (Crossroad(tile, side)) =
         match side, dir with
@@ -363,6 +371,7 @@ module Path =
 
     let ofMoves moves start =
         List.mapFold (fun pos move -> (neighbor move pos, move), Crossroad.neighbor move pos) start moves
+
 
 type LMax =  
     { Max: Axe
@@ -480,6 +489,12 @@ module Field =
 
     let interesect (Field x) (Field y) =
         Field(Set.intersect x y)
+
+    let crossroads (Field parcels) =
+        parcels
+        |> Seq.collect Parcel.crossroads
+        |> set
+
    
     let fill (paths: (Path * Direction) list) =
         let sortedPaths = 
@@ -614,6 +629,7 @@ module Barns =
 type MoveBlocker =
     | Tractor
     | Protection
+    | PhytosanitaryProducts
 
 
 type Move =
@@ -678,6 +694,7 @@ module Player =
         | HighVoltaged
         | BonusDiscarded of Card
         | Watched
+        | Heliported of Crossroad
     and Started =
         { Parcel : Parcel }
     and FirstCrossroadSelected =
@@ -747,6 +764,16 @@ module Player =
         match player with
         | Playing p -> p.Bonus
         | Starting p -> p.Bonus
+
+    let fence player =
+        match player with
+        | Playing p -> p.Fence
+        | Starting _ -> Fence.empty
+
+    let field player =
+        match player with
+        | Playing p -> p.Field
+        | Starting p -> Field.ofParcels [p.Parcel]
 
 
     let toPrivate player =
@@ -876,6 +903,10 @@ module Player =
                           Watched ]
                 | PlayRut _ ->
                     [ CardPlayed card ]
+                | PlayHelicopter crossroad ->
+                    [  CardPlayed card
+                       Heliported crossroad ]
+
                 | _ -> []
             else 
                 []
@@ -907,6 +938,8 @@ module Player =
         | Playing player, Watched -> Playing { player with Bonus = { player.Bonus with  Watched = true }}
         | Playing player, Rutted -> Playing { player with Bonus = { player.Bonus with  Rutted = player.Bonus.Rutted + 1 }}
         | Playing player, SpedUp e -> Playing { player with Moves = player.Moves |> Moves.addCapacity e.Speed }
+        | Playing player, Heliported e -> Playing { player with Tractor = e; Bonus = { player.Bonus with Heliported = player.Bonus.Heliported + 1}  }
+
         | Playing player, CardPlayed card ->
             Playing { player with
                         Hand = 
@@ -975,12 +1008,26 @@ module Player =
         else
             Ok c
         
+    let checkHeliported moverBonus player c =
+        if moverBonus.Heliported > 0 then
+            let isOnFence =
+                player.Fence
+                |> Fence.fenceCrossroads player.Tractor
+                |> Seq.exists (fun p -> p = c)
 
-    let checkMove player c =
+            if isOnFence then
+                Error(c, PhytosanitaryProducts )
+            else
+                Ok c
+        else
+            Ok c
+
+    let checkMove moverbonus player c =
         match player with
         | Playing player ->
             checkTractor player c 
             >>= checkProtection player
+            >>= checkHeliported moverbonus player
            
         | _ -> Ok c
 
@@ -1066,6 +1113,9 @@ module DrawPile =
     let shuffle cards =
         let rand = System.Random()
         List.sortBy (fun _ -> rand.Next()) cards
+        //List.sortBy (function
+        //    | Helicopter -> System.Int32.MinValue
+        //    | _ -> rand.Next()) cards
 
 
     let remove cards pile =
@@ -1416,11 +1466,17 @@ module Board =
         match board, playerid with
         | Board board, Some playerid ->
             match Map.tryFind playerid board.Players with
-            | Some ((Playing _) as p)->
-                [ for dir,m in Player.possibleMoves p do
-                    match Seq.fold (fun c p -> Player.bindMove (Player.checkMove p) c) m (List.map snd (otherPlayers playerid board)) with
-                    | Ok c -> Move(dir, c)
-                    | Error (c,e) -> ImpossibleMove(dir, c, e) ]
+            | Some ((Playing _) as player)->
+                let otherPlayers =
+                    otherPlayers playerid board
+                    |> List.map snd
+                let check = 
+                    Player.checkMove (Player.bonus player)
+                [ 
+                    for dir,m in Player.possibleMoves player do
+                        match Seq.fold (fun c p -> Player.bindMove (check p) c) m otherPlayers with
+                        | Ok c -> Move(dir, c)
+                        | Error (c,e) -> ImpossibleMove(dir, c, e) ]
             | Some (Starting { Parcel = Parcel p}) ->
                 [ SelectCrossroad (Crossroad (p, CLeft))
                   SelectCrossroad (Crossroad (p,CRight))

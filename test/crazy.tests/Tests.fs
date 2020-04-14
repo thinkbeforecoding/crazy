@@ -3,7 +3,16 @@ module Tests
 open System
 open Xunit
 open Shared
+open Shared.Player
+open Shared.Board
 open Swensen.Unquote
+
+let (=>) events cmd =
+    events
+    |> List.fold Board.evolve Board.initialState
+    |> Board.decide cmd
+
+let (==) = (=)
 
 [<Fact>]
 let ``IsInField corner``() =
@@ -54,72 +63,144 @@ let ``Path of moves``() =
                       Path(2*Axe.NE, BNE), Down ],
                     Crossroad(2*Axe.NE, CRight))  @>
 
-[<Fact>]
-let ``Fence move``() =
-    test <@
-            Player.start Blue (Parcel Axe.center) (Crossroad (Axe.center, CLeft))
-            |> Player.move Up
-            |> Player.move Up
-            |> Player.move Horizontal
-            |> Player.move Down
-             =  Playing
-                { Color = Blue
-                  Tractor = Crossroad(Axe.NW, CLeft)
-                  Fence = Fence [ Path (Axe.NW, BNW), Down
-                                  Path (Axe.NW, BN), Horizontal
-                                  Path(Axe.NW, BNE), Up ]
-                  Field = Field.create (Parcel Axe.center)
-                  Moves = { Capacity = 0; Done = 0 }
-                  Hand = Hand.Public []
-                  Watched = false
-                  HighVoltage = false
-                  Power = PowerUp}
+//[<Fact>]
+//let ``Fence move``() =
+//    test <@
+//            Player.start Blue (Parcel Axe.center) (Crossroad (Axe.center, CLeft))
+//            |> Player.move Up
+//            |> Player.move Up
+//            |> Player.move Horizontal
+//            |> Player.move Down
+//             =  Playing
+//                { Color = Blue
+//                  Tractor = Crossroad(Axe.NW, CLeft)
+//                  Fence = Fence [ Path (Axe.NW, BNW), Down
+//                                  Path (Axe.NW, BN), Horizontal
+//                                  Path(Axe.NW, BNE), Up ]
+//                  Field = Field.create (Parcel Axe.center)
+//                  Moves = { Capacity = 0; Done = 0 }
+//                  Hand = Hand.Public []
+//                  Watched = false
+//                  HighVoltage = false
+//                  Power = PowerUp}
 
-                      @>
+//                      @>
 
-[<Fact>]
-let ``Fence move reverse``() =
-    test <@
-            Player.start Blue (Parcel Axe.center) (Crossroad (Axe.center, CLeft))
-            |> Player.move Up
-            |> Player.move Up
-            |> Player.move Horizontal
-            |> Player.move Down
-            |> Player.move Up
-            |> Player.move Horizontal
-             =  Playing
-                { Color = Blue
-                  Tractor = Crossroad(Axe.N, CLeft)
-                  Fence = Fence [ Path (Axe.NW, BNE), Up ]
-                  Field = Field.create (Parcel Axe.center)
-                  Moves = { Capacity = 0; Done = 0 }
-                  Hand = Hand.Public []
-                  Watched = false
-                  HighVoltage = false
-                  Power = PowerUp} @>
 
+//[<Fact>]
+//let ``Fence move reverse``() =
+//    test <@
+//            Player.start Blue (Parcel Axe.center) (Crossroad (Axe.center, CLeft))
+//            |> Player.move Up
+//            |> Player.move Up
+//            |> Player.move Horizontal
+//            |> Player.move Down
+//            |> Player.move Up
+//            |> Player.move Horizontal
+//             =  Playing
+//                { Color = Blue
+//                  Tractor = Crossroad(Axe.N, CLeft)
+//                  Fence = Fence [ Path (Axe.NW, BNE), Up ]
+//                  Field = Field.create (Parcel Axe.center)
+//                  Moves = { Capacity = 0; Done = 0 }
+//                  Hand = Hand.Public []
+//                  Watched = false
+//                  HighVoltage = false
+//                  Power = PowerUp} @>
+
+
+//[<Fact>]
+//let ``Loops are deleted``() =
+//    test <@
+//            Player.start Blue (Parcel Axe.center) (Crossroad (Axe.center, CRight))
+//            |> Player.move Horizontal
+//            |> Player.move Up
+//            |> Player.move Horizontal
+//            |> Player.move Down
+//            |> Player.move Down
+//            |> Player.move Horizontal
+//            |> Player.move Up
+//             =  Playing
+//                { Color = Blue
+//                  Tractor = Crossroad(Axe.E2, CLeft)
+//                  Fence = Fence [ Path (Axe.SE, BN), Horizontal ]
+//                  Field = Field.create (Parcel Axe.center)
+//                  Moves = { Capacity = 0; Done = 0 }
+//                  Hand = Hand.Public []
+//                  Watched = false
+//                  HighVoltage = false
+//                  Power = PowerUp} @>
+let started =
+    Board.Started {
+        Players = [ Blue,"p1","p1", Parcel.center + 2 * Axe.N
+                    Yellow, "p2","p2", Parcel.center + 2 * Axe.S ]
+        DrawPile = []
+        Barns = []
+        Goal = Goal.Common 3
+    }
+
+let left axe = Crossroad (axe,CLeft) 
+let right axe = Crossroad (axe, CRight)
+let pN axe = Path(axe,BN)
+let pNE axe = Path(axe,BNE)
+let pNW axe = Path(axe,BNW)
+
+let played p e =  Board.Played(p,e)
+let play p e =  Board.Play(p,e)
+
+let p1 = played "p1"
+let p2 = played "p2"
+
+let cmd1 =  play "p1"
+let cmd2 =  play "p2"
+
+let fencesDrawn p start dirs =
+    dirs
+    |> List.mapFold 
+        (fun c dir -> 
+            let dest = Crossroad.neighbor dir c
+            let path = Path.neighbor dir c
+            let e = p <| Player.FenceDrawn {Move = dir; Path = path; Crossroad =dest }
+            e,dest
+        ) start
+
+let startfences p start dirs =
+    p (Player.FirstCrossroadSelected { Crossroad = start })
+    :: fst (fencesDrawn p start dirs)
+
+let fence start dirs =
+    dirs
+       |> List.fold 
+           (fun (c,f) dir -> 
+               let dest = Crossroad.neighbor dir c
+               let path = Path.neighbor dir c
+               let newFence = (path, dir) :: f
+               dest, newFence
+           ) (start, [])
+    |> snd
+    |> List.rev
+    |> Fence
+     
+open Axe
 
 [<Fact>]
 let ``Loops are deleted``() =
-    test <@
-            Player.start Blue (Parcel Axe.center) (Crossroad (Axe.center, CRight))
-            |> Player.move Horizontal
-            |> Player.move Up
-            |> Player.move Horizontal
-            |> Player.move Down
-            |> Player.move Down
-            |> Player.move Horizontal
-            |> Player.move Up
-             =  Playing
-                { Color = Blue
-                  Tractor = Crossroad(Axe.E2, CLeft)
-                  Fence = Fence [ Path (Axe.SE, BN), Horizontal ]
-                  Field = Field.create (Parcel Axe.center)
-                  Moves = { Capacity = 0; Done = 0 }
-                  Hand = Hand.Public []
-                  Watched = false
-                  HighVoltage = false
-                  Power = PowerUp} @>
+    let events = 
+        [ started
+          yield! startfences p1 (left (N+NE)) 
+                    [ Down; Horizontal; Down; Down; Horizontal; Up]
+          Next
+          Next ]
+         => cmd1 (Move { Direction = Up; Destination = right N})
+    test 
+        <@
+         events
+         == [ p1 <| FenceLooped { Move = Up
+                                  Crossroad = right N
+                                  Loop = fence (right N) [Horizontal; Down; Down; Horizontal; Up]  } ]
+
+        @>
+
 
 [<Fact>]
 let ``Find boder``() =
@@ -179,10 +260,11 @@ let ``Fill path``() =
     let field = Field.fill paths
 
     test <@
-        start = end'
-        && field = Field(set [ Parcel.center
-                               Parcel.center + Axe.NE
-                               Parcel.center + Axe.SE
-                               Parcel.center + Axe.S]) @>
+            start = end'
+            && field = Field(set [ Parcel.center
+                                   Parcel.center + Axe.NE
+                                   Parcel.center + Axe.SE
+                                   Parcel.center + Axe.S]) @>
+
 
 
