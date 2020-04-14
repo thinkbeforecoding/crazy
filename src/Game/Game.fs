@@ -486,23 +486,6 @@ let hayBaleDestinations board =
                 p  |> Player.fence |> Fence.fencePaths |> set ]
         - board.HayBales
 
-let bribeParcels board =
-    let player = board.Players.[board.Table.Player]
-    let border = Field.borderTiles (Player.field player) 
-    let barns = board.Barns.Free + board.Barns.Occupied
-
-    let otherPlayersFields =
-         Board.otherPlayers board.Table.Player board
-         |> List.map (snd >> Player.field)
-         |> Field.unionMany
-
-    (Field.interesect border otherPlayersFields) - barns
-
-
-
-
-    
-
 
 let boardCardActionView dispatch player board  cardAction =
     match cardAction with
@@ -523,7 +506,7 @@ let boardCardActionView dispatch player board  cardAction =
         [ for p in board.HayBales do
             path p (fun _ -> dispatch (PlayCard (PlayDynamite p))) ]
     | Some { Card =  Bribe}  ->
-        [ for p in bribeParcels board |> Field.parcels do
+        [ for p in Board.bribeParcels board |> Field.parcels do
             tile p (fun _ -> dispatch (PlayCard (PlayBribe p))) ]
     | _ ->
         []

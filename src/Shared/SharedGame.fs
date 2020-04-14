@@ -1257,6 +1257,24 @@ module Board =
            |> List.map (fun c -> Played(nextPlayerId, Player.BonusDiscarded c))
                        ]
 
+    let bribeParcels (board: PlayingBoard) =
+        let player = board.Players.[board.Table.Player]
+        let border = Field.borderTiles (Player.field player) 
+        let barns = board.Barns.Free + board.Barns.Occupied
+
+        let otherPlayersFields =
+             otherPlayers board.Table.Player board
+             |> List.map (fun (_, player) -> 
+                    let field = Player.field player
+                    if Field.size field = 1 then
+                        Field.empty
+                    else
+                        field)
+             |> Field.unionMany
+
+        (Field.interesect border otherPlayersFields) - barns
+
+
 
     let decide cmd (state: Board) =
         
