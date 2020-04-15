@@ -102,6 +102,9 @@ i.fa-bars {
     position: fixed;
     width: 100vw;
     top: 0;
+    div {
+        display: inline-block;
+    }
 
     .player-dashboard {
         vertical-align: top;
@@ -113,6 +116,8 @@ i.fa-bars {
         padding-right: 1em;
 
         .player {
+            display: block;
+            margin-top: -1em;
             width: 2em;
             height: 2em;
             z-index: 10;
@@ -121,20 +126,60 @@ i.fa-bars {
 
     .player-dashboard.local {
         background-color: $crazy-hay;
-
     }
-        
+
     .moves {
+        display: block;
         margin-left: 2.5em;
         height: 1.5em;
     }
 
     .individual-goal {
-        display: inline-block;
+        display:block;
+        margin-left: 1em;
+        float:right;
+
+        .stack {
+        }
+
+        .tile {
+            position: static;
+            width: 1.4em;
+            height: 1.4em;
+        }
+
+        .tile-count {
+            font-size: 0.7em;
+            vertical-align: top;
+            margin-left: 0.5em;
+            margin-top: 0.5em;
+        }
     }
+
     .common-goal {
         display: inline-block;
         margin-left: 5em;
+        vertical-align: middle;
+
+
+        .stack {
+            display: inline-block;
+            margin-left: -2.3em;
+        }
+
+        .tile {
+            position: static;
+            width: 2em;
+            height: 2em;
+        }
+
+        .tile-count {
+            vertical-align: top;
+            margin-left: 0.5em;
+            margin-top: 0.5em;
+            display: inline-block;
+            width: 4em;
+        }
     }
 
     .flash {

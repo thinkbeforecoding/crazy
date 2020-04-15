@@ -1,3 +1,6 @@
+### 0.1.3  - 2020-04-15
+* Show goal
+
 ### 0.1.2  - 2020-04-15
 * Fix #5: show moves / capacity
 * Collapsible players dashboard

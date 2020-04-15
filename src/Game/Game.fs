@@ -118,7 +118,7 @@ let init () : Model * Cmd<Msg> =
       CardAction = None
       Message = "Init from client"
       Error = ""
-      DashboardOpen = false
+      DashboardOpen = true
     }, Cmd.none
 
 // The update function computes the next state of the application based on the current state and the incoming events/messages
@@ -578,6 +578,19 @@ let playersDashboard model dispatch =
                            
                             div [Style [ MarginLeft "3em" ]] [ str board.Table.Names.[playerid] ] ]
 
+                            
+                        match player, board.Goal with
+                        | Ko _, _ -> ()
+                        | _, Individual goal ->
+                            div [ ClassName "individual-goal" ]
+                                [ div [ ClassName ("stack " + colorName (Player.color player))]
+                                      [ div [ ClassName ("tile")] []  ]
+                                  div [ClassName "tile-count"]
+                                      [ str (sprintf "x %d" (goal - Player.fieldTotalSize player)) ] 
+                                ]
+                        | _ -> ()
+                           
+
 
                         div [ ClassName "moves" ] 
                             [ if isActive then
@@ -590,13 +603,6 @@ let playersDashboard model dispatch =
                                         flash  (i <= p.Moves.Done)
                                 | Ko _ -> ()
                             ]
-
-                        match board.Goal with
-                        | Individual goal ->
-                            div [ ClassName "individual-goal" ]
-                                [ str (sprintf "%d parcels left" (goal - Player.fieldTotalSize player) ) ]
-                        | _ -> ()
-
                         if model.DashboardOpen then
                             handView dispatch board model.CardAction (Player.hand player)
 
@@ -605,7 +611,13 @@ let playersDashboard model dispatch =
                 match board.Goal with
                 | Common goal ->
                     div [ ClassName "common-goal" ]
-                        [ str (sprintf "%d parcels left" (goal - Board.totalSize board) ) ]
+                        [ let colors = [ for KeyValue(_,p) in board.Players -> Player.color p]
+                          for c in colors do
+                            div [ ClassName ("stack " + colorName c)]
+                                [ div [ ClassName ("tile")] [] ]
+                          div [ClassName "tile-count"]
+                            [ str (sprintf "x %d" (goal - Board.totalSize board)) ]
+                        ]
                 | _ -> ()
 
  ]
