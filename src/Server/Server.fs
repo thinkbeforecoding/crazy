@@ -264,10 +264,11 @@ let init (claim: JwtClaim) clientDispatch () =
 /// Returns a new state and commands
 
 let update claim clientDispatch msg (model: PlayerState) =
+    async {
     match msg with
     | JoinGame gameid ->
         
-        let state = runner.PostAndReply(fun c -> gameid, GetState c.Reply)
+        let! state = runner.PostAndAsyncReply(fun c -> gameid, GetState c.Reply)
         match state with 
         | Some (Board game as s, version)
         | Some (Won(_, game) as s, version) ->
@@ -292,19 +293,21 @@ let update claim clientDispatch msg (model: PlayerState) =
                 | Won(p,_) -> Won(p, privateGame)
                 | InitialState -> InitialState
             clientDispatch (Sync (Board.toState privateBoard, version))
-            Connected {GameId = gameid; Color = color; Player = claim.sub } ,  Cmd.none
+            return  Connected {GameId = gameid; Color = color; Player = claim.sub } ,  Cmd.none
         | _ ->
-            model, Cmd.none
+            return model, Cmd.none
 
     | Command cmd ->
         match model with
         | Connected g -> 
-            let events = runner.PostAndReply(fun c -> g.GameId, Exec(Board.Play(claim.sub, cmd), c.Reply))
+            do! runner.PostAndAsyncReply(fun c -> g.GameId, Exec(Board.Play(claim.sub, cmd), c.Reply))
+                |> Async.Ignore
 
 
 
-            model, Cmd.none
-        | NotConnected -> model, Cmd.none
+            return model, Cmd.none
+        | NotConnected -> return model, Cmd.none
+    }
 
 let handleGame gameId i events =
     match events with
@@ -743,6 +746,7 @@ module Join =
         NoGame, Cmd.none
 
     let update claim clientDispatch msg (model: Model) =
+        async {
         match model, msg with
         | _ , Login email ->
             let t =
@@ -752,7 +756,7 @@ module Join =
                     | Some(playerid,_) -> clientDispatch (StartCheck playerid)
                     | None -> () }
             t.Wait()
-            model, Cmd.none
+            return model, Cmd.none
         | _ , Register (email, name) ->
             let t =
                 task {
@@ -761,63 +765,63 @@ module Join =
                     | Some(playerid,_) -> clientDispatch (StartCheck playerid)
                     | None -> () }
             t.Wait()
-            model, Cmd.none
+            return model, Cmd.none
 
 
         | _ , CreateGame ->
             match claim with
             | Some claim ->
                 let gameid = createId 10
-                let events = setupRunner.PostAndReply(fun c -> gameid, Exec(Create { GameId = gameid; Initiator = claim.sub}, c.Reply))
+                let! events = setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(Create { GameId = gameid; Initiator = claim.sub}, c.Reply))
                 clientDispatch(Events events)
-                SetupGame gameid, Cmd.none
+                return SetupGame gameid, Cmd.none
             | _ ->
                 clientDispatch(ShouldLogin )
-                model, Cmd.none
+                return model, Cmd.none
                 
         | _, JoinGame gameid ->
             match claim with
             | Some claim ->
-                match setupRunner.PostAndReply(fun c -> gameid, GetState(c.Reply)) with
+                match! setupRunner.PostAndAsyncReply(fun c -> gameid, GetState(c.Reply)) with
                 | Some (Setup s, version) -> 
                     if s.Initiator = claim.sub then
                        clientDispatch(SyncCreate (gameid, Setup s, version))
-                       SetupGame gameid, Cmd.none
+                       return SetupGame gameid, Cmd.none
                     else
                         clientDispatch(SyncJoin (gameid, Setup s, version))
-                        JoiningGame gameid, Cmd.none
+                        return JoiningGame gameid, Cmd.none
                 | Some (Game.Started s, version) ->
                     clientDispatch(SyncStarted (gameid, Game.Started s, version))
-                    Started gameid, Cmd.none
+                    return Started gameid, Cmd.none
                 | _ ->
-                    model, Cmd.none
+                    return model, Cmd.none
             | None ->
                 clientDispatch(ShouldLogin )
-                model, Cmd.none
+                return model, Cmd.none
 
         |SetupGame gameid, SelectColor color
         |JoiningGame gameid, SelectColor color ->
             match claim with
             | Some claim ->
-                let events = setupRunner.PostAndReply(fun c -> gameid, Exec(SetPlayer(color, claim.sub, claim.nickname), c.Reply))
+                do! setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(SetPlayer(color, claim.sub, claim.nickname), c.Reply))
+                    |> Async.Ignore
                 //function | Connected c when c.GameId = gameId -> true  | _ -> falsefunction | Connected c when c.GameId = gameId -> true  | _ -> falsefunction | Connected c when c.GameId = gameId -> true  | _ -> false) (Events events)
-                ()
             | None -> ()
 
-            model, Cmd.none
+            return model, Cmd.none
         | SetupGame gameid, Start ->
-            let events, version = setupRunner.PostAndReply(fun c -> gameid, Exec(Command.Start, c.Reply))
+            let! events, version = setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(Command.Start, c.Reply))
             for event in events do
                 match event with
                 | SharedJoin.Event.Started e ->
-                    runner.PostAndReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e -> p.Color, p.PlayerId, p.Name ] }, c.Reply))
-                    |> ignore
+                    do! runner.PostAndAsyncReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e -> p.Color, p.PlayerId, p.Name ] }, c.Reply))
+                         |> Async.Ignore
                 | _ -> ()
             //connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events(events, version))
-            Started gameid, Cmd.none
+            return Started gameid, Cmd.none
 
-        | _ -> model, Cmd.none
-
+        | _ -> return model, Cmd.none
+    }
 
     let handleJoin gameid i events =
         connections.SendClientIf (function SetupGame id | JoiningGame id | Started id when id = gameid -> true | _ -> false ) (Events (events, i))

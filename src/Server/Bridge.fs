@@ -223,7 +223,7 @@ type BridgeDeserializer<'server> =
 
 
 /// Defines server configuration
-type BridgeServer<'arg, 'model, 'server, 'client, 'impl>(endpoint : string, init, update) =
+type BridgeServer<'arg, 'model, 'server, 'client, 'impl>(endpoint : string, init, update: Dispatch<'client> -> 'server -> 'model ->  ('model * Cmd<'server>) Async) =
     let mutable subscribe = fun _ -> Cmd.none
     let mutable logMsg = ignore
     let mutable logRegister = ignore
@@ -390,7 +390,7 @@ type BridgeServer<'arg, 'model, 'server, 'client, 'impl>(endpoint : string, init
                         match msg with
                         | Some msg ->
                             logMsg msg
-                            let model, msgs = update clientDispatch msg state
+                            let! model, msgs = update clientDispatch msg state
                             logModel model
                             msgs
                             |> List.iter
@@ -398,12 +398,12 @@ type BridgeServer<'arg, 'model, 'server, 'client, 'impl>(endpoint : string, init
                             hubInstance.Update model
                             return! loop model
                         | None ->
-                            whenDown
-                            |> Option.iter
-                                (fun msg ->
+                            match whenDown with
+                            | Some msg ->
                                     logMsg msg
-                                    let model, _ = update clientDispatch msg state
-                                    logModel model)
+                                    let! model, _ = update clientDispatch msg state
+                                    logModel model
+                            | None -> ()
                             hubInstance.Remove()
                             return ()
                     }
@@ -420,7 +420,7 @@ module Bridge =
     /// Typical program, new commands are produced by `init` and `update` along with the new state.
     let mkServer endpoint
         (init : Dispatch<'client> -> 'arg -> ('model * Cmd<'server>))
-        (update : Dispatch<'client> -> 'server -> 'model -> ('model * Cmd<'server>)) =
+        (update : Dispatch<'client> -> 'server -> 'model ->  Async<'model * Cmd<'server>>) =
         BridgeServer(endpoint, init, update)
 
     /// Subscribe to external source of events.
