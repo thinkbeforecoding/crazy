@@ -8,6 +8,7 @@
   <ItemGroup>
     <None Include="index.html" />
     <None Include="paket.references" />
+    <Compile Include="..\Game\Version.fs" Link="Version.fs" />
     <None Include="join-style.scss" />
     <Compile Include="..\Shared\Shared.fs" />
     <Compile Include="..\Shared\SharedJoin.fs" />

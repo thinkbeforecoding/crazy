@@ -297,6 +297,9 @@ let header dispatch player =
 
 let mainTitle text = h1 [ ClassName "main"] [str text] 
 let cancel dispatch = a [ Href "#"; OnClick (fun _ -> dispatch Cancel) ] [ str "Cancel"]
+let footer =
+    div [ ClassName "footer" ]
+        [ span [] [ str ("v"+ Version.app)] ]
 
 
 let view (model : Model) (dispatch : Msg -> unit) =
@@ -312,6 +315,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                       button [ OnClick (fun _ -> dispatch CreateNewGame) ] [ str "New game" ]
                       button [ OnClick (fun _ -> dispatch SelectJoin)] [ str "Join game"]
                     ]
+                footer
             ]
         | NewGame game ->
             div [ ClassName "content" ] [
@@ -336,6 +340,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                             cancel dispatch
                            ]
                     ]
+                footer
             ]
         | JoinGame game ->
             div [ ClassName "content" ] [
@@ -378,6 +383,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                             cancel dispatch
                       ]
                     ]
+                footer
             ]
         | LoginPage ->
             div [ ClassName "title" ] [
@@ -398,6 +404,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         [ str "Don't have an accout yet ? "
                           a [ Href "#"; OnClick (fun _ -> dispatch OpenRegister) ] [ str "Register"]]
                 ]
+                footer
             ]
         | RegisterPage ->
             div [ ClassName "title" ] [
@@ -421,6 +428,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         [ str "Already have an accout ? "
                           a [ Href "#"; OnClick (fun _ -> dispatch OpenLogin) ] [ str "Login"]]
                 ]
+                footer
             ]
         | CheckPage playerid ->
             div [ ClassName "title" ] [
@@ -440,8 +448,10 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         ]
                     cancel dispatch
                 ]
+                footer
             ]
         | Started _ -> ()
+
             
       ]
 

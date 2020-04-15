@@ -127,6 +127,16 @@ h1, h2 {
     }
 }
 
+.footer {
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    text-align: right;
+
+    span {
+        margin: 1em;
+    }
+}
 
 label {
     width: 10em;
