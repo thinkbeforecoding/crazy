@@ -321,6 +321,8 @@ let playerField  p =
         | Starting { Parcel = p; Color = color } ->
             div [ ClassName (colorName color) ]
                 [ parcel p [] ] 
+        | Ko color -> 
+            null
 let playerFences  p =
     match p with
     | Playing p ->
@@ -328,7 +330,8 @@ let playerFences  p =
             [ let (Fence paths) = p.Fence
               for p,_ in paths do
                 singleFence p ]
-    | Starting _ ->
+    | Starting _ 
+    | Ko _ ->
         null
 
 let playerTractor p =
@@ -342,6 +345,7 @@ let playerTractor p =
               |> Pix.rotate
               |> Pix.translate (3.3,3.3)
               |> drawplayer  ]
+    | Ko _ -> null
 
 
 
@@ -365,8 +369,10 @@ let cardName =
     | Helicopter -> "card helicopter"
     | Bribe -> "card bribe"
 
-let handView dispatch player otherPlayers cardAction =
-    function 
+let handView dispatch board cardAction hand =
+    let player = Board.currentPlayer board
+    let otherPlayers = Board.currentOtherPlayers board
+    match hand with 
     | Public cards -> 
        div [ ClassName "cards" ]
            [ for i,c in List.indexed cards do
@@ -404,7 +410,14 @@ let handView dispatch player otherPlayers cardAction =
                 | Some { Index = index; Card = Dynamite } when index = i ->
                     div [] [ str "Select a hay bale to blow up" ]
                 | Some { Index = index; Card = Bribe } when index = i ->
-                    div [] [ str "Select a parcel on the border of your field to take over" ]
+                    match Board.bribeParcels board with
+                    | Ok _ ->
+                        div [] [ str "Select a parcel on the border of your field to take over" ]
+                    | Error Board.InstantVictory ->
+                        div [] [ str "You cannot bribe to take the last parcel ! That would be too visible !" ]
+                    | Error Board.NoParcelsToBribe ->
+                        div [] [ str "There is no parcel to bribe."]
+                        
                 | _ -> ()
 
 
@@ -506,8 +519,11 @@ let boardCardActionView dispatch player board  cardAction =
         [ for p in board.HayBales do
             path p (fun _ -> dispatch (PlayCard (PlayDynamite p))) ]
     | Some { Card =  Bribe}  ->
-        [ for p in Board.bribeParcels board |> Field.parcels do
-            tile p (fun _ -> dispatch (PlayCard (PlayBribe p))) ]
+        match Board.bribeParcels board with
+        | Ok parcels ->
+            [ for p in Field.parcels parcels do
+                tile p (fun _ -> dispatch (PlayCard (PlayBribe p))) ]
+        | Error _ -> []
     | _ ->
         []
 
@@ -547,7 +563,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         let otherPlayers =
                             Board.otherPlayers board.Table.Player board
                         
-                        handView dispatch player otherPlayers  model.CardAction (Player.hand player)
+                        handView dispatch board model.CardAction (Player.hand player)
 
                         goalView board
                     ]
@@ -560,7 +576,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                               Left "10em"
                               BackgroundColor "white"
                               ] ]
-                    [ p [] [ str "And the winner is !"]
+                    [ p [] [ str "And the winner is :"]
                       p [] [ str board.Table.Names.[winner] ] ]
 
                 

@@ -118,6 +118,7 @@ let serialize =
     | Board.Event.Played (playerid, Player.Event.Heliported e  ) -> "Heliported" , box { Player = playerid; Event = e }
     | Board.Event.Played (playerid, Player.Event.Bribed e  ) -> "Bribed" , box { Player = playerid; Event = e }
     | Board.Event.Played (playerid, Player.Event.BonusDiscarded e  ) -> "BonusDiscarded" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.Eliminated  ) -> "Eliminated" , box { Player = playerid; Event = null }
     | Board.Event.Next  -> "Next" , null
     | Board.Event.PlayerDrewCards e  -> "PlayerDrewCards" , box e
     | Board.Event.HayBalesPlaced e  -> "HayBalesPlaced" , box e
@@ -144,6 +145,7 @@ let deserialize =
     | "Heliported", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.Heliported e)]
     | "Bribed", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.Bribed e)]
     | "BonusDiscarded", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.BonusDiscarded e)]
+    | "Eliminated", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Eliminated )]
     | "Next", _ -> [ Board.Next]
     | "PlayerDrewCards", JObj e -> [ Board.PlayerDrewCards e ]
     | "HayBalesPlaced", JObj e -> [ Board.HayBalesPlaced e ]
@@ -271,9 +273,7 @@ let update claim clientDispatch msg (model: PlayerState) =
         | Some (Won(_, game) as s, version) ->
             let color = 
                 Map.tryFind claim.sub game.Players
-                |> Option.bind (function 
-                    | Starting p -> Some p.Color
-                    | Playing p -> Some p.Color )
+                |> Option.map Player.color
 
             let privateGame =
                 { game with

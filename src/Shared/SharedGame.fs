@@ -123,6 +123,8 @@ type Hand =
     | Public of Card list
 
 module Hand =
+    let empty = Private 0
+
     let toPrivate =
         function
         | Public p -> Private p.Length
@@ -158,6 +160,7 @@ module Hand =
 type Player =
     | Starting of Starting
     | Playing of Playing
+    | Ko of Color
 and Starting =
     { Color: Color
       Parcel: Parcel
@@ -198,12 +201,16 @@ type Table =
         { this with
             Current = (this.Current + 1) % this.Players.Length }
 
-    static member start players =
+module Table =
+    let start players =
 
         { Players = [| for p,_ in players -> p |]
           Current = 0
-          Names = Map.ofList players
-          }
+          Names = Map.ofList players }
+
+    let eliminate player table =
+        { table with
+            Players = Array.filter (fun p -> p <> player) table.Players }
 
 
 module Bonus =
@@ -274,6 +281,7 @@ and PlayingBoard =
 type PlayerState =
     | SStarting of StartingState
     | SPlaying of PlayingState
+    | SKo of Color
 and StartingState =
     { SColor: Color
       SParcel: Parcel
@@ -743,6 +751,7 @@ module Player =
         | Watched
         | Heliported of Crossroad
         | Bribed of Bribed
+        | Eliminated
     and Started =
         { Parcel : Parcel }
     and FirstCrossroadSelected =
@@ -800,49 +809,62 @@ module Player =
                 { p with
                     Moves = Moves.startTurn p.Fence p.Bonus }
         | Starting _ -> player
+        | Ko _ -> player
 
     let color player =
         match player with
         | Playing p -> p.Color
         | Starting p -> p.Color
+        | Ko color -> color
         
     let hand player =
         match player with
         | Playing p -> p.Hand
         | Starting p -> p.Hand
+        | Ko _ -> Hand.empty
 
     let bonus player =
         match player with
         | Playing p -> p.Bonus
         | Starting p -> p.Bonus
+        | Ko _ -> Bonus.empty
 
     let fence player =
         match player with
         | Playing p -> p.Fence
-        | Starting _ -> Fence.empty
+        | Starting _
+        | Ko _ -> Fence.empty
 
     let field player =
         match player with
         | Playing p -> p.Field
         | Starting p -> Field.ofParcels [p.Parcel]
+        | Ko _ -> Field.empty
+
+    let isKo player =
+        match player with
+        | Ko _ -> true
+        | _ -> false
 
 
     let toPrivate player =
         match player with
         | Playing p -> Playing { p with Hand = Hand.toPrivate p.Hand }
         | Starting p -> Starting { p with Hand = Hand.toPrivate p.Hand }
+        | Ko p -> player
 
     let fieldTotalSize player =
         match player with
         | Playing p -> Field.size p.Field
-        | Starting p -> 1
+        | Starting _ -> 1
+        | Ko _ -> 0
 
 
     let watchedField player =
         match player with
         | Playing ({ Bonus = { Watched = true }; Field = field }) -> field
         | _ -> Field.empty
-                    
+
     let decide (otherPlayers: (string * Player) list) barns command player =
         match player, command with
         | Starting _, SelectFirstCrossroad cmd ->
@@ -1012,6 +1034,8 @@ module Player =
         |  Playing player, BonusDiscarded e ->
             Playing { player with
                         Bonus = player.Bonus |> Bonus.discard e }
+        | Playing player, Eliminated ->
+            Ko player.Color
         | _ -> player 
 
 
@@ -1112,6 +1136,7 @@ module Player =
                         | Public h, Public c -> Public (h @ c)
                         | Private h, Private c -> Private (h + c)  
                         | _ -> failwith "Unexpected mix" }
+        | Ko _ -> player
 
 
 
@@ -1137,6 +1162,7 @@ module Player =
                   SHand = p.Hand
                   SBonus = p.Bonus
                   }
+        | Ko color -> SKo color
 
     let ofState (p: PlayerState) =
         match p with
@@ -1157,6 +1183,7 @@ module Player =
                 Hand = p.SHand
                 Bonus = p.SBonus
             }
+        | SKo color -> Ko color
 
 module DrawPile =
     let cards =
@@ -1215,16 +1242,31 @@ module Board =
         { Player: string 
           Cards: Hand }
         
+    let currentPlayer (board: PlayingBoard) =
+        board.Players.[board.Table.Player]
+
     let otherPlayers playerid (board: PlayingBoard) =
         board.Players
         |> Map.toSeq
         |> Seq.filter (fun (id,_) -> id <> playerid)
         |> Seq.toList
 
+    let currentOtherPlayers board =
+        otherPlayers board.Table.Player board
+
     let totalSize (board: PlayingBoard) = 
        let players = board.Players
        players
        |> Map.fold (fun count _ p -> count + Player.fieldTotalSize p) 0
+
+
+    let endGameWithBribe (board: PlayingBoard) =
+        match board.Goal with
+        | Common goal ->
+            totalSize board + 1>= goal
+        | Individual goal ->
+            let player = currentPlayer board
+            Player.fieldTotalSize player + 1 >= goal
 
     let tryFindWinner (board: PlayingBoard) =
         let players = board.Players
@@ -1256,24 +1298,143 @@ module Board =
            Bonus.startTurn (Player.bonus nextPlayer)
            |> List.map (fun c -> Played(nextPlayerId, Player.BonusDiscarded c))
                        ]
+    type BribeBocker =
+        | InstantVictory
+        | NoParcelsToBribe
+
 
     let bribeParcels (board: PlayingBoard) =
-        let player = board.Players.[board.Table.Player]
-        let border = Field.borderTiles (Player.field player) 
-        let barns = board.Barns.Free + board.Barns.Occupied
+        if  endGameWithBribe board then
+            Error InstantVictory
+        else
+            let player = board.Players.[board.Table.Player]
+            let border = Field.borderTiles (Player.field player) 
+            let barns = board.Barns.Free + board.Barns.Occupied
 
-        let otherPlayersFields =
-             otherPlayers board.Table.Player board
-             |> List.map (fun (_, player) -> 
-                    let field = Player.field player
-                    if Field.size field = 1 then
-                        Field.empty
-                    else
-                        field)
-             |> Field.unionMany
+            let otherPlayersFields =
+                 currentOtherPlayers board
+                 |> List.map (fun (_, player) -> 
+                        let field = Player.field player
+                        if Field.size field = 1 then
+                            Field.empty
+                        else
+                            field)
+                 |> Field.unionMany
 
-        (Field.interesect border otherPlayersFields) - barns
+            let parcelsToBribe = (Field.interesect border otherPlayersFields) - barns
+            if Field.isEmpty parcelsToBribe then
+                Error NoParcelsToBribe
+            else
+                Ok parcelsToBribe
+                    
+        
 
+
+    let annexed playerid e (board: PlayingBoard) =
+        let annexedPlayer = Player.evolve board.Players.[playerid] (Player.Annexed e)
+        let newMap = Map.add playerid annexedPlayer board.Players
+        e.LostFields
+        |> List.fold (fun map (playerid, parcels) ->
+            match board.Players.[playerid] with
+            | Playing p ->
+                let newP = Playing { p with Field = p.Field - Field.ofParcels parcels }
+                { board with
+                            Players = Map.add playerid newP map.Players }
+            | _ -> map
+        ) { board with Players = newMap
+                       Barns =
+                           let annexedBarns =
+                               { Free = e.FreeBarns |> Field.ofParcels
+                                 Occupied = e.OccupiedBarns |> Field.ofParcels }
+                           Barns.annex annexedBarns board.Barns }
+
+
+    let evolve (state: Board) event =
+        match state,event with
+        | InitialState, Started s ->
+            Board 
+                { Players =
+                    Map.ofList [ for c,u,n,p in s.Players -> u, Starting { Color = c; Parcel = p; Hand = Public []; Bonus = Bonus.empty}]
+                  Table =  Table.start [ for _,p,n,_ in s.Players -> p,n ] 
+                  DrawPile = s.DrawPile
+                  DiscardPile = []
+                  Barns = Barns.init s.Barns
+                  HayBales = Set.empty
+                  Goal = s.Goal }
+        | InitialState, _ -> state
+        | Board _, Started _ -> state
+        | Board board, GameWon player -> Won(player, board)
+        | Board board, Played (_, Player.CutFence { Player = playerid }) ->
+            match board.Players.[playerid] with
+            | Playing player -> 
+                let cutPlayer =
+                    Playing { player with
+                                Fence = Fence.empty
+                                Power = PowerDown }
+                Board { board with
+                            Players = Map.add playerid cutPlayer board.Players }
+            | _ -> state
+
+        | Board board, Played (playerid, Player.Annexed e ) ->
+            annexed playerid e board
+            |> Board
+        | Board board, PlayerDrewCards e ->
+            let newDrawPile = board.DrawPile |> DrawPile.remove e.Cards
+            let player = board.Players.[e.Player] |> Player.takeCards e.Cards
+            Board {
+                board with
+                    Players = Map.add e.Player player board.Players
+                    DrawPile = newDrawPile }
+
+        | Board board, HayBalesPlaced p ->
+            Board {
+                board with
+                    HayBales = board.HayBales + set p }
+        | Board board, HayBaleDynamited p ->
+            Board {
+                board with
+                    HayBales = board.HayBales |> Set.remove p }
+        | Board board, Played(playerid,(Player.Bribed p as e)) ->
+            let newPlayer = Player.evolve board.Players.[playerid] e
+            let newVictim = 
+                match board.Players.[p.Victim] with
+                | Starting p -> Starting p
+                | Playing victim -> Playing { victim with Field = victim.Field - Field.ofParcels [p.Parcel] }
+                | Ko _ as p -> p
+            Board {
+                board with
+                    Players =
+                        board.Players
+                        |> Map.add playerid newPlayer
+                        |> Map.add p.Victim newVictim 
+            }
+        | Board board, Played(playerid,(Player.Eliminated as e)) ->
+            let newPlayer = Player.evolve board.Players.[playerid] e
+            let newTable = Table.eliminate playerid board.Table
+            Board { board with
+                        Players = Map.add playerid newPlayer board.Players
+                        Table = newTable
+                    }
+
+        | Board board, Played (playerid,e) ->
+            let player = Player.evolve board.Players.[playerid] e
+            let newDiscardPile =
+                match e with
+                | Player.BonusDiscarded card ->
+                    card :: board.DiscardPile
+                | _ -> board.DiscardPile
+
+            Board { board with
+                       Players = Map.add playerid player board.Players
+                       DiscardPile = newDiscardPile }
+        | Board board, Next ->
+            let nextTable = board.Table.Next
+            let player = Player.startTurn board.Players.[nextTable.Player]
+            Board {
+                board with
+                    Players = Map.add nextTable.Player player board.Players
+                    Table = nextTable}
+        | Won _, _ -> state
 
 
     let decide cmd (state: Board) =
@@ -1385,23 +1546,38 @@ module Board =
                   | Some (Player.Annexed e) ->
                         let nextBoard = 
                             { state with Players = Map.add playerid nextState state.Players }
+                            |> annexed playerid e
 
-                        match tryFindWinner nextBoard with
-                        | Some (winner,_) ->
-                            GameWon winner
-                        | _ ->
+                        let mutable eliminated = 0
+                        for KeyValue(pid, p) in nextBoard.Players do
+                            
+                            if Player.isKo p then   
+                                eliminated <- eliminated + 1
+                            elif Field.isEmpty (Player.field p) then
+                                eliminated <- eliminated + 1
+                                Played(pid, Player.Eliminated)
 
-                            let cardsToTake =
-                                e.FreeBarns.Length + 2 * e.OccupiedBarns.Length
-                            if cardsToTake > 0 then
-                                PlayerDrewCards 
-                                    { Player = playerid
-                                      Cards = Public (state.DrawPile |> DrawPile.take cardsToTake) }
-                            else
-                                match nextState with
-                                | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) ->
-                                    yield! next state 
-                                | _ -> ()
+                        if eliminated >= Map.count nextBoard.Players - 1 then
+                            // winner by ko
+                            GameWon playerid
+
+                        else
+                            match tryFindWinner nextBoard with
+                            | Some (winner,_) ->
+                                GameWon winner
+                            | _ ->
+
+                                let cardsToTake =
+                                    e.FreeBarns.Length + 2 * e.OccupiedBarns.Length
+                                if cardsToTake > 0 then
+                                    PlayerDrewCards 
+                                        { Player = playerid
+                                          Cards = Public (state.DrawPile |> DrawPile.take cardsToTake) }
+                                else
+                                    match nextState with
+                                    | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) ->
+                                        yield! next state 
+                                    | _ -> ()
                   | _ -> 
                       match nextState with
                       | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) ->
@@ -1411,102 +1587,6 @@ module Board =
             else
                 []
         | _ -> []
-
-
-    let evolve (state: Board) event =
-        match state,event with
-        | InitialState, Started s ->
-            Board 
-                { Players =
-                    Map.ofList [ for c,u,n,p in s.Players -> u, Starting { Color = c; Parcel = p; Hand = Public []; Bonus = Bonus.empty}]
-                  Table =  Table.start [ for _,p,n,_ in s.Players -> p,n ] 
-                  DrawPile = s.DrawPile
-                  DiscardPile = []
-                  Barns = Barns.init s.Barns
-                  HayBales = Set.empty
-                  Goal = s.Goal }
-        | InitialState, _ -> state
-        | Board _, Started _ -> state
-        | Board board, GameWon player -> Won(player, board)
-        | Board board, Played (_, Player.CutFence { Player = playerid }) ->
-            match board.Players.[playerid] with
-            | Playing player -> 
-                let cutPlayer =
-                    Playing { player with
-                                Fence = Fence.empty
-                                Power = PowerDown }
-                Board { board with
-                            Players = Map.add playerid cutPlayer board.Players }
-            | _ -> state
-
-        | Board board, Played (playerid, Player.Annexed e ) ->
-            let annexedPlayer = Player.evolve board.Players.[playerid] (Player.Annexed e)
-            let newMap = Map.add playerid annexedPlayer board.Players
-            e.LostFields
-            |> List.fold (fun map (playerid, parcels) ->
-                match board.Players.[playerid] with
-                | Playing p ->
-                    let newP = Playing { p with Field = p.Field - Field.ofParcels parcels }
-                    { board with
-                                Players = Map.add playerid newP map.Players }
-                | _ -> map
-            ) { board with Players = newMap
-                           Barns =
-                               let annexedBarns =
-                                   { Free = e.FreeBarns |> Field.ofParcels
-                                     Occupied = e.OccupiedBarns |> Field.ofParcels }
-                               Barns.annex annexedBarns board.Barns }
-            |> Board
-        | Board board, PlayerDrewCards e ->
-            let newDrawPile = board.DrawPile |> DrawPile.remove e.Cards
-            let player = board.Players.[e.Player] |> Player.takeCards e.Cards
-            Board {
-                board with
-                    Players = Map.add e.Player player board.Players
-                    DrawPile = newDrawPile }
-
-        | Board board, HayBalesPlaced p ->
-            Board {
-                board with
-                    HayBales = board.HayBales + set p }
-        | Board board, HayBaleDynamited p ->
-            Board {
-                board with
-                    HayBales = board.HayBales |> Set.remove p }
-        | Board board, Played(playerid,(Player.Bribed p as e)) ->
-            let newPlayer = Player.evolve board.Players.[playerid] e
-            let newVictim = 
-                match board.Players.[p.Victim] with
-                | Starting p -> Starting p
-                | Playing victim -> Playing { victim with Field = victim.Field - Field.ofParcels [p.Parcel] }
-            Board {
-                board with
-                    Players =
-                        board.Players
-                        |> Map.add playerid newPlayer
-                        |> Map.add p.Victim newVictim 
-            }
-
-        | Board board, Played (playerid,e) ->
-            let player = Player.evolve board.Players.[playerid] e
-            let newDiscardPile =
-                match e with
-                | Player.BonusDiscarded card ->
-                    card :: board.DiscardPile
-                | _ -> board.DiscardPile
-
-            Board { board with
-                       Players = Map.add playerid player board.Players
-                       DiscardPile = newDiscardPile }
-        | Board board, Next ->
-            let nextTable = board.Table.Next
-            let player = Player.startTurn board.Players.[nextTable.Player]
-            Board {
-                board with
-                    Players = Map.add nextTable.Player player board.Players
-                    Table = nextTable}
-        | Won _, _ -> state
-
     let toState (board: Board) =
         match board with
         | Board board ->
@@ -1605,6 +1685,7 @@ module Board =
                   SelectCrossroad (Crossroad (p+Axe.NE, CLeft))
                   SelectCrossroad (Crossroad (p+Axe.SW, CRight))
                   SelectCrossroad (Crossroad (p+Axe.SE, CLeft)) ]
+            | Some (Ko _)
             | None -> []
         | _ -> []
 
