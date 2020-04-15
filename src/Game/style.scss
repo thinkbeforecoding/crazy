@@ -15,9 +15,15 @@
 // Bulma
 //@import "~bulma/bulma";
 
+$crazy-tree: #9DAA52;
+$crazy-green: #CBDE9C;
+$crazy-lightgreen: #D7E5AA;
+$crazy-hay: #FEEBA2;
+
 body {
     margin: 0;
     padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .board {
@@ -60,6 +66,13 @@ body {
     background-image: url(/img/barn-occupied.png);
 }
 
+i.fa-bars {
+    display: inline-block;
+    margin: 5px;
+    color: $crazy-tree;
+    width: 1em;
+    height: 1em;
+}
 
 
 .crossroad {
@@ -83,6 +96,72 @@ body {
     height: 3vw;
 }
 
+
+.dashboard {
+    background-color: $crazy-green;
+    position: fixed;
+    width: 100vw;
+    top: 0;
+
+    .player-dashboard {
+        vertical-align: top;
+        display: inline-block;
+        padding-top: 0.2em;
+        padding-bottom: 0.1em;
+        margin-left: 1em;
+        padding-left: 1em;
+        padding-right: 1em;
+
+        .player {
+            width: 2em;
+            height: 2em;
+            z-index: 10;
+        }
+    }
+
+    .player-dashboard.local {
+        background-color: $crazy-hay;
+
+    }
+        
+    .moves {
+        margin-left: 2.5em;
+        height: 1.5em;
+    }
+
+    .individual-goal {
+        display: inline-block;
+    }
+    .common-goal {
+        display: inline-block;
+        margin-left: 5em;
+    }
+
+    .flash {
+        background-image: url(/img/flash.png);
+        width: 1.5em;
+        height: 1.5em;
+        display: inline-block;
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
+
+    .flash.inactive {
+        background-image: url(/img/flash-inactive.png);
+    }
+}
+
+.dashboard.closed {
+    .moves {
+        height: 1em;
+    }
+    .flash {
+        width: 1em;
+        height: 1em;
+    }
+}
+
+
 .blue {
     .fence {
         background-image: url(/img/fence-blue.png);
@@ -90,6 +169,14 @@ body {
 
     .player {
         background-image: url(/img/player-blue.png);
+    }
+
+    .player.selected {
+        background-image: url(/img/selected-player-blue.png);
+    }
+
+    .player.ko {
+        background-image: url(/img/ko-player-blue.png);
     }
 
     .tile {
@@ -103,6 +190,12 @@ body {
 
     .player {
         background-image: url(/img/player-yellow.png);
+    }
+    .player.selected {
+        background-image: url(/img/selected-player-yellow.png);
+    }
+    .ko.selected {
+        background-image: url(/img/ko-player-yellow.png);
     }
 
     .tile {
@@ -119,7 +212,12 @@ body {
         background-image: url(/img/player-red.png);
     }
 
-
+    .player.selected {
+        background-image: url(/img/selected-player-red.png);
+    }
+    .player.ko {
+        background-image: url(/img/ko-player-red.png);
+    }
 
     .tile {
         background-image: url(/img/tile-red.png);
@@ -134,6 +232,12 @@ body {
     .player {
         background-image: url(/img/player-purple.png);
     }
+    .player.selected {
+        background-image: url(/img/selected-player-purple.png);
+    }
+    .player.ko {
+        background-image: url(/img/ko-player-purple.png);
+    }
 
     .tile {
         background-image: url(/img/tile-purple.png);
@@ -141,27 +245,48 @@ body {
 }
 
 
-$back-x: 0.7vw;
+$back-x: -4.8vw;
 $back-y: 0.15vw;
 
 .cards {
-    div {
+    padding-top: 8px;
+    width: 25vw;
+
+    .card-container {
+        display: inline-block;
+        height: 100%;
+    }
+        
+    div.card {
         /*margin-top: 3em;*/
-        width: 8vw;
-        height: 11.54vw;
+        width: 5vw;
+        height: 7.25vw;
         background-size: contain;
         background-repeat: no-repeat;
         border-radius: 8px;
         background-clip: padding-box;
         box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
-        display: inline-block;
+        /*display: inline-block;*/
         margin-right: 0.4vw;
     }
 
-    div.back {
-        margin-top: 3em;
-        display: block;
+    div.action {
+
         position: absolute;
+        border: 1px solid $crazy-tree;
+        background-color: $crazy-green;
+        border-radius: 1em;
+        padding: 1em;
+
+        .cancel {
+            display: block;
+            margin-top: 0.3em;
+            color: black;
+        }
+    }
+
+    div.back {
+        position: relative;
         background-image: url(/img/card-back.jpg);
     }
 
@@ -180,21 +305,27 @@ $back-y: 0.15vw;
     .hay-bale-1 {
         background-image: url(/img/card-1-hay-bale.jpg);
     }
+
     .hay-bale-2 {
         background-image: url(/img/card-2-hay-bales.jpg);
     }
+
     .dynamite {
         background-image: url(/img/card-dynamite.jpg);
     }
+
     .high-voltage {
         background-image: url(/img/card-high-voltage.jpg);
     }
+
     .watchdog {
         background-image: url(/img/card-watchdog.jpg);
     }
+
     .helicopter {
         background-image: url(/img/card-helicopter.jpg);
     }
+
     .bribe {
         background-image: url(/img/card-bribe.jpg);
     }
@@ -236,4 +367,3 @@ $back-y: 0.15vw;
         z-index: 1;
     }
 }
-

@@ -85,6 +85,7 @@ type Model = {
     Moves: Move list 
     Message: string
     Error : string
+    DashboardOpen: bool
     }
 
 // The Msg type defines what events/actions can occur while the application is running
@@ -96,6 +97,7 @@ type Msg =
     | SelectCard of Card * int
     | SelectHayBale of Path
     | CancelCard
+    | SwitchDashboard
     | EndTurn
     | Remote of ClientMsg
     | ConnectionLost
@@ -116,7 +118,9 @@ let init () : Model * Cmd<Msg> =
       CardAction = None
       Message = "Init from client"
       Error = ""
+      DashboardOpen = false
     }, Cmd.none
+
 // The update function computes the next state of the application based on the current state and the incoming events/messages
 // It can also run side-effects (encoded as commands) like calling the server via Http.
 // these commands in turn, can dispatch messages to which the update function will react.
@@ -162,6 +166,8 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | EndTurn ->
         Player.EndTurn
         |> handleCommand { currentModel with CardAction = None}
+    | SwitchDashboard ->
+        { currentModel with DashboardOpen = not currentModel.DashboardOpen }, Cmd.none
     | ConnectionLost ->
         { currentModel with Message = "Connection lost"}, Cmd.none
     | Remote (SyncPlayer playerid) ->
@@ -240,17 +246,17 @@ let barn (Parcel pos) occupied =
                    ]] 
         []
 
-let drawplayer (x,y) =
-    div [ ClassName "player"
+let drawplayer selected (x,y) =
+    div [ classBaseList "player" ["selected", selected]
           Style [ Left (sprintf "%fvw" x)
                   Top (sprintf "%fvw" y)
                    ]] 
         []
 
-let player pos =
+let player active pos =
     Pix.ofPlayer pos
     |> Pix.rotate
-    |> drawplayer
+    |> drawplayer active
 
 let drawcrossroad pos f =
     let x,y = Pix.ofPlayer pos |> Pix.rotate
@@ -321,8 +327,9 @@ let playerField  p =
         | Starting { Parcel = p; Color = color } ->
             div [ ClassName (colorName color) ]
                 [ parcel p [] ] 
-        | Ko color -> 
+        | Ko _ -> 
             null
+
 let playerFences  p =
     match p with
     | Playing p ->
@@ -334,17 +341,17 @@ let playerFences  p =
     | Ko _ ->
         null
 
-let playerTractor p =
+let playerTractor selected p =
     match p with
     | Playing p ->
-        div [ ClassName (colorName p.Color)]
-            [ player p.Tractor ]
+        div [ ClassName (colorName p.Color) ]
+            [ player selected p.Tractor ]
     | Starting { Parcel = Parcel p; Color = color } ->
-        div [ ClassName (colorName color)]
+        div [ ClassName (colorName color) ]
             [ Pix.ofTile p
               |> Pix.rotate
               |> Pix.translate (3.3,3.3)
-              |> drawplayer  ]
+              |> drawplayer selected  ]
     | Ko _ -> null
 
 
@@ -372,64 +379,74 @@ let cardName =
 let handView dispatch board cardAction hand =
     let player = Board.currentPlayer board
     let otherPlayers = Board.currentOtherPlayers board
+    let cancel = a [ ClassName "cancel"; Href "#"; OnClick (fun _ -> dispatch CancelCard)] [ str "Cancel" ]
     match hand with 
     | Public cards -> 
        div [ ClassName "cards" ]
            [ for i,c in List.indexed cards do
-               div [ ClassName (cardName c)
-                     match cardAction with
-                     | Some { Index = index } when index = i -> ()
-                     | _ ->
-                         OnClick (fun _ -> dispatch (SelectCard(c,i)))
-               ] [
+               div [ClassName "card-container" ]
+                   [
+                        div [ ClassName ("card " + cardName c)
+                              match cardAction with
+                              | Some { Index = index } when index = i -> 
+                                    OnClick (fun _ -> dispatch CancelCard)
+                              | _ -> OnClick (fun _ -> dispatch (SelectCard(c,i))) ] []
 
-                match cardAction with
-                | Some { Index = index; Card = Nitro power} when index = i ->
-                    button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str "Play" ]
-                | Some { Index = index; Card = Rut } when index = i ->
-                    for playerId, player in otherPlayers do
-                          div [ OnClick (fun _ -> dispatch (PlayCard (PlayRut playerId)))
-                                ClassName (colorName (Player.color player)) ] [
-                                    div [ ClassName "player"] []
-                                ] 
-                | Some { Index = index; Card = HighVoltage } when index = i ->
-                    button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str "Play" ]
-                | Some { Index = index; Card = Watchdog } when index = i ->
-                    button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str "Play" ]
-                | Some { Index = index; Card = Helicopter } when index = i ->
-                    if Fence.isEmpty (Player.fence player) then
-                        div [] [ str "Select a destination in your field" ]
-                    else
-                        div [] [ str "Cannot be played with a fence" ]
-                | Some { Index = index; Card = HayBale One } when index = i ->
-                    div [] [ str "Select a free path for the hay bale" ]
-                | Some { Index = index; Card = HayBale Two; Ext = NoExt } when index = i ->
-                    div [] [ str "Select a  free paths for the first hay bale" ]
-                | Some { Index = index; Card = HayBale Two; Ext = FirstHayBale _ } when index = i ->
-                    div [] [ str "Select a free paths for the second hay bales" ]
-                | Some { Index = index; Card = Dynamite } when index = i ->
-                    div [] [ str "Select a hay bale to blow up" ]
-                | Some { Index = index; Card = Bribe } when index = i ->
-                    match Board.bribeParcels board with
-                    | Ok _ ->
-                        div [] [ str "Select a parcel on the border of your field to take over" ]
-                    | Error Board.InstantVictory ->
-                        div [] [ str "You cannot bribe to take the last parcel ! That would be too visible !" ]
-                    | Error Board.NoParcelsToBribe ->
-                        div [] [ str "There is no parcel to bribe."]
-                        
-                | _ -> ()
-
-
-
-
-               
-               ]
+                        match cardAction with
+                        | Some { Index = index; Card = Nitro power} when index = i ->
+                            div [ ClassName "action" ]
+                                [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str "Play" ] 
+                                  cancel ]
+                        | Some { Index = index; Card = Rut } when index = i ->
+                            div [ ClassName "action"]
+                                [ for playerId, player in otherPlayers do
+                                      div [ OnClick (fun _ -> dispatch (PlayCard (PlayRut playerId)))
+                                            ClassName (colorName (Player.color player)) ] [
+                                                div [ ClassName "player"] []
+                                            ] 
+                                            
+                                  cancel ]
+                        | Some { Index = index; Card = HighVoltage } when index = i ->
+                            div [ ClassName "action" ]
+                                [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str "Play" ] 
+                                  cancel]
+                        | Some { Index = index; Card = Watchdog } when index = i ->
+                            div [ ClassName "action" ]
+                                [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str "Play" ] 
+                                  cancel]
+                        | Some { Index = index; Card = Helicopter } when index = i ->
+                            if Fence.isEmpty (Player.fence player) then
+                                div [ ClassName "action" ]
+                                    [ str "Select a destination in your field"
+                                      cancel ]
+                            else
+                                div [ ClassName "action" ] 
+                                    [ str "Cannot be played with a fence" 
+                                      cancel ]
+                        | Some { Index = index; Card = HayBale One } when index = i ->
+                            div [ ClassName "action" ] [ str "Select a free path for the hay bale"; cancel ]
+                        | Some { Index = index; Card = HayBale Two; Ext = NoExt } when index = i ->
+                            div [ ClassName "action" ] [ str "Select a  free paths for the first hay bale"; cancel ]
+                        | Some { Index = index; Card = HayBale Two; Ext = FirstHayBale _ } when index = i ->
+                            div [ ClassName "action" ] [ str "Select a free paths for the second hay bales"; cancel ]
+                        | Some { Index = index; Card = Dynamite } when index = i ->
+                            div [ ClassName "action" ] [ str "Select a hay bale to blow up"; cancel ]
+                        | Some { Index = index; Card = Bribe } when index = i ->
+                            match Board.bribeParcels board with
+                            | Ok _ ->
+                                div [ ClassName "action" ] [ str "Select a parcel on the border of your field to take over"; cancel ]
+                            | Error Board.InstantVictory ->
+                                div [ ClassName "action" ] [ str "You cannot bribe to take the last parcel ! That would be too visible !"; cancel ]
+                            | Error Board.NoParcelsToBribe ->
+                                div [ ClassName "action" ] [ str "There is no parcel to bribe."; cancel]
+                        | _ -> ()
+                    ]
            ]
     | Private cards ->
         div [ ClassName "cards"]
             [ for c in 1..cards do
-                div [ ClassName (sprintf "back z%d" c) ] []
+               div [ClassName "card-container" ]
+                   [ div [ ClassName (sprintf "card back z%d" c) ] [] ]
             ]
 
 let barnsView barns =
@@ -454,11 +471,10 @@ let boardView board =
      for _,p in Map.toSeq board.Players do
          lazyViewWith sameFence playerFences  p
 
-     for _,p in Map.toSeq board.Players do
-         playerTractor  p
+     for playerid,p in Map.toSeq board.Players do
+         playerTractor (Table.isCurrent playerid board.Table)  p
          
-     hayBalesView board
-         ]
+     hayBalesView board ]
 
 let goalView board =
     match board.Goal with
@@ -500,9 +516,11 @@ let hayBaleDestinations board =
         - board.HayBales
 
 
-let boardCardActionView dispatch player board  cardAction =
+let boardCardActionView dispatch board  cardAction =
+
     match cardAction with
     | Some { Card = Helicopter} ->
+        let player = Board.currentPlayer board
         [ for c in helicopterDestinations player board do
             crossroad c (fun _ -> dispatch (PlayCard (PlayHelicopter c))) ]
     | Some { Card =  HayBale One } ->
@@ -527,6 +545,72 @@ let boardCardActionView dispatch player board  cardAction =
     | _ ->
         []
 
+let flash active =
+    div [ classBaseList "flash" [ "inactive", not active] ]
+        []
+
+let bars = i [ ClassName "fas fa-bars"] [
+ svg [ AriaHidden true; Role "img"; ViewBox "0 0 448 512" ]
+    [ Fable.React.Standard.path [ SVGAttr.Fill "currentColor"; D "M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z" ] []]
+    ]
+
+let playersDashboard model dispatch =
+    match model.Board with
+    | InitialState -> null
+    | Board board
+    | Won(_,board) ->
+
+        div [ classBaseList "dashboard" [ "closed",not model.DashboardOpen  ] ]
+            [  
+                span [ OnClick (fun _ -> dispatch SwitchDashboard)]
+                    [ bars ]
+
+                let currentPlayer = board.Table.Player
+                for playerid in board.Table.AllPlayers do
+                    let isActive = currentPlayer = playerid
+                    let player = board.Players.[playerid]
+                    div[ classBaseList "player-dashboard" [ "local", Some playerid = model.PlayerId ]] [
+
+                        div []
+                          [ div [ ClassName (colorName (Player.color player))                             ]
+                                [ div [ classBaseList "player" [ "selected", isActive ; "ko", Player.isKo player ] ] []]
+                            
+                           
+                            div [Style [ MarginLeft "3em" ]] [ str board.Table.Names.[playerid] ] ]
+
+
+                        div [ ClassName "moves" ] 
+                            [ if isActive then
+                                match player with
+                                | Starting _->
+                                    for _ in 1 .. 3 do
+                                        flash true 
+                                | Playing p ->
+                                    for i in 1 .. p.Moves.Capacity do
+                                        flash  (i <= p.Moves.Done)
+                                | Ko _ -> ()
+                            ]
+
+                        match board.Goal with
+                        | Individual goal ->
+                            div [ ClassName "individual-goal" ]
+                                [ str (sprintf "%d parcels left" (goal - Player.fieldTotalSize player) ) ]
+                        | _ -> ()
+
+                        if model.DashboardOpen then
+                            handView dispatch board model.CardAction (Player.hand player)
+
+                        //goalView board
+                    ]
+                match board.Goal with
+                | Common goal ->
+                    div [ ClassName "common-goal" ]
+                        [ str (sprintf "%d parcels left" (goal - Board.totalSize board) ) ]
+                | _ -> ()
+
+ ]
+
+
 
 let view (model : Model) (dispatch : Msg -> unit) =
     div [ ClassName "board" ]
@@ -541,32 +625,12 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
                 yield! endTurnView dispatch model.PlayerId board
 
-                let player =  board.Players.[board.Table.Player]
 
-                yield! boardCardActionView dispatch player board model.CardAction
-
+                yield! boardCardActionView dispatch board model.CardAction
 
 
-                div [ Style [Position PositionOptions.Fixed
-                             Left 0
-                             Top "0px"
-                             Padding "10px"
-                             BackgroundColor "white"
-                            ] ]
-                    [  
-                        div [ ClassName (colorName (Player.color player))                             ]
-                            [ div [ClassName "player" ] []]
-                        
-                       
-                        div [Style [ MarginLeft "3em" ]] [ str board.Table.Names.[board.Table.Player] ]
+                playersDashboard model dispatch
 
-                        let otherPlayers =
-                            Board.otherPlayers board.Table.Player board
-                        
-                        handView dispatch board model.CardAction (Player.hand player)
-
-                        goalView board
-                    ]
             | Won(winner, board) ->
                 yield! boardView board
                 

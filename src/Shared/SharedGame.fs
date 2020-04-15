@@ -193,6 +193,7 @@ and Bonus =
 
 type Table =
     { Players: string[]
+      AllPlayers: string[]
       Names: Map<string,string>
       Current: int }
     member this.Player = this.Players.[this.Current]
@@ -203,8 +204,10 @@ type Table =
 
 module Table =
     let start players =
+        let allplayers = [| for p,_ in players -> p |]
 
-        { Players = [| for p,_ in players -> p |]
+        { Players = allplayers
+          AllPlayers = allplayers
           Current = 0
           Names = Map.ofList players }
 
@@ -212,6 +215,8 @@ module Table =
         { table with
             Players = Array.filter (fun p -> p <> player) table.Players }
 
+    let isCurrent playerid (table:Table) =
+        table.Player = playerid
 
 module Bonus =
     let empty =
@@ -310,6 +315,7 @@ type BoardState =
     }
 and STable =
     { SPlayers: string[]
+      SAllPlayers: string[]
       SNames: (string*string)[]
       SCurrent: int }
     
@@ -1597,6 +1603,7 @@ module Board =
                 |> Seq.toArray
 
               STable = { SPlayers = board.Table.Players
+                         SAllPlayers = board.Table.AllPlayers
                          SNames = [| for KeyValue(p,n) in board.Table.Names -> p,n |]
                          SCurrent = board.Table.Current }
               SDiscardPile = List.toArray board.DiscardPile
@@ -1608,7 +1615,7 @@ module Board =
                          }
         | InitialState -> 
             { SPlayers = [||]
-              STable = { SPlayers = null; SNames = null; SCurrent = 0}
+              STable = { SPlayers = null; SAllPlayers = null; SNames = null; SCurrent = 0}
               SDiscardPile = [||]
               SFreeBarns = null
               SOccupiedBarns = null
@@ -1623,6 +1630,7 @@ module Board =
                 |> Seq.toArray
 
               STable = { SPlayers = board.Table.Players
+                         SAllPlayers = board.Table.AllPlayers
                          SNames = [| for KeyValue(p,n) in board.Table.Names -> p,n |]
                          SCurrent = board.Table.Current }
               SDiscardPile = List.toArray board.DiscardPile
@@ -1642,6 +1650,7 @@ module Board =
             let state =
                   { Players = board.SPlayers |> Seq.map (fun (c,p) -> c, Player.ofState p) |> Map.ofSeq 
                     Table = { Players = board.STable.SPlayers
+                              AllPlayers = board.STable.SAllPlayers
                               Names = Map.ofArray board.STable.SNames
                               Current = board.STable.SCurrent }
                     DrawPile = [] 
