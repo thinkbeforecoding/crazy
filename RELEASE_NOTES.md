@@ -1,3 +1,6 @@
+### 0.1.6  - 2020-04-16
+* Fix #18: Show reasons for impossible movements
+
 ### 0.1.5  - 2020-04-16
 * Fix #21: Don't bribe start of fence
 

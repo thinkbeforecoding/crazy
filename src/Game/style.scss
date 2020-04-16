@@ -89,8 +89,32 @@ i.fa-bars {
     width: 2.5vw;
     height: 2.5vw;
     position: absolute;
+    z-index: 30;
+
+    /* Tooltip text */
+    .tooltiptext {
+        visibility: hidden;
+        width: 120px;
+        background-color: black;
+        color: #fff;
+        text-align: center;
+        padding: 5px 0;
+        border-radius: 6px;
+        /* Position the tooltip text - see examples below! */
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 30;
+    }
+
+
 }
 
+.crossroad:hover {
+    .tooltiptext {
+        visibility: visible;
+    }
+}
 .hay-bale {
     background-image: url(/img/hay-bale.png);
     background-repeat: no-repeat;

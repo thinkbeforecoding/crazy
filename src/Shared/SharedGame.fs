@@ -477,12 +477,6 @@ module Fence =
     let fencePaths (Fence paths) =
         paths |> List.map fst
 
-    let protection player fence =
-        let fence = fenceCrossroads player.Tractor fence
-        if player.Bonus.HighVoltage then
-            fence
-        else
-            fence |> Seq.truncate 2
 
     let start tractor (Fence paths) =
         let rec loop pos paths =
@@ -697,6 +691,7 @@ type MoveBlocker =
     | Protection
     | PhytosanitaryProducts
     | HayBaleOnPath
+    | HighVoltageProtection
 
 
 type Move =
@@ -1098,14 +1093,17 @@ module Player =
             Ok c
 
     let checkProtection player c =
-        let isOnProtection =
-            player.Fence
-            |> Fence.protection player
-            |> Seq.exists (fun p -> p = c)
-        if isOnProtection then
-            Error(c, Protection)
-        else
-            Ok c
+        let fence = Fence.fenceCrossroads player.Tractor player.Fence
+        match Seq.tryFindIndex (fun p -> p = c) fence with
+        | None -> Ok c
+        | Some i ->
+            if player.Bonus.HighVoltage then
+                Error(c, HighVoltageProtection)
+            elif i < 2 then
+                Error(c, Protection)
+            else
+                Ok c
+
         
     let checkHeliported moverBonus player c =
         if moverBonus.Heliported > 0 then

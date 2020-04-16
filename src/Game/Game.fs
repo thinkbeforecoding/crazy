@@ -258,6 +258,9 @@ let player active pos =
     |> Pix.rotate
     |> drawplayer active
 
+
+let tooltip txt =
+    div [ ClassName "tooltiptext"] [ str txt ]
 let drawcrossroad pos f =
     let x,y = Pix.ofPlayer pos |> Pix.rotate
     div [ ClassName "crossroad"
@@ -266,9 +269,19 @@ let drawcrossroad pos f =
           match f with
           | Ok f -> OnClick f
           | _ -> () ] 
-        []
+        [ match f with
+          | Ok _ -> ()
+          | Error Tractor -> tooltip "The crossroad is occupied by another tractor"
+          | Error HayBaleOnPath -> tooltip "The path is blocked by a hay bale"
+          | Error PhytosanitaryProducts -> tooltip "You cannot cut a fence just after using an Helicopter. With phytosanitary products, it could explode"
+          | Error Protection -> tooltip "You cannot cut on the two fences behind a tractor. Too close, you'd be shotgunned !"
+          | Error HighVoltageProtection -> tooltip "The fence is under High Voltage. You'd be reduced to ashes !"
+          
+                
+        ]
 
 let crossroad pos f = drawcrossroad pos (Ok f)
+
 let blockedCrossroad pos e = drawcrossroad pos (Error e)
 
 let singleFence path =
