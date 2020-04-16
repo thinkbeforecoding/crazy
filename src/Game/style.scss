@@ -209,9 +209,12 @@ i.fa-bars {
         }
 
         .tile-count {
+            font-family: BigSlabHammer;
+            color: white;
+            text-shadow: 2px 0.2em 0.2em #333;
             vertical-align: top;
-            margin-left: 0.5em;
-            margin-top: 0.5em;
+            margin-left: -1.9em;
+            margin-top: 0.3em;
             display: inline-block;
             width: 4em;
         }

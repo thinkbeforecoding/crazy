@@ -527,7 +527,7 @@ let endTurnView dispatch playerId board =
     if playerId = Some board.Table.Player then
         match  board.Players.[board.Table.Player] with
         | Playing player when 
-             not (Moves.canMove player.Moves) && Hand.canPlay player.Hand ->
+             not (Moves.canMove player.Moves) && Hand.canPlay player.Hand || List.isEmpty (Board.possibleMoves playerId (Board board)) ->
                [ crossroad player.Tractor (fun _ -> dispatch EndTurn) ]
                 
         | _ -> []
@@ -652,7 +652,7 @@ let playersDashboard model dispatch =
                             div [ ClassName ("stack " + colorName c)]
                                 [ div [ ClassName ("tile")] [] ]
                           div [ClassName "tile-count"]
-                            [ str (sprintf "x %d" (goal - Board.totalSize board)) ]
+                            [ str (sprintf "x%d" (goal - Board.totalSize board)) ]
                         ]
                 | _ -> ()
 

@@ -1,5 +1,6 @@
 ### 0.1.8  - 2020-04-16
 * Fix #22: Bad move display when selecting first crossroad
+* Fix #24: Skip turn if no move is possible
 
 ### 0.1.7  - 2020-04-16
 * Fix #23: Should be Powered after helicopter
