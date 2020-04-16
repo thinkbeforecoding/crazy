@@ -633,7 +633,7 @@ let playersDashboard model dispatch =
                                 match player with
                                 | Starting _->
                                     for _ in 1 .. 3 do
-                                        flash true 
+                                        flash false 
                                 | Playing p ->
                                     for i in 1 .. p.Moves.Capacity do
                                         flash  (i <= p.Moves.Done)
