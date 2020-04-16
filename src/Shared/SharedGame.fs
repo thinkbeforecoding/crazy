@@ -985,7 +985,10 @@ module Player =
                     [ CardPlayed card ]
                 | PlayHelicopter crossroad ->
                     [  CardPlayed card
-                       Heliported crossroad ]
+                       Heliported crossroad
+                       if player.Power = PowerDown && Crossroad.isInField player.Field crossroad then
+                            PoweredUp
+                       ]
                 | PlayHayBale _ 
                 | PlayDynamite _ ->
                     [ CardPlayed card

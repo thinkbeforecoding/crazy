@@ -240,6 +240,25 @@ let ``fence start cannot be bribed``() =
         test <@   Board.bribeParcels board = Error NoParcelsToBribe @>
     | _ -> failwith "Invalid board state"
 
+[<Fact>]
+let ``cut player should be powered up after helicopter``() =
+    let events = 
+        [ started (Common 3)
+          yield! startfences p1 (left (N+NE))  [Horizontal]
+          PlayerDrewCards { Player = "p1"; Cards = Public [ Helicopter ]}
+          Next
+          p2 ( CutFence { Player =  "p1" })
+          Next
+          ]
+         => cmd1 (PlayCard (PlayHelicopter (right (N+N))))
+    test 
+        <@
+         events
+         == [ p1 <| CardPlayed (PlayHelicopter (right (N+N))) 
+              p1 <| Heliported (right (N+N))
+              p1 <| PoweredUp ]
+
+        @>
 
 [<Fact>]
 let ``Find boder``() =

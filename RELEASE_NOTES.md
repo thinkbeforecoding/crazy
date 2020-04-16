@@ -1,3 +1,6 @@
+### 0.1.7  - 2020-04-16
+* Fix #23: Should be Powered after helicopter
+
 ### 0.1.6  - 2020-04-16
 * Fix #18: Show reasons for impossible movements
 
