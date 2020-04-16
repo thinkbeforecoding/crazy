@@ -1,3 +1,9 @@
+### 0.1.4  - 2020-04-16
+* Fix nitro+2
+* Show cards descriptions
+* hide less board with players dashboards
+* more async
+
 ### 0.1.3  - 2020-04-15
 * Show goal
 

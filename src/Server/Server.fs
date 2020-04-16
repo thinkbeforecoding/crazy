@@ -478,7 +478,7 @@ let sendChallenge config email name =
 
             do! Storage.saveChallenge config.Cosmos challenge
 
-            Email.sendCode config.BaseUri email userid code
+            do! Email.sendCode config.BaseUri email userid code
 
             return Some (userid, name)
 

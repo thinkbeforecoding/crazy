@@ -16,13 +16,14 @@
 
 // Bulma
 //@import "~bulma/bulma";
+
 @font-face {
     font-family: 'BigSlabHammer';
     /*src: url(webfont.eot');  IE9+ Compat Modes */
     /*src: url('webfont.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
     /*url('webfont.woff2') format('woff2'), Super modern browsers */
     //src: url('webfont.woff') format('woff'), /* Modern browsers */
-    src: url(../Game/public/font/BigSlabHammer.ttf) format('truetype'), /* Safari, Android, iOS */
+    src: url(~fonts/BigSlabHammer.ttf) format('truetype'), /* Safari, Android, iOS */
 }
 
 $crazy-red:  #E84737;

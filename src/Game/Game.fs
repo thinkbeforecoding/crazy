@@ -366,7 +366,7 @@ let moveView dispatch move =
 let cardName =
     function
     | Nitro One -> "card nitro-1"
-    | Nitro Two -> "card nitro-1"
+    | Nitro Two -> "card nitro-2"
     | Rut -> "card rut"
     | HayBale One -> "card hay-bale-1"
     | HayBale Two -> "card hay-bale-2"
@@ -380,6 +380,18 @@ let handView dispatch board cardAction hand =
     let player = Board.currentPlayer board
     let otherPlayers = Board.currentOtherPlayers board
     let cancel = a [ ClassName "cancel"; Href "#"; OnClick (fun _ -> dispatch CancelCard)] [ str "Cancel" ]
+    let action title texts buttons =
+        div [ClassName "action" ]
+            [ h2 [] [ str title ]
+              for t in texts do
+                p [] [ t ]
+              div [ ClassName "buttons" ] [ yield! buttons; yield cancel ] ]
+
+            
+        
+        
+
+
     match hand with 
     | Public cards -> 
        div [ ClassName "cards" ]
@@ -394,51 +406,62 @@ let handView dispatch board cardAction hand =
 
                         match cardAction with
                         | Some { Index = index; Card = Nitro power} when index = i ->
-                            div [ ClassName "action" ]
-                                [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str "Play" ] 
-                                  cancel ]
+                            action ("Nitro +" + match power with One -> "1" | Two -> "2") 
+                                [ str (sprintf "Gives you %s extra moves during this turn." (match power with One -> "one" | Two -> "two"))
+                                  Standard.i [] [str "(Reminder: max. 5 moves per turn)" ] ]
+                                 [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str "Play" ] ]
                         | Some { Index = index; Card = Rut } when index = i ->
-                            div [ ClassName "action"]
+                            action "Rut"
+                                [ str "Choose an opponent; he/she will have two fewer moves during his next turn" ]
                                 [ for playerId, player in otherPlayers do
                                       div [ OnClick (fun _ -> dispatch (PlayCard (PlayRut playerId)))
                                             ClassName (colorName (Player.color player)) ] [
-                                                div [ ClassName "player"] []
-                                            ] 
-                                            
-                                  cancel ]
+                                                div [ ClassName "player"] [] ] ]
                         | Some { Index = index; Card = HighVoltage } when index = i ->
-                            div [ ClassName "action" ]
-                                [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str "Play" ] 
-                                  cancel]
+                            action "High Voltage"
+                                [ str "Protects the entire length of the fence, even the starting point until your next turn. Other tractors cannot go through or cut your fence." ]
+                                [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str "Play" ] ]
                         | Some { Index = index; Card = Watchdog } when index = i ->
-                            div [ ClassName "action" ]
-                                [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str "Play" ] 
-                                  cancel]
+                            action "Watchdog"
+                                [ str "Protects your plots and barns from being annexed until next turn. Annexations by opponents leave your plots and barns in place." ]
+                                [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str "Play" ] ] 
                         | Some { Index = index; Card = Helicopter } when index = i ->
-                            if Fence.isEmpty (Player.fence player) then
-                                div [ ClassName "action" ]
-                                    [ str "Select a destination in your field"
-                                      cancel ]
-                            else
-                                div [ ClassName "action" ] 
-                                    [ str "Cannot be played with a fence" 
-                                      cancel ]
+                            action "Helicopter"
+                                [ str "Moves your tractor to any point in your field. The point of arrival must be in the field or at the edge. Once moved, you cannot cut any more fences until the end of the turn: crop protection agents + electicity... I could explode!"
+                                  if Fence.isEmpty (Player.fence player) then
+                                        str "Select a destination in your field"
+                                  else
+                                        str "Cannot be played with a fence" ]
+                                []
                         | Some { Index = index; Card = HayBale One } when index = i ->
-                            div [ ClassName "action" ] [ str "Select a free path for the hay bale"; cancel ]
+                            action "1 Hay Bale"
+                                [ str "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent." 
+                                  str "Select a free path for the hay bale" ]
+                                []
                         | Some { Index = index; Card = HayBale Two; Ext = NoExt } when index = i ->
-                            div [ ClassName "action" ] [ str "Select a  free paths for the first hay bale"; cancel ]
+                            action "2 Hay Bales"
+                                [ str "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent."
+                                  str "Select a  free paths for the first hay bale"]
+                                []
                         | Some { Index = index; Card = HayBale Two; Ext = FirstHayBale _ } when index = i ->
-                            div [ ClassName "action" ] [ str "Select a free paths for the second hay bales"; cancel ]
+                             action "2 Hay Bales"
+                                [ str "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent."
+                                  str "Select a free paths for the second hay bales" ] 
+                                []
                         | Some { Index = index; Card = Dynamite } when index = i ->
-                            div [ ClassName "action" ] [ str "Select a hay bale to blow up"; cancel ]
-                        | Some { Index = index; Card = Bribe } when index = i ->
-                            match Board.bribeParcels board with
-                            | Ok _ ->
-                                div [ ClassName "action" ] [ str "Select a parcel on the border of your field to take over"; cancel ]
-                            | Error Board.InstantVictory ->
-                                div [ ClassName "action" ] [ str "You cannot bribe to take the last parcel ! That would be too visible !"; cancel ]
-                            | Error Board.NoParcelsToBribe ->
-                                div [ ClassName "action" ] [ str "There is no parcel to bribe."; cancel]
+                             action "2 Hay Bales"
+                                [ str "Remove 1 Hay Bale of your choice" 
+                                  str "Select a hay bale to blow up" ]
+                                []
+                        | Some { Index = index; Card =  Bribe } when index = i ->
+                             action "Bribe"
+                                [ str "It wasn't clear on the plan... slipping a small bill should do the trick. The choose a plot of an opponent's field that has a common edge with yours... now it belongs to you! Careful, it needs to be discreet. You cannot take a plot of land from which a fence starts, it would cut it off, hence a bit conspicuous... You cannot take a barn either, hard to hide... You cannot place your last plot using this bonus, it would be a bit much!"
+                                  match Board.bribeParcels board with
+                                  | Ok _ -> str "Select a parcel on the border of your field to take over"
+                                  | Error Board.InstantVictory -> str "You cannot bribe to take the last parcel ! That would be too visible !"
+                                  | Error Board.NoParcelsToBribe -> str "There is no parcel to bribe."
+                                ]
+                                []
                         | _ -> ()
                     ]
            ]
@@ -625,59 +648,58 @@ let playersDashboard model dispatch =
 
 
 let view (model : Model) (dispatch : Msg -> unit) =
-    div [ ClassName "board" ]
-        [
-            match model.Board with
-            | InitialState -> ()
-            | Board board ->
-                yield! boardView board
+    match model.Board with
+    | InitialState -> 
+        div [ClassName "board" ] []
+    | Board board ->
+        div [] 
+            [ playersDashboard model dispatch
+              div [ ClassName "board" ]
+                [ yield! boardView board
 
-                for m in model.Moves do
+                  for m in model.Moves do
                     moveView dispatch m
 
-                yield! endTurnView dispatch model.PlayerId board
+                  yield! endTurnView dispatch model.PlayerId board
 
 
-                yield! boardCardActionView dispatch board model.CardAction
+                  yield! boardCardActionView dispatch board model.CardAction ] ]
+    | Won(winner, board) ->
+        div []
+            [ div [ ClassName "board" ]
+                  [ yield! boardView board
+        
+
+                    div [ Style [ Position PositionOptions.Absolute
+                                  Top "10em"
+                                  Left "10em"
+                                  BackgroundColor "white"
+                                  ] ]
+                        [ p [] [ str "And the winner is :"]
+                          p [] [ str board.Table.Names.[winner] ] ] ] ]
+
+        
 
 
-                playersDashboard model dispatch
+    //div [ Style [ Position PositionOptions.Fixed
+    //              Top 0
+    //              Left 0
+    //              BackgroundColor "white"
+    //              ]
+    //]  [   p [] [str (sprintf "%d %s" model.Version model.Message)]
+    //       p [] [str model.Error ] ]
 
-            | Won(winner, board) ->
-                yield! boardView board
-                
-
-                div [ Style [ Position PositionOptions.Absolute
-                              Top "10em"
-                              Left "10em"
-                              BackgroundColor "white"
-                              ] ]
-                    [ p [] [ str "And the winner is :"]
-                      p [] [ str board.Table.Names.[winner] ] ]
-
-                
-
-
-            //div [ Style [ Position PositionOptions.Fixed
-            //              Top 0
-            //              Left 0
-            //              BackgroundColor "white"
-            //              ]
-            //]  [   p [] [str (sprintf "%d %s" model.Version model.Message)]
-            //       p [] [str model.Error ] ]
-
-            //for q in -4..4 do
-            // for r in -4..4 do
-            //    let px,py = Pix.ofTile (Axe(q,r))
-            //    let x,y,z = Axe.cube (Axe(q,r))
-            //    div [ Style [ Position PositionOptions.Absolute
-            //                  Left (sprintf "%fvw" (px+2.5))
-            //                  Top (sprintf "%fvw" (py+2.5))
-            //                  BackgroundColor "white"
-            //                   ]] 
-            //        [ //str (sprintf "%d,%d,%d" x y z)
-            //          str (sprintf "%d, %d" q r) ]
-        ]
+    //for q in -4..4 do
+    // for r in -4..4 do
+    //    let px,py = Pix.ofTile (Axe(q,r))
+    //    let x,y,z = Axe.cube (Axe(q,r))
+    //    div [ Style [ Position PositionOptions.Absolute
+    //                  Left (sprintf "%fvw" (px+2.5))
+    //                  Top (sprintf "%fvw" (py+2.5))
+    //                  BackgroundColor "white"
+    //                   ]] 
+    //        [ //str (sprintf "%d,%d,%d" x y z)
+    //          str (sprintf "%d, %d" q r) ]
 
 
 

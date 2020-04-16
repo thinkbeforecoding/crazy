@@ -8,6 +8,7 @@ open Fable.React.Props
 open Fable.ReactServer
 open Microsoft.Extensions.Configuration
 open System.IO
+open FSharp.Control.Tasks
 
 let mailContent baseUri userid code =
     html [] 
@@ -48,17 +49,19 @@ let smtpConfig =
 
 
 let sendCode baseUri email userid code =
-    try
-        let msg = MimeMessage()
-        msg.From.Add(MailboxAddress("Crazy Farmers","no-reply@thefreaky42.com"))
-        msg.To.Add(MailboxAddress(email))
-        msg.Subject <- "Crazy Farmers"
-        msg.Body <- TextPart("html", Text = renderToString (mailContent baseUri userid code))
+    task {
+        try
+            let msg = MimeMessage()
+            msg.From.Add(MailboxAddress("Crazy Farmers","no-reply@thefreaky42.com"))
+            msg.To.Add(MailboxAddress(email))
+            msg.Subject <- "Crazy Farmers"
+            msg.Body <- TextPart("html", Text = renderToString (mailContent baseUri userid code))
 
-        let client = new SmtpClient()
-        client.Connect(smtpConfig.Host,smtpConfig.Port  ,true)
-        client.Authenticate(smtpConfig.User,smtpConfig.Password)
-        client.Send(msg)
-    with 
-    | ex -> printfn "Error while sending email:\n%O" ex
+            let client = new SmtpClient()
+            do! client.ConnectAsync(smtpConfig.Host,smtpConfig.Port  ,true)
+            do!  client.AuthenticateAsync(smtpConfig.User,smtpConfig.Password)
+            do! client.SendAsync(msg)
+        with 
+        | ex -> printfn "Error while sending email:\n%O" ex
+    }
 

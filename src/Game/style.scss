@@ -14,6 +14,14 @@
 
 // Bulma
 //@import "~bulma/bulma";
+@font-face {
+    font-family: 'BigSlabHammer';
+    /*src: url(webfont.eot');  IE9+ Compat Modes */
+    /*src: url('webfont.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
+    /*url('webfont.woff2') format('woff2'), Super modern browsers */
+    //src: url('webfont.woff') format('woff'), /* Modern browsers */
+    src: url(/font/BigSlabHammer.ttf) format('truetype') /* Safari, Android, iOS */
+}
 
 $crazy-tree: #9DAA52;
 $crazy-green: #CBDE9C;
@@ -29,8 +37,10 @@ body {
 .board {
     background-image: url(/img/board.jpg);
     background-size: contain;
+    position: relative;
     width: 100vw;
     height: 100vw;
+    margin-top: 2em;
 }
 .fence {
     background-size: contain;
@@ -102,6 +112,7 @@ i.fa-bars {
     position: fixed;
     width: 100vw;
     top: 0;
+    z-index: 100;
     div {
         display: inline-block;
     }
@@ -294,21 +305,21 @@ $back-x: -4.8vw;
 $back-y: 0.15vw;
 
 .cards {
-    padding-top: 8px;
+    padding-top: 0.2vw;
     width: 25vw;
 
     .card-container {
         display: inline-block;
         height: 100%;
     }
-        
+
     div.card {
         /*margin-top: 3em;*/
         width: 5vw;
         height: 7.25vw;
         background-size: contain;
         background-repeat: no-repeat;
-        border-radius: 8px;
+        border-radius: 0.5vw;
         background-clip: padding-box;
         box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
         /*display: inline-block;*/
@@ -316,17 +327,26 @@ $back-y: 0.15vw;
     }
 
     div.action {
-
         position: absolute;
         border: 1px solid $crazy-tree;
         background-color: $crazy-green;
         border-radius: 1em;
         padding: 1em;
+        z-index: 200;
 
-        .cancel {
-            display: block;
+        h2 {
+            font-family: BigSlabHammer;
+        }
+
+        .buttons {
             margin-top: 0.3em;
-            color: black;
+            width: 100%;
+            padding-right: 1em;
+
+            .cancel {
+                float: right;
+                color: black;
+            }
         }
     }
 
@@ -340,7 +360,7 @@ $back-y: 0.15vw;
     }
 
     .nitro-2 {
-        background-image: url(/img/card-nitro-1.jpg);
+        background-image: url(/img/card-nitro-2.jpg);
     }
 
     .rut {

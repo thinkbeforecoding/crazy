@@ -92,7 +92,7 @@ module.exports = {
               resolve(CONFIG.cssEntry)],
 
         join: [resolve('./src/Join/Join.fsproj'),
-               resolve(resolve('./src/Join/join-style.scss'))]
+               resolve('./src/Join/join-style.scss')]
 
     } : {
             game: [resolve(CONFIG.fsharpEntry)],
@@ -130,7 +130,11 @@ module.exports = {
         ]),
     resolve: {
         // See https://github.com/fable-compiler/Fable/issues/1490
-        symlinks: false
+        symlinks: false,
+        alias: {
+            fonts: path.resolve(__dirname, "src/Game/public/font")
+        }
+
     },
     // Configuration for webpack-dev-server
     devServer: {
