@@ -332,6 +332,12 @@ module Crossroad =
         | CRight, Horizontal -> tile + Axe.E2, CLeft
         |> Crossroad
 
+    let neighborTiles (Crossroad(tile, side)) =
+        let p = Parcel tile
+        match side with
+        | CLeft -> [p; p+Axe.NW; p+Axe.SW ]
+        | CRight -> [ p; p+Axe.NE; p+Axe.SE]
+
     let tile (Crossroad(tile,_)) = tile
     let side (Crossroad(_,side)) = side
 
@@ -1324,8 +1330,18 @@ module Board =
                         if Field.size field = 1 then
                             Field.empty
                         else
-                            field)
+                            match player with
+                            | Playing p ->
+                                let startCrossRoad = Fence.start p.Tractor p.Fence
+                                let startTiles = 
+                                    Crossroad.neighborTiles startCrossRoad
+                                    |> Field.ofParcels
+                                field - startTiles
+                            | Starting _ 
+                            | Ko _ -> field
+                                )
                  |> Field.unionMany
+            
 
             let parcelsToBribe = (Field.interesect border otherPlayersFields) - barns
             if Field.isEmpty parcelsToBribe then

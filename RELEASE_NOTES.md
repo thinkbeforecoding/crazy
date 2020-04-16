@@ -1,3 +1,6 @@
+### 0.1.5  - 2020-04-16
+* Fix #21: Don't bribe start of fence
+
 ### 0.1.4  - 2020-04-16
 * Fix nitro+2
 * Show cards descriptions
