@@ -63,7 +63,8 @@ module Pix =
 
 type CardExt =
     | NoExt
-    | FirstHayBale of Path
+    | FirstHayBale of bool * Path
+    | Hidden 
 
 type CardAction = 
     { Index: int
@@ -86,6 +87,7 @@ type Model = {
     Message: string
     Error : string
     DashboardOpen: bool
+    PlayedCard: Card option
     }
 
 // The Msg type defines what events/actions can occur while the application is running
@@ -101,6 +103,8 @@ type Msg =
     | EndTurn
     | Remote of ClientMsg
     | ConnectionLost
+    | Go
+    | HidePlayedCard
 
 let parseGame (s:string) =
     let idx = s.LastIndexOf("/")
@@ -119,6 +123,7 @@ let init () : Model * Cmd<Msg> =
       Message = "Init from client"
       Error = ""
       DashboardOpen = true
+      PlayedCard = None
     }, Cmd.none
 
 // The update function computes the next state of the application based on the current state and the incoming events/messages
@@ -162,7 +167,21 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         { currentModel with
             CardAction = 
                 currentModel.CardAction
-                |> Option.map (fun c -> { c with Ext = FirstHayBale bale })}, Cmd.none
+                |> Option.map (fun c -> { c with Ext = FirstHayBale (false,bale) })}, Cmd.none
+    | Go ->
+        { currentModel with
+            CardAction =
+                currentModel.CardAction
+                |> Option.map (fun c ->
+                    { c with
+                        Ext = 
+                            match c.Ext with
+                            | FirstHayBale(_,bale) -> FirstHayBale(true,bale)
+                            | _ -> Hidden }) 
+        }, Cmd.none
+    | HidePlayedCard ->
+        { currentModel with
+            PlayedCard = None }, Cmd.none
     | EndTurn ->
         Player.EndTurn
         |> handleCommand { currentModel with CardAction = None}
@@ -190,6 +209,12 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         if version >= currentModel.Version then
             let newState = List.fold Board.evolve currentModel.Synched e
             let newVersion = version + 1
+            let newCard = 
+                e |> List.fold (fun card e ->
+                    match e with
+                    | Board.Played(_,Player.CardPlayed c ) -> Some (Card.ofPlayCard c)
+                    | _ -> card
+                    ) currentModel.PlayedCard
             { currentModel with
                   Board = 
                     if newVersion >= currentModel.LocalVersion then
@@ -202,6 +227,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                   Error = currentModel.Error + "\n" + string version
                   Moves = Board.possibleMoves currentModel.PlayerId newState
                   Message = "Event"
+                  PlayedCard = newCard
             }, Cmd.none
         else
           { currentModel with Error = currentModel.Error + sprintf "\nskipped %d (<%d)" version currentModel.Version }, Cmd.none
@@ -393,17 +419,13 @@ let handView dispatch board cardAction hand =
     let player = Board.currentPlayer board
     let otherPlayers = Board.currentOtherPlayers board
     let cancel = a [ ClassName "cancel"; Href "#"; OnClick (fun _ -> dispatch CancelCard)] [ str "Cancel" ]
+    let go = button [ OnClick (fun _ -> dispatch Go )]  [str "Go" ]
     let action title texts buttons =
         div [ClassName "action" ]
             [ h2 [] [ str title ]
               for t in texts do
                 p [] [ t ]
               div [ ClassName "buttons" ] [ yield! buttons; yield cancel ] ]
-
-            
-        
-        
-
 
     match hand with 
     | Public cards -> 
@@ -418,55 +440,55 @@ let handView dispatch board cardAction hand =
                               | _ -> OnClick (fun _ -> dispatch (SelectCard(c,i))) ] []
 
                         match cardAction with
-                        | Some { Index = index; Card = Nitro power} when index = i ->
+                        | Some { Index = index; Card = Nitro power; Ext = NoExt} when index = i ->
                             action ("Nitro +" + match power with One -> "1" | Two -> "2") 
                                 [ str (sprintf "Gives you %s extra moves during this turn." (match power with One -> "one" | Two -> "two"))
                                   Standard.i [] [str "(Reminder: max. 5 moves per turn)" ] ]
                                  [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str "Play" ] ]
-                        | Some { Index = index; Card = Rut } when index = i ->
+                        | Some { Index = index; Card = Rut; Ext = NoExt } when index = i ->
                             action "Rut"
                                 [ str "Choose an opponent; he/she will have two fewer moves during his next turn" ]
                                 [ for playerId, player in otherPlayers do
                                       div [ OnClick (fun _ -> dispatch (PlayCard (PlayRut playerId)))
                                             ClassName (colorName (Player.color player)) ] [
                                                 div [ ClassName "player"] [] ] ]
-                        | Some { Index = index; Card = HighVoltage } when index = i ->
+                        | Some { Index = index; Card = HighVoltage; Ext = NoExt } when index = i ->
                             action "High Voltage"
                                 [ str "Protects the entire length of the fence, even the starting point until your next turn. Other tractors cannot go through or cut your fence." ]
                                 [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str "Play" ] ]
-                        | Some { Index = index; Card = Watchdog } when index = i ->
+                        | Some { Index = index; Card = Watchdog; Ext = NoExt } when index = i ->
                             action "Watchdog"
                                 [ str "Protects your plots and barns from being annexed until next turn. Annexations by opponents leave your plots and barns in place." ]
                                 [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str "Play" ] ] 
-                        | Some { Index = index; Card = Helicopter } when index = i ->
+                        | Some { Index = index; Card = Helicopter; Ext = NoExt } when index = i ->
                             action "Helicopter"
                                 [ str "Moves your tractor to any point in your field. The point of arrival must be in the field or at the edge. Once moved, you cannot cut any more fences until the end of the turn: crop protection agents + electicity... I could explode!"
                                   if Fence.isEmpty (Player.fence player) then
                                         str "Select a destination in your field"
                                   else
                                         str "Cannot be played with a fence" ]
-                                []
-                        | Some { Index = index; Card = HayBale One } when index = i ->
+                                [ go ]
+                        | Some { Index = index; Card = HayBale One; Ext = NoExt } when index = i ->
                             action "1 Hay Bale"
                                 [ str "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent." 
                                   str "Select a free path for the hay bale" ]
-                                []
+                                [ go ]
                         | Some { Index = index; Card = HayBale Two; Ext = NoExt } when index = i ->
                             action "2 Hay Bales"
                                 [ str "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent."
                                   str "Select a  free paths for the first hay bale"]
-                                []
-                        | Some { Index = index; Card = HayBale Two; Ext = FirstHayBale _ } when index = i ->
+                                [ go ]
+                        | Some { Index = index; Card = HayBale Two; Ext = FirstHayBale (false,_) } when index = i ->
                              action "2 Hay Bales"
                                 [ str "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent."
                                   str "Select a free paths for the second hay bales" ] 
-                                []
-                        | Some { Index = index; Card = Dynamite } when index = i ->
-                             action "2 Hay Bales"
+                                [ go ]
+                        | Some { Index = index; Card = Dynamite; Ext = NoExt } when index = i ->
+                             action "Dynamite"
                                 [ str "Remove 1 Hay Bale of your choice" 
                                   str "Select a hay bale to blow up" ]
-                                []
-                        | Some { Index = index; Card =  Bribe } when index = i ->
+                                [ go ]
+                        | Some { Index = index; Card =  Bribe; Ext = NoExt } when index = i ->
                              action "Bribe"
                                 [ str "It wasn't clear on the plan... slipping a small bill should do the trick. The choose a plot of an opponent's field that has a common edge with yours... now it belongs to you! Careful, it needs to be discreet. You cannot take a plot of land from which a fence starts, it would cut it off, hence a bit conspicuous... You cannot take a barn either, hard to hide... You cannot place your last plot using this bonus, it would be a bit much!"
                                   match Board.bribeParcels board with
@@ -474,7 +496,7 @@ let handView dispatch board cardAction hand =
                                   | Error Board.InstantVictory -> str "You cannot bribe to take the last parcel ! That would be too visible !"
                                   | Error Board.NoParcelsToBribe -> str "There is no parcel to bribe."
                                 ]
-                                []
+                                [ go ]
                         | _ -> ()
                     ]
            ]
@@ -562,10 +584,10 @@ let boardCardActionView dispatch board  cardAction =
     | Some { Card =  HayBale One } ->
         [ for p in hayBaleDestinations board do
             path p (fun _ -> dispatch (PlayCard (PlayHayBale [ p ]))) ]
-    | Some {Card = HayBale Two; Ext = NoExt } ->
+    | Some {Card = HayBale Two; Ext = (NoExt | Hidden) } ->
         [ for p in hayBaleDestinations board do
             path p (fun _ -> dispatch (SelectHayBale p) ) ]
-    | Some {Card = HayBale Two; Ext = FirstHayBale fp } ->
+    | Some {Card = HayBale Two; Ext = FirstHayBale(_,fp) } ->
         [ haybale fp
           for p in hayBaleDestinations board do
             path p (fun _ -> dispatch (PlayCard (PlayHayBale [fp; p])) ) ]
@@ -590,6 +612,24 @@ let bars = i [ ClassName "fas fa-bars"] [
     [ Fable.React.Standard.path [ SVGAttr.Fill "currentColor"; D "M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z" ] []]
     ]
 
+let bonusMarkers bonus =
+    div [ ClassName "markers"]
+        [
+          for _ in  1 .. bonus.Rutted do
+            div [ ClassName "rut-marker" ] []
+          for _ in 1 .. bonus.NitroOne do
+            div [ ClassName "nitro-1-marker"] []
+          for _ in 1 .. bonus.NitroTwo do
+            div [ ClassName "nitro-2-marker"] []
+          if bonus.HighVoltage then
+            div [ ClassName "highvoltage-marker" ] []
+          if bonus.Watched then
+            div [ ClassName "watchdog-marker" ] []
+          if bonus.Heliported > 0 then
+            div [ ClassName "helicopter-marker" ] []
+
+        ]
+
 let playersDashboard model dispatch =
     match model.Board with
     | InitialState -> null
@@ -606,15 +646,35 @@ let playersDashboard model dispatch =
                     let isActive = currentPlayer = playerid
                     let player = board.Players.[playerid]
                     div[ classBaseList "player-dashboard" [ "local", Some playerid = model.PlayerId ]] [
+                        div [ ClassName "player-top"]
+                            [
+                                div [ ClassName "description"]
+                                  [ div [ ClassName (colorName (Player.color player)) ]
+                                        [ div [ classBaseList "player" [ "selected", isActive ; "ko", Player.isKo player ] ] []]
+                                    
+                                   
+                                    div [ ClassName "name"] [ str board.Table.Names.[playerid] ] 
+                                    
+                                    div [ ClassName "moves" ] 
+                                        [ if isActive then
+                                            match player with
+                                            | Starting _->
+                                                for _ in 1 .. 3 do
+                                                    flash false 
+                                            | Playing p ->
+                                                for i in 1 .. p.Moves.Capacity do
+                                                    flash  (i <= p.Moves.Done)
+                                            | Ko _ -> ()
+                                        ]
 
-                        div []
-                          [ div [ ClassName (colorName (Player.color player))                             ]
-                                [ div [ classBaseList "player" [ "selected", isActive ; "ko", Player.isKo player ] ] []]
-                            
-                           
-                            div [Style [ MarginLeft "3em" ]] [ str board.Table.Names.[playerid] ] ]
+                                    ]
 
-                            
+                                
+                                                      
+
+                                bonusMarkers (Player.bonus player)
+                            ]
+
                         match player, board.Goal with
                         | Ko _, _ -> ()
                         | _, Individual goal ->
@@ -625,20 +685,8 @@ let playersDashboard model dispatch =
                                       [ str (sprintf "x %d" (goal - Player.fieldTotalSize player)) ] 
                                 ]
                         | _ -> ()
-                           
 
 
-                        div [ ClassName "moves" ] 
-                            [ if isActive then
-                                match player with
-                                | Starting _->
-                                    for _ in 1 .. 3 do
-                                        flash false 
-                                | Playing p ->
-                                    for i in 1 .. p.Moves.Capacity do
-                                        flash  (i <= p.Moves.Done)
-                                | Ko _ -> ()
-                            ]
                         if model.DashboardOpen then
                             handView dispatch board model.CardAction (Player.hand player)
 
@@ -659,6 +707,14 @@ let playersDashboard model dispatch =
  ]
 
 
+let playedCard dispatch card =
+    match card with
+    | Some c ->
+      div [ClassName "played-card"
+           OnAnimationEnd (fun _ -> dispatch HidePlayedCard) ]
+          [ div [ClassName ("card " + cardName c)] [] ]
+    | None -> null
+
 
 let view (model : Model) (dispatch : Msg -> unit) =
     match model.Board with
@@ -676,7 +732,11 @@ let view (model : Model) (dispatch : Msg -> unit) =
                   yield! endTurnView dispatch model.PlayerId board
 
 
-                  yield! boardCardActionView dispatch board model.CardAction ] ]
+                  yield! boardCardActionView dispatch board model.CardAction 
+
+                ]
+              lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
+            ]
     | Won(winner, board) ->
         div []
             [ div [ ClassName "board" ]

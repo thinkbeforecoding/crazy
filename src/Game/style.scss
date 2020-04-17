@@ -34,6 +34,12 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+@media screen and (max-width: 800px) {
+    body {
+        font-size: small;
+    }
+}
+
 .board {
     background-image: url(/img/board.jpg);
     background-size: contain;
@@ -134,28 +140,42 @@ i.fa-bars {
 .dashboard {
     background-color: $crazy-green;
     position: fixed;
-    width: 100vw;
+    width: 100%;
     top: 0;
     z-index: 100;
-    div {
-        display: inline-block;
-    }
+    display: flex;
+    flex-flow: row wrap;
+
 
     .player-dashboard {
-        vertical-align: top;
-        display: inline-block;
+        flex: 1 1 25vw;
         padding-top: 0.2em;
         padding-bottom: 0.1em;
-        margin-left: 1em;
-        padding-left: 1em;
-        padding-right: 1em;
+        display: flex;
+        flex-flow: column;
 
-        .player {
-            display: block;
-            margin-top: -1em;
-            width: 2em;
-            height: 2em;
-            z-index: 10;
+        .player-top {
+            flex: 0 0 3em;
+            display: flex;
+            flex-flow: row;
+            align-content: stretch;
+        }
+
+        .description {
+            flex: 0 0 auto;
+
+            .player {
+                display: block;
+                /*margin-top: 1em;*/
+                margin-left: 0.5em;
+                width: 2em;
+                height: 2em;
+                z-index: 10;
+            }
+
+            .name {
+                margin-left: 3em;
+            }
         }
     }
 
@@ -164,15 +184,52 @@ i.fa-bars {
     }
 
     .moves {
-        display: block;
+        display: inline-block;
         margin-left: 2.5em;
         height: 1.5em;
     }
 
+    .markers {
+        flex: 1 1 auto;
+        margin-left: 0.5em;
+
+        div {
+            width: 2.5em;
+            height: 2.5em;
+            background-size: contain;
+            background-repeat: no-repeat;
+            display: inline-block;
+        }
+
+        .rut-marker {
+            background-image: url(/img/rut-marker.png);
+        }
+
+        .nitro-1-marker {
+            background-image: url(/img/nitro-1-marker.png);
+        }
+
+        .nitro-2-marker {
+            background-image: url(/img/nitro-2-marker.png);
+        }
+
+        .watchdog-marker {
+            background-image: url(/img/watchdog-marker.png);
+        }
+
+        .highvoltage-marker {
+            background-image: url(/img/highvoltage-marker.png);
+        }
+
+        .helicopter-marker {
+            background-image: url(/img/helicopter-marker.png);
+        }
+    }
+
     .individual-goal {
-        display:block;
+        display: block;
         margin-left: 1em;
-        float:right;
+        float: right;
 
         .stack {
         }
@@ -192,14 +249,16 @@ i.fa-bars {
     }
 
     .common-goal {
-        display: inline-block;
-        margin-left: 5em;
-        vertical-align: middle;
-
+        margin-left: auto;
+        flex: 0 0 auto;
+        width: 0.2em;
+        padding-left: 3em;
+        text-wrap: none;
 
         .stack {
             display: inline-block;
             margin-left: -2.3em;
+            margin-top: 0.5em;
         }
 
         .tile {
@@ -214,9 +273,8 @@ i.fa-bars {
             text-shadow: 2px 0.2em 0.2em #333;
             vertical-align: top;
             margin-left: -1.9em;
-            margin-top: 0.3em;
+            margin-top: 0.8em;
             display: inline-block;
-            width: 4em;
         }
     }
 
@@ -243,8 +301,6 @@ i.fa-bars {
         height: 1em;
     }
 }
-
-
 .blue {
     .fence {
         background-image: url(/img/fence-blue.png);
@@ -331,26 +387,73 @@ i.fa-bars {
 $back-x: -4.8vw;
 $back-y: 0.15vw;
 
+
+div.card {
+    /*margin-top: 3em;*/
+    width: 5vw;
+    height: 7.25vw;
+    background-size: contain;
+    background-repeat: no-repeat;
+    border-radius: 0.5vw;
+    background-clip: padding-box;
+    box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
+    /*display: inline-block;*/
+    margin-right: 0.4vw;
+}
+
+
+
+div.back {
+    position: relative;
+    background-image: url(/img/card-back.jpg);
+}
+
+.nitro-1 {
+    background-image: url(/img/card-nitro-1.jpg);
+}
+
+.nitro-2 {
+    background-image: url(/img/card-nitro-2.jpg);
+}
+
+.rut {
+    background-image: url(/img/card-rut.jpg);
+}
+
+.hay-bale-1 {
+    background-image: url(/img/card-1-hay-bale.jpg);
+}
+
+.hay-bale-2 {
+    background-image: url(/img/card-2-hay-bales.jpg);
+}
+
+.dynamite {
+    background-image: url(/img/card-dynamite.jpg);
+}
+
+.high-voltage {
+    background-image: url(/img/card-high-voltage.jpg);
+}
+
+.watchdog {
+    background-image: url(/img/card-watchdog.jpg);
+}
+
+.helicopter {
+    background-image: url(/img/card-helicopter.jpg);
+}
+
+.bribe {
+    background-image: url(/img/card-bribe.jpg);
+}
+
+
 .cards {
     padding-top: 0.2vw;
-    width: 25vw;
 
     .card-container {
         display: inline-block;
-        height: 100%;
-    }
-
-    div.card {
-        /*margin-top: 3em;*/
-        width: 5vw;
-        height: 7.25vw;
-        background-size: contain;
-        background-repeat: no-repeat;
-        border-radius: 0.5vw;
-        background-clip: padding-box;
-        box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
-        /*display: inline-block;*/
-        margin-right: 0.4vw;
     }
 
     div.action {
@@ -376,52 +479,6 @@ $back-y: 0.15vw;
             }
         }
     }
-
-    div.back {
-        position: relative;
-        background-image: url(/img/card-back.jpg);
-    }
-
-    .nitro-1 {
-        background-image: url(/img/card-nitro-1.jpg);
-    }
-
-    .nitro-2 {
-        background-image: url(/img/card-nitro-2.jpg);
-    }
-
-    .rut {
-        background-image: url(/img/card-rut.jpg);
-    }
-
-    .hay-bale-1 {
-        background-image: url(/img/card-1-hay-bale.jpg);
-    }
-
-    .hay-bale-2 {
-        background-image: url(/img/card-2-hay-bales.jpg);
-    }
-
-    .dynamite {
-        background-image: url(/img/card-dynamite.jpg);
-    }
-
-    .high-voltage {
-        background-image: url(/img/card-high-voltage.jpg);
-    }
-
-    .watchdog {
-        background-image: url(/img/card-watchdog.jpg);
-    }
-
-    .helicopter {
-        background-image: url(/img/card-helicopter.jpg);
-    }
-
-    .bribe {
-        background-image: url(/img/card-bribe.jpg);
-    }
-
 
     .z1 {
         top: 0;
@@ -459,3 +516,26 @@ $back-y: 0.15vw;
         z-index: 1;
     }
 }
+@keyframes fadeout
+{
+  0% { opacity: 0; }
+  5% { opacity: 1;}
+  90% { opacity: 1;}
+  100% { opacity: 0; }
+}
+
+.played-card {
+    position: fixed;
+    right: 3em;
+    top: 7em;
+    opacity: 0;
+    z-index: 150;
+    animation-name: fadeout;
+    animation-duration: 6s;
+    transition-property: opacity;
+    .card {
+        width: 2*5vw;
+        height: 2*7.25vw;
+    }
+}
+

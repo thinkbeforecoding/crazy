@@ -1008,7 +1008,6 @@ module Player =
                     
         | _ -> failwith "Invalid operation"      
 
-
     let evolve player event =
         match player, event with
         | Starting p, FirstCrossroadSelected e ->
@@ -1039,7 +1038,16 @@ module Player =
             Playing { player with
                         Hand = 
                             player.Hand 
-                            |> Hand.remove (Card.ofPlayCard card) }
+                            |> Hand.remove (Card.ofPlayCard card)
+                        Bonus =
+                            match card with
+                            | PlayNitro One ->
+                                { player.Bonus with NitroOne = player.Bonus.NitroOne + 1 }
+                            | PlayNitro Two ->
+                                { player.Bonus with NitroTwo = player.Bonus.NitroTwo + 1 }
+                            | _ -> player.Bonus
+
+                            }
 
         |  Playing player, BonusDiscarded e ->
             Playing { player with
@@ -1216,9 +1224,6 @@ module DrawPile =
     let shuffle cards =
         let rand = System.Random()
         List.sortBy (fun _ -> rand.Next()) cards
-        //List.sortBy (function
-        //    | Helicopter -> System.Int32.MinValue
-        //    | _ -> rand.Next()) cards
 
 
     let remove cards pile =

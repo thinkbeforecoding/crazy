@@ -200,13 +200,17 @@ let gameRunner container gameid =
 
 
         async {
-            let! board, expectedVersion  = 
-                EventStore.fold deserialize container Board.evolve stream Board.initialState 0
-                |> Async.AwaitTask
-        
+            try 
+                let! board, expectedVersion  = 
+                    EventStore.fold deserialize container Board.evolve stream Board.initialState 0
+                    |> Async.AwaitTask
+            
 
 
-            return! loop board expectedVersion
+                return! loop board expectedVersion
+
+            with
+            | ex -> printfn "%O" ex
         }
     )
 
