@@ -1,3 +1,6 @@
+### 0.2.3  - 2020-04-17
+* Change url in join script to avoid losing game on refresh
+
 ### 0.2.2  - 2020-04-17
 * Better individual goal
 * Better join screen on phones

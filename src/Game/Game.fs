@@ -113,6 +113,8 @@ let parseGame (s:string) =
 // defines the initial state and initial command (= side-effect) of the application
 let init () : Model * Cmd<Msg> =
     let board= Board.initialState
+ 
+
     { Board = board
       LocalVersion = -1
       Synched = board
@@ -143,7 +145,7 @@ let handleCommand (model : Model) command =
                 Moves = Board.possibleMoves model.PlayerId newState
                 CardAction = None
             } , Cmd.bridgeSend(Command command)
-    | None -> model, Cmd.none
+    | None -> model,  Cmd.none
 
 
 let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =

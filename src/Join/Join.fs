@@ -137,11 +137,12 @@ let handleCommand state (command, serverCmd : ServerMsg) =
 // these commands in turn, can dispatch messages to which the update function will react.
 let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     match msg with
-    | CreateNewGame  ->
+    | CreateNewGame ->
         currentModel, Cmd.bridgeSend(CreateGame)
     | SelectJoin ->
         { currentModel with Game = SelectGame}, Cmd.none
     | Join gameid ->
+        Browser.Dom.document.location.hash <- gameid
         currentModel, Cmd.bridgeSend(ServerMsg.JoinGame gameid)
     | SelectColor color ->
         match currentModel.Player with
@@ -162,10 +163,18 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         currentModel, Cmd.bridgeSend(ServerMsg.Login email)
     | Register (email,name) ->
         currentModel, Cmd.bridgeSend(ServerMsg.Register (email,name))
+
     | Remote(LoggedIn(playerid,name)) ->
+        let cmd = 
+            let hash = Browser.Dom.window.location.hash.TrimStart('#')
+            if System.String.IsNullOrWhiteSpace hash then
+                Cmd.none
+            else
+                Cmd.bridgeSend(ServerMsg.JoinGame hash)
+
         { currentModel with
             Player = Some { PlayerId = playerid
-                            Name = name}}, Cmd.none
+                            Name = name}}, cmd
     | Remote(StartCheck playerid) ->
         { currentModel with
             Game = CheckPage playerid }, Cmd.none
@@ -186,6 +195,8 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                     Browser.Dom.document.location.replace("/game/" + gameid)
                 | _ -> 
                     Browser.Dom.console.log(sprintf "Started but other state: %A" currentModel.Game)
+            | Event.Created e ->
+                Browser.Dom.document.location.hash <- e.GameId
 
             | _ -> ()
 
@@ -213,7 +224,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         else
             currentModel, Cmd.none
     | Remote (SyncJoin(gameid, game, version)) ->
-
+        Browser.Dom.document.location.hash <- gameid
         match game with
         | Game.Setup s -> 
             let newGame = 
@@ -227,6 +238,8 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
             }, Cmd.none
         | _ -> currentModel, Cmd.none
     | Remote (SyncCreate(gameid, game, version)) ->
+        Browser.Dom.document.location.hash <- gameid
+        
         match game with
         | Game.Setup s -> 
             let newGame = 
