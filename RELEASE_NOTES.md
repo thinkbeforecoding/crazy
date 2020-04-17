@@ -1,3 +1,7 @@
+### 0.2.2  - 2020-04-17
+* Better individual goal
+* Better join screen on phones
+
 ### 0.2.1  - 2020-04-17
 * Fix #6: Show played card
 * Show active bonus on players

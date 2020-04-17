@@ -673,19 +673,20 @@ let playersDashboard model dispatch =
                                                       
 
                                 bonusMarkers (Player.bonus player)
+                                match player, board.Goal with
+                                | Ko _, _ -> ()
+                                | _, Individual goal ->
+                                   div [ ClassName "individual-goal" ]
+                                       [ div [ ClassName ("stack " + colorName (Player.color player))]
+                                             [ div [ ClassName ("tile")] []  ]
+                                         div [ClassName "tile-count"]
+                                             [ str (sprintf "x %d" (goal - Player.fieldTotalSize player)) ] 
+                                       ]
+                                | _ -> ()
+
                             ]
 
-                        match player, board.Goal with
-                        | Ko _, _ -> ()
-                        | _, Individual goal ->
-                            div [ ClassName "individual-goal" ]
-                                [ div [ ClassName ("stack " + colorName (Player.color player))]
-                                      [ div [ ClassName ("tile")] []  ]
-                                  div [ClassName "tile-count"]
-                                      [ str (sprintf "x %d" (goal - Player.fieldTotalSize player)) ] 
-                                ]
-                        | _ -> ()
-
+                       
 
                         if model.DashboardOpen then
                             handView dispatch board model.CardAction (Player.hand player)

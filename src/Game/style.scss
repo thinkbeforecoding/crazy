@@ -157,7 +157,7 @@ i.fa-bars {
         .player-top {
             flex: 0 0 3em;
             display: flex;
-            flex-flow: row;
+            flex-flow: row wrap;
             align-content: stretch;
         }
 
@@ -232,19 +232,26 @@ i.fa-bars {
         float: right;
 
         .stack {
+            display: inline-block;
+            margin-left: -2.3em;
+            margin-top: 0.5em;
         }
 
         .tile {
             position: static;
-            width: 1.4em;
-            height: 1.4em;
+            width: 2em;
+            height: 2em;
         }
 
         .tile-count {
-            font-size: 0.7em;
+            font-family: BigSlabHammer;
+            color: white;
+            text-shadow: 2px 0.2em 0.2em #333;
             vertical-align: top;
-            margin-left: 0.5em;
-            margin-top: 0.5em;
+            margin-left: -2.2em;
+            margin-top: 0.8em;
+            display: inline-block;
+            white-space: nowrap;
         }
     }
 
@@ -275,6 +282,8 @@ i.fa-bars {
             margin-left: -1.9em;
             margin-top: 0.8em;
             display: inline-block;
+            white-space: nowrap;
+            text-align: center;
         }
     }
 

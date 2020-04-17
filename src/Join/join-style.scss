@@ -42,6 +42,7 @@ body {
     padding: 0;
     background-image: url(../Game/public/img/background.png);
     background-size:cover;
+    height: 100vh;
 }
 
 div, h1, h2 {
@@ -58,13 +59,20 @@ h1, h2 {
 *, *::before, *::after {
     box-sizing: inherit;
 }
+
+.players {
+    display: flex;
+    margin-right: 0em;
+    flex-flow: row wrap;
+}
+
 .select-player {
-    float: left;
+    /*float: left;*/
     padding: 5px;
 
     img {
         border-radius: 15px;
-        width: 40vw;
+        width: 38vw;
         max-width: 800px;
         border: 3px solid transparent;
     }
@@ -98,7 +106,7 @@ h1, h2 {
 }
 
 .content {
-    padding: 2em;
+    padding: 1em;
 
     a {
         text-decoration: none;

@@ -326,7 +326,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                       p [ ClassName "info"] [ str "Send this game id to your friends, and tell them to join the game using this code."]
                       p [ ClassName "info"] [ str "Select your team, and start the game once your friends joined."]
 
-                      div []
+                      div [ ClassName "players" ]
                           [ for color in [ Blue; Yellow; Purple; Red ] do
                             selectPlayer dispatch color game.Players model.Player
                           ]
@@ -353,7 +353,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                       div [ ClassName "info"] 
                           [ str "Select your team ! If you don't select any, you can still watch the game. "  ]
 
-                      div []
+                      div [ ClassName "players" ]
                           [ for color in [ Blue; Yellow; Purple; Red ] do
                                 selectPlayer dispatch color game.Players model.Player
                           ]
