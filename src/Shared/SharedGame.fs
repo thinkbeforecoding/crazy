@@ -596,10 +596,10 @@ module Field =
            
     let borderBetween start end' field =
         let rec loop orientedPath pos path =
-            if pos = start then
-                []
-            elif pos = end' then
+            if pos = end' then
                 List.rev path
+            elif pos = start then
+                []
             else
                 match orientedPath with
                 | DE ->
@@ -663,7 +663,30 @@ module Field =
     let pathInFieldOrBorder path field =
          contains (Path.tile path) field || contains (Path.neighborTiles path) field
 
+
+    let rec findBorder field crossroad =
+        let neighborTilesInField =
+            Crossroad.neighborTiles crossroad
+            |> List.sumBy (fun p -> if containsParcel p field then 1 else 0)
+
+        if neighborTilesInField < 3 then
+            crossroad
+        else
+            findBorder field (Crossroad.neighbor Up crossroad)
+
+
+
         
+
+    let principalField field crossroad =
+        if Crossroad.isInField field crossroad then
+            let onBorder = findBorder field crossroad
+            
+            let border = borderBetween onBorder onBorder field
+            fill border
+        else
+            empty
+
         
 module Barns =
     let empty = { Free = Field.empty; Occupied = Field.empty }
@@ -863,6 +886,14 @@ module Player =
     let fieldTotalSize player =
         match player with
         | Playing p -> Field.size p.Field
+        | Starting _ -> 1
+        | Ko _ -> 0
+
+    let principalFieldSize player =
+        match player with
+        | Playing p -> 
+            Field.principalField p.Field p.Tractor
+            |> Field.size
         | Starting _ -> 1
         | Ko _ -> 0
 
@@ -1294,14 +1325,21 @@ module Board =
             if totalSize board >= goal then
                 players
                 |> Map.toList
-                |> List.maxBy(fun (_,p)-> Player.fieldTotalSize p)
+                |> List.maxBy(fun (_,p)-> Player.principalFieldSize p)
                 |> Some
             else
                 None
         | Individual goal ->
-            players
-            |> Map.toList
-            |> List.tryFind (fun (_, p) -> Player.fieldTotalSize p >= goal)
+            let won =
+                players
+                |> Map.exists (fun _ p -> Player.fieldTotalSize p >= goal)
+            if won then
+                players
+                |> Map.toSeq
+                |> Seq.maxBy(fun (_, p) -> Player.principalFieldSize p)
+                |> Some
+            else
+                None
 
 
     let next state =

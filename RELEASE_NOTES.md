@@ -1,3 +1,6 @@
+### 0.2.6  - 2020-04-19
+* Fix #4: Take fallow land into account for victory
+
 ### 0.2.5  - 2020-04-19
 * Fix #7: Shuffled discard pile when no card left
 * Fix #25: Disable cards when it's not player's turn
