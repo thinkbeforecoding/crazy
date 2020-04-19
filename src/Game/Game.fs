@@ -742,17 +742,21 @@ let view (model : Model) (dispatch : Msg -> unit) =
             ]
     | Won(winner, board) ->
         div []
-            [ div [ ClassName "board" ]
+            [ playersDashboard model dispatch
+              div [ ClassName "board" ]
                   [ yield! boardView board
         
+                    let player = board.Players.[winner]
 
-                    div [ Style [ Position PositionOptions.Absolute
-                                  Top "10em"
-                                  Left "10em"
-                                  BackgroundColor "white"
-                                  ] ]
-                        [ p [] [ str "And the winner is :"]
-                          p [] [ str board.Table.Names.[winner] ] ] ] ]
+                    div [ ClassName "victory" ]
+                        [ p [] [ str "And the winner is"]
+                          div [ ClassName ("winner " + colorName (Player.color player)) ]
+                              [ div [ ClassName "player"] [] ]
+                          p [] [ str board.Table.Names.[winner] ] 
+
+                          p [ ClassName "back"] [ a [ Href "/" ] [ str "back to home" ]]
+
+                          ] ] ]
 
         
 

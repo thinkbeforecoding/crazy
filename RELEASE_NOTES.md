@@ -1,3 +1,7 @@
+### 0.2.4  - 2020-04-19
+* Better victory screen
+
+
 ### 0.2.3  - 2020-04-17
 * Change url in join script to avoid losing game on refresh
 

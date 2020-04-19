@@ -548,3 +548,53 @@ div.back {
     }
 }
 
+.victory {
+    position: fixed;
+    width: 60vw;
+    height: 30vw;
+    top: 20vw;
+    left: 20vw;
+    background-image: url(/img/victory.png);
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    font-family: BigSlabHammer;
+    color: white;
+    font-size: 4vw;
+    text-align: center;
+    padding-top: 0.5em;
+
+    text-shadow: 0.1em 0.1em 0.1em #333;
+
+    p { margin-top: 0.05em;
+       margin-bottom: 0.05em;
+    }
+
+    .winner {
+        margin-left: auto;
+        width: 2em;
+        height: 2em;
+        margin-right: auto;
+    }
+
+    .player {
+        width: 2em;
+        height: 2em;
+
+    }
+
+    .back {
+        margin-top: 2.3vw;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: large;
+
+        color: white;
+        font-weight: bold;
+
+        *:visited {
+            color: white;
+        }
+    }
+
+}
+

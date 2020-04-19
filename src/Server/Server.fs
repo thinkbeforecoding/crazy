@@ -803,6 +803,7 @@ module Join =
                 clientDispatch(ShouldLogin )
                 return model, Cmd.none
 
+
         |SetupGame gameid, SelectColor color
         |JoiningGame gameid, SelectColor color ->
             match claim with
