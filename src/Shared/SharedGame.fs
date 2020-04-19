@@ -1250,6 +1250,7 @@ module Board =
         | GameWon of string
         | HayBalesPlaced of Path list
         | HayBaleDynamited of Path
+        | DiscardPileShuffled of Card list
     and Started =
         { Players: (Color*string*string*Parcel) list 
           DrawPile: Card list
@@ -1422,6 +1423,12 @@ module Board =
             Board {
                 board with
                     HayBales = board.HayBales |> Set.remove p }
+        | Board board, DiscardPileShuffled cards ->
+            Board {
+                board with
+                    DrawPile = board.DrawPile @ cards
+                    DiscardPile = [] }
+
         | Board board, Played(playerid,(Player.Bribed p as e)) ->
             let newPlayer = Player.evolve board.Players.[playerid] e
             let newVictim = 
@@ -1598,9 +1605,19 @@ module Board =
                                 let cardsToTake =
                                     e.FreeBarns.Length + 2 * e.OccupiedBarns.Length
                                 if cardsToTake > 0 then
+                                    let drawPile, es = 
+                                        if cardsToTake > List.length state.DrawPile then
+                                            let shuffledDiscardPile = DrawPile.shuffle state.DiscardPile
+                                            state.DrawPile @ shuffledDiscardPile, [DiscardPileShuffled shuffledDiscardPile]
+                                            
+                                        else
+                                            state.DrawPile, []
+                                        
+
+                                    yield! es
                                     PlayerDrewCards 
                                         { Player = playerid
-                                          Cards = Public (state.DrawPile |> DrawPile.take cardsToTake) }
+                                          Cards = Public (drawPile |> DrawPile.take cardsToTake) }
                                 else
                                     match nextState with
                                     | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) ->

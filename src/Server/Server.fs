@@ -123,6 +123,7 @@ let serialize =
     | Board.Event.PlayerDrewCards e  -> "PlayerDrewCards" , box e
     | Board.Event.HayBalesPlaced e  -> "HayBalesPlaced" , box e
     | Board.Event.HayBaleDynamited e  -> "HayBaleDynamited" , box e
+    | Board.Event.DiscardPileShuffled e  -> "DiscardPileShuffled" , box e
     | Board.Event.GameWon e  -> "GameWon" , box e
 
 let deserialize =
@@ -150,6 +151,7 @@ let deserialize =
     | "PlayerDrewCards", JObj e -> [ Board.PlayerDrewCards e ]
     | "HayBalesPlaced", JObj e -> [ Board.HayBalesPlaced e ]
     | "HayBaleDynamited", JObj e -> [ Board.HayBaleDynamited e ]
+    | "DiscardPileShuffled", JObj e -> [ Board.DiscardPileShuffled e ]
     | "GameWon", JObj e -> [ Board.GameWon e ]
     | _ -> []
 
@@ -316,7 +318,6 @@ let update claim clientDispatch msg (model: PlayerState) =
 let handleGame gameId i events =
     match events with
     | [Board.Started e] ->
-
         Events ([ Board.Started { e with DrawPile = [] } ], i)
         |> connections.SendClientIf (function Connected c when c.GameId = gameId -> true  | _ -> false )
     | _ ->
@@ -345,6 +346,8 @@ let handleGame gameId i events =
                     function
                     | Board.PlayerDrewCards e ->
                         Board.PlayerDrewCards { e with Cards = Hand.toPrivate e.Cards }
+                    | Board.DiscardPileShuffled e ->
+                        Board.DiscardPileShuffled []
                     | e -> e
                 )
 

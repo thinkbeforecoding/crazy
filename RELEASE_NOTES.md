@@ -1,3 +1,6 @@
+### 0.2.5  - 2020-04-19
+* Fix #7: Shuffled discard pile when no card left
+
 ### 0.2.4  - 2020-04-19
 * Better victory screen
 
