@@ -70,6 +70,11 @@ body {
     height: 9vw;
     position: absolute;
 }
+
+.fallow {
+    opacity: 0.5;
+}
+
 .barn {
     background-size: contain;
     width: 9vw;
@@ -273,6 +278,7 @@ i.fa-bars {
             width: 2em;
             height: 2em;
         }
+
 
         .tile-count {
             font-family: BigSlabHammer;

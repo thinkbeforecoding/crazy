@@ -579,18 +579,30 @@ module Field =
         match side with
         | CRight ->
             if contains tile field then
-                Up, DNW
+                if contains (tile + Axe.NE) field then
+                    Horizontal, DE
+                else
+                    Up, DNW
             elif contains (tile + Axe.NE) field then
-                Horizontal , DE
+                if contains (tile + Axe.SE) field then
+                    Down, DSW
+                else
+                    Horizontal , DE
             else
                 Down,DSW
         | CLeft ->
             if contains tile field then
-                Down,DSE
+                if contains (tile + Axe.SW) field then
+                    Horizontal, DW
+                else
+                    Down,DSE
             elif contains (tile + Axe.NW) field then
                 Up,DNE
             else
-                Horizontal, DW
+                if contains (tile + Axe.NW) field then
+                    Up, DNE
+                else
+                    Horizontal, DW
 
 
            
@@ -678,9 +690,10 @@ module Field =
 
         
 
-    let principalField field crossroad =
-        if Crossroad.isInField field crossroad then
-            let onBorder = findBorder field crossroad
+    let principalField field fence crossroad =
+        let start = Fence.start crossroad fence
+        if Crossroad.isInField field start then
+            let onBorder = findBorder field start
             
             let border = borderBetween onBorder onBorder field
             fill border
@@ -892,7 +905,7 @@ module Player =
     let principalFieldSize player =
         match player with
         | Playing p -> 
-            Field.principalField p.Field p.Tractor
+            Field.principalField p.Field p.Fence p.Tractor
             |> Field.size
         | Starting _ -> 1
         | Ko _ -> 0

@@ -361,10 +361,20 @@ let sameFence x y =
 let playerField  p =
         match p with
         | Playing p ->
+            let principal =
+                Field.principalField p.Field p.Fence p.Tractor
+            let fallow = p.Field - principal
+
             div [ ClassName (colorName p.Color)]
-                [ let (Field parcels) = p.Field
-                  for p in parcels do
-                        parcel p [] ]
+                [ 
+                  for p in Field.parcels principal do
+                        parcel p []
+                 
+                  div [ ClassName "fallow" ]
+                      [ for p in Field.parcels fallow do
+                          parcel p [] ]
+                        
+                ]
         | Starting { Parcel = p; Color = color } ->
             div [ ClassName (colorName color) ]
                 [ parcel p [] ] 
@@ -532,7 +542,7 @@ let hayBalesView board =
 
 let boardView board =
    [ for _,p in Map.toSeq board.Players do
-         lazyViewWith sameField playerField p
+         playerField p
 
      lazyView barnsView board.Barns
 
