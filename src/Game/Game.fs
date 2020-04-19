@@ -417,8 +417,9 @@ let cardName =
     | Helicopter -> "card helicopter"
     | Bribe -> "card bribe"
 
-let handView dispatch board cardAction hand =
+let handView dispatch playerId board cardAction hand =
     let player = Board.currentPlayer board
+    let active =  Option.exists (fun p -> p = board.Table.Player) playerId
     let otherPlayers = Board.currentOtherPlayers board
     let cancel = a [ ClassName "cancel"; Href "#"; OnClick (fun _ -> dispatch CancelCard)] [ str "Cancel" ]
     let go = button [ OnClick (fun _ -> dispatch Go )]  [str "Go" ]
@@ -427,7 +428,14 @@ let handView dispatch board cardAction hand =
             [ h2 [] [ str title ]
               for t in texts do
                 p [] [ t ]
-              div [ ClassName "buttons" ] [ yield! buttons; yield cancel ] ]
+
+              if active then
+                  div [ ClassName "buttons" ] [ yield! buttons; yield cancel ] 
+              else
+                  div [ ClassName "buttons" ]
+                    [ str "You can only play cards during your turn."
+                      cancel ]
+            ]
 
     match hand with 
     | Public cards -> 
@@ -691,7 +699,7 @@ let playersDashboard model dispatch =
                        
 
                         if model.DashboardOpen then
-                            handView dispatch board model.CardAction (Player.hand player)
+                            handView dispatch model.PlayerId board model.CardAction (Player.hand player)
 
                         //goalView board
                     ]
