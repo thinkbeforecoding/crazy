@@ -481,13 +481,15 @@ let handView dispatch playerId board cardAction hand =
                                 [ str "Protects your plots and barns from being annexed until next turn. Annexations by opponents leave your plots and barns in place." ]
                                 [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str "Play" ] ] 
                         | Some { Index = index; Card = Helicopter; Ext = NoExt } when index = i ->
+                            let noFence =Fence.isEmpty (Player.fence player) 
                             action "Helicopter"
                                 [ str "Moves your tractor to any point in your field. The point of arrival must be in the field or at the edge. Once moved, you cannot cut any more fences until the end of the turn: crop protection agents + electicity... I could explode!"
-                                  if Fence.isEmpty (Player.fence player) then
-                                        str "Select a destination in your field"
+                                  if noFence then
+                                    str "Select a destination in your field"
                                   else
-                                        str "Cannot be played with a fence" ]
-                                [ go ]
+                                    str "Cannot be played with a fence" ]
+                                [ if noFence then
+                                    go ]
                         | Some { Index = index; Card = HayBale One; Ext = NoExt } when index = i ->
                             action "1 Hay Bale"
                                 [ str "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent." 

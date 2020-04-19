@@ -1075,7 +1075,7 @@ module Player =
         | Playing player, Watched -> Playing { player with Bonus = { player.Bonus with  Watched = true }}
         | Playing player, Rutted -> Playing { player with Bonus = { player.Bonus with  Rutted = player.Bonus.Rutted + 1 }}
         | Playing player, SpedUp e -> Playing { player with Moves = player.Moves |> Moves.addCapacity e.Speed }
-        | Playing player, Heliported e -> Playing { player with Tractor = e; Bonus = { player.Bonus with Heliported = player.Bonus.Heliported + 1}  }
+        | Playing player, Heliported e -> Playing { player with Tractor = e; Fence = Fence.empty; Bonus = { player.Bonus with Heliported = player.Bonus.Heliported + 1}  }
         | Playing player, Bribed p -> Playing { player with Field = player.Field + Field.ofParcels [p.Parcel] }
 
         | Playing player, CardPlayed card ->

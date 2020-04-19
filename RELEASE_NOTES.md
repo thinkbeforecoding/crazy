@@ -1,3 +1,6 @@
+### 0.2.8  - 2020-04-19
+* Fix #26: Prevent helicopter use when no player has no fence
+
 ### 0.2.7  - 2020-04-19
 * Fix #11: Make Fallow land visible
 
