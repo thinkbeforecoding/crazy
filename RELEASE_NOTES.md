@@ -1,3 +1,6 @@
+### 0.3.2  - 2020-04-21
+* Save commands with correlation ids
+
 ### 0.3.1  - 2020-04-21
 * Fix #13: Hay bale should not block an opponent
 

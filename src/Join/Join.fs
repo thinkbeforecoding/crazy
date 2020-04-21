@@ -384,11 +384,11 @@ let view (model : Model) (dispatch : Msg -> unit) =
                     [ mainTitle "Play Online"
 
                       div [ ClassName "pitch" ] [
-                        str "2042... L'agriculture a périclité, les fermiers ont dû se reconvertit et développé
+                        str "2042... L'agriculture a périclité, les fermiers ont dû se reconvertir et développer
                              l’Ultimate Farming Championship (UFC pour les intimes) mélange improbable de Monster Truck,
-                             catch mexicain et foire agricole, qui a rapidement fait le Buzz sur les écran.
+                             catch mexicain et foire agricole, qui a rapidement fait le Buzz sur les écrans.
                              À bord de votre tracteur trafiqué, entrez à votre tour dans l’arène pour affronter
-                             vos adversaire sans fois ni loi pour  devenir le meilleur poseur de Clôtures
+                             vos adversaires sans fois ni loi pour  devenir le meilleur poseur de Clôtures
                              Électriques du monde !"
                       ]
                       button [ OnClick (fun _ -> dispatch CreateNewGame) ] [ str "Open new Arena" ]
