@@ -9,13 +9,15 @@ type BatchData =
     { id: string
       i: int
       p: string
-      e: EventData[]}
+      e: EventData[]
+      o: string }
 and [<CLIMutable>] EventData =
     { c: string
       d: obj }
 
 
-let append serialize (container: Container) (stream: string) expectedVersion events =
+
+let append serialize (container: Container) (stream: string) correlationId expectedVersion events =
     task {
         if List.isEmpty events then
             try
@@ -38,7 +40,8 @@ let append serialize (container: Container) (stream: string) expectedVersion eve
                   e = 
                     [| for e in events do
                         let c,d = serialize e
-                        { c= c; d = d } |] }
+                        { c= c; d = d } |]
+                  o = correlationId }
             let nextExpected = expectedVersion+1
             let! result =
                 container
@@ -48,6 +51,34 @@ let append serialize (container: Container) (stream: string) expectedVersion eve
 
             if result.StatusCode = System.Net.HttpStatusCode.OK then
                 return Ok nextExpected
+            else
+                return Error result.StatusCode
+         }
+
+[<CLIMutable>]
+type CommandData =
+    { id: string
+      p: string
+      c: EventData
+      o: string }
+
+let appendCmd serialize (container: Container) (stream: string) correlationId command =
+    task {
+            let data =
+                { id = correlationId 
+                  p = stream
+                  c = 
+                    let c,d = serialize command
+                    { c= c; d = d } 
+                  o = correlationId }
+            let! result =
+                container
+                    .CreateTransactionalBatch(PartitionKey stream)
+                    .CreateItem(data)
+                    .ExecuteAsync()
+
+            if result.StatusCode = System.Net.HttpStatusCode.OK then
+                return Ok()
             else
                 return Error result.StatusCode
          }

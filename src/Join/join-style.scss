@@ -59,6 +59,9 @@ h1, h2 {
 *, *::before, *::after {
     box-sizing: inherit;
 }
+.pitch {
+    width: 60vw;
+}
 
 .players {
     display: flex;

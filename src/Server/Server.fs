@@ -155,10 +155,23 @@ let deserialize =
     | "GameWon", JObj e -> [ Board.GameWon e ]
     | _ -> []
 
+type PlayerCommand =
+    { Player: string 
+      Command: obj }
+let serializeCmd =
+    function
+    | Board.Start c -> "Start", box c
+    | Board.Play (p, Player.Start c) -> "PlayerStart", box { Player = p; Command = box c }
+    | Board.Play (p, Player.Move c) -> "Move", box { Player = p; Command = box c }
+    | Board.Play (p, Player.EndTurn) -> "EndTurn", box { Player = p; Command = null }
+    | Board.Play (p, Player.PlayCard c) -> "PlayCard", box { Player = p; Command = box c }
+    | Board.Play (p, Player.SelectFirstCrossroad c) -> "SelectFirstCrossroad", box { Player = p; Command = box c }
+
 
 
 let gameRunner container gameid =
     let stream = "game-"+gameid
+    let cmdStream = "game-cmd-" + gameid
     MailboxProcessor.Start(fun mailbox ->
         let rec loop state expectedVersion =
             async {
@@ -173,6 +186,11 @@ let gameRunner container gameid =
                     reply (Some (newState, nextExpectedVersion))
                     return! loop newState nextExpectedVersion
                 | Exec (cmd, reply) ->
+                    let correlationId = Guid.NewGuid().ToString("n")
+
+
+                    do! EventStore.appendCmd serializeCmd container cmdStream correlationId cmd
+                        |> Async.AwaitTask |> Async.Ignore
 
                     let rec exec board  expectedVersion =
                         async {
@@ -183,7 +201,7 @@ let gameRunner container gameid =
 
 
                             let! result =
-                                EventStore.append serialize container stream expectedVersion events
+                                EventStore.append serialize container stream correlationId expectedVersion events 
                                 |> Async.AwaitTask
                             match result with
                             | Ok nextExpectedVersion ->
@@ -664,8 +682,17 @@ module Join =
         | "Started", JObj e -> [Event.Started e]
         | _ -> []
 
+    
+    let serializeCmd =
+        function
+        | Create e -> "Create", box e
+        | SetPlayer (c,p,n) -> "SetPlayer", box {| Color = c; Player = p; Name = n |}
+        | SetGoal e -> "SetGoal", box e
+        | Command.Start -> "Start", null
+
     let gameRunner container gameid =
         let stream = "join-"+gameid
+        let cmdStream = "join-cmd-"+gameid
         MailboxProcessor.Start(fun mailbox ->
             let rec loop state expectedVersion =
                 async {
@@ -681,12 +708,16 @@ module Join =
                         return! loop newState nextExpectedVersion
                     | Exec (cmd, reply) ->
 
+                        let correlationId = Guid.NewGuid().ToString("n")
+                        do! EventStore.appendCmd serializeCmd container cmdStream correlationId cmd
+                            |> Async.AwaitTask |> Async.Ignore
+
                         let rec exec state expectedVersion =
                             async {
                                 let events = decide cmd state 
 
                                 let! result =
-                                    EventStore.append serialize container stream expectedVersion events
+                                    EventStore.append serialize container stream correlationId expectedVersion events
                                     |> Async.AwaitTask
                                 match result with
                                 | Ok nextExpectedVersion ->
