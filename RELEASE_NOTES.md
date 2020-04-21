@@ -1,3 +1,6 @@
+### 0.3.1  - 2020-04-21
+* Fix #13: Hay bale should not block an opponent
+
 ### 0.3.0  - 2020-04-20
 * Fix #1: Select game goal
 

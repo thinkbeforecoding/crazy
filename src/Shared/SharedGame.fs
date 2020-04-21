@@ -917,6 +917,7 @@ module Player =
         match player with
         | Playing p -> Fence.isEmpty p.Fence
         | _ -> false
+     
 
     let decide (otherPlayers: (string * Player) list) barns command player =
         match player, command with
@@ -1359,7 +1360,6 @@ module Board =
                 |> Some
             else
                 None
-
 
     let next state =
         let playerId = state.Table.Player
