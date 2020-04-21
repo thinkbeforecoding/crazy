@@ -40,7 +40,9 @@ and PageModel =
 
 and NewGame =
     { GameId: string
-      Players: Map<Color, string* string> }
+      Players: Map<Color, string* string>
+      Goal: GoalType
+      }
     with
     member this.CanStart = Map.count this.Players >= 2
     
@@ -56,6 +58,7 @@ type Msg =
     | Cancel
     | Start 
     | SelectColor of Color
+    | SelectGoal of GoalType
     | Remote of ClientMsg
     | ConnectionLost
     | OpenLogin
@@ -76,9 +79,16 @@ let localDecide command state =
             [ Created { GameId = e.GameId; Initiator = e.Initiator }]
         else
             []
+    | NewGame _, Command.SetGoal goal ->
+        [ GoalSet goal]
     | NewGame g, Command.Start ->
         if g.CanStart then
-            [ Event.Started [ for c,(p,n) in Map.toSeq g.Players -> { Color = c; PlayerId = p; Name = n}] ]
+            match goalFromType g.Players.Count g.Goal with
+            | Some goal ->
+                [ Event.Started { 
+                    Players = [ for c,(p,n) in Map.toSeq g.Players -> { Color = c; PlayerId = p; Name = n}]
+                    Goal = goal } ]
+            | None -> []
         else 
             []
     |_ -> []
@@ -87,7 +97,9 @@ let localEvolve state event =
     match state, event with
     | _, Created e ->
         NewGame { GameId = e.GameId
-                  Players = Map.empty }
+                  Players = Map.empty
+                  Goal = Regular
+                  }
     | NewGame g, PlayerSet p ->
         NewGame { g with 
                     Players = 
@@ -100,6 +112,10 @@ let localEvolve state event =
                         g.Players 
                         |> Map.filter (fun _ (pid,_) -> pid <> p.PlayerId)
                         |> Map.add p.Color (p.PlayerId,p.Name) }
+    | NewGame g , GoalSet goal ->
+        NewGame {g with Goal = goal }
+    | JoinGame g , GoalSet goal ->
+        JoinGame {g with Goal = goal }
     | NewGame g,  Event.Started _ 
     | JoinGame g, Event.Started _ ->
         Started g.GameId
@@ -150,6 +166,10 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
             (SetPlayer (color, p.PlayerId, p.Name),ServerMsg.SelectColor color)
             |> handleCommand currentModel
         | None -> currentModel, Cmd.none
+    | SelectGoal goal ->
+        (SetGoal goal, ServerMsg.SelectGoal goal)
+        |> handleCommand currentModel
+
     | Cancel ->
         { currentModel with Game = Home}, Cmd.none
     | Start ->
@@ -229,7 +249,9 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         | Game.Setup s -> 
             let newGame = 
                 JoinGame { GameId = gameid
-                           Players = s.Players}
+                           Players = s.Players
+                           Goal = s.Goal
+                           }
             { currentModel with
                 Game = newGame
                 LocalVersion = version
@@ -244,7 +266,8 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         | Game.Setup s -> 
             let newGame = 
                 NewGame { GameId = gameid
-                          Players = s.Players}
+                          Players = s.Players
+                          Goal = s.Goal }
             { currentModel with
                 Game = newGame
                 LocalVersion = version
@@ -314,6 +337,40 @@ let footer =
     div [ ClassName "footer" ]
         [ span [] [ str ("v"+ Version.app)] ]
 
+let goalName = function
+    | Fast -> "Fast"
+    | Regular -> "Regular"
+    | Expert -> "Expert"
+
+let goalTime = function
+    | Fast -> "15-30 min"
+    | Regular -> "25-50 min"
+    | Expert -> "40-90 min"
+    
+
+let goalDetails goal =
+    match goal with
+    | Some (Individual n) -> sprintf "%d parcels/player" n
+    | Some (Common n) -> sprintf "%d shared parcels" n
+    | None -> ""
+
+
+let goalView dispatch goal players newGame =
+    let item value =
+        li [ classBaseList "goal" [ "selected", goal = value]
+             if newGame then 
+                 OnClick (fun _ -> dispatch (SelectGoal value))
+           ] [ str (goalName value)
+               div [] [ str (goalTime value)]
+               div [] [ str (goalDetails (goalFromType players value)) ]
+           ]
+        
+    ul [ classBaseList "goals" [ "new-game", newGame ] ]
+        [ item Fast
+          item Regular
+          item Expert
+        ]
+
 
 let view (model : Model) (dispatch : Msg -> unit) =
     div [  ]
@@ -325,8 +382,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
                 div [ ClassName "content" ]
                     [ mainTitle "Play Online"
-                      button [ OnClick (fun _ -> dispatch CreateNewGame) ] [ str "New game" ]
-                      button [ OnClick (fun _ -> dispatch SelectJoin)] [ str "Join game"]
+                      button [ OnClick (fun _ -> dispatch CreateNewGame) ] [ str "Open new Arena" ]
+                      button [ OnClick (fun _ -> dispatch SelectJoin)] [ str "Join an Arena"]
                     ]
                 footer
             ]
@@ -334,7 +391,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
             div [ ClassName "content" ] [
                 header dispatch model.Player
                 div [ ClassName "content" ]
-                    [ mainTitle "New game"
+                    [ mainTitle "Open new Arena"
                       p [] [ str ("Game id: " + game.GameId) ]
                       p [ ClassName "info"] [ str "Send this game id to your friends, and tell them to join the game using this code."]
                       p [ ClassName "info"] [ str "Select your team, and start the game once your friends joined."]
@@ -343,6 +400,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
                           [ for color in [ Blue; Yellow; Purple; Red ] do
                             selectPlayer dispatch color game.Players model.Player
                           ]
+
+                      goalView dispatch game.Goal game.Players.Count true
 
 
                       div [ Style [ Clear ClearOptions.Both ]]
@@ -360,7 +419,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 header dispatch model.Player
 
                 div [ ClassName "content" ]
-                    [ mainTitle "Join game"
+                    [ mainTitle "Join an Arena"
                       str ("Game id: " + game.GameId)
 
                       div [ ClassName "info"] 
@@ -370,6 +429,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
                           [ for color in [ Blue; Yellow; Purple; Red ] do
                                 selectPlayer dispatch color game.Players model.Player
                           ]
+                      goalView dispatch game.Goal game.Players.Count false
+
                       div [ Style [ Clear ClearOptions.Both ]]
                           [ cancel dispatch]
                     ]

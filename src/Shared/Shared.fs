@@ -7,3 +7,7 @@ type Color =
     | Purple
     | Red
 
+type Goal =
+    | Common of int
+    | Individual of int
+

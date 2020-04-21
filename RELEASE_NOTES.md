@@ -1,3 +1,9 @@
+### 0.3.0  - 2020-04-20
+* Fix #1: Select game goal
+
+### 0.2.9  - 2020-04-20
+* Check no fence for helicopter in decide
+
 ### 0.2.8  - 2020-04-19
 * Fix #26: Prevent helicopter use when no player has no fence
 

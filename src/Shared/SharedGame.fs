@@ -46,9 +46,6 @@ type Path = Path of Axe * BorderSide
 
 type Direction = Up | Down | Horizontal
 
-type Goal =
-    | Common of int
-    | Individual of int
 
 [<Struct>]
 type Parcel = Parcel of Axe
@@ -916,6 +913,11 @@ module Player =
         | Playing ({ Bonus = { Watched = true }; Field = field }) -> field
         | _ -> Field.empty
 
+    let canUseHelicopter player =
+        match player with
+        | Playing p -> Fence.isEmpty p.Fence
+        | _ -> false
+
     let decide (otherPlayers: (string * Player) list) barns command player =
         match player, command with
         | Starting _, SelectFirstCrossroad cmd ->
@@ -1010,9 +1012,9 @@ module Player =
                             // an maybe you cut someone just there
                             yield! decideCut otherPlayers nextPos
                     ]
-        | Playing player, PlayCard card ->
+        | Playing p, PlayCard card ->
             let c = Card.ofPlayCard card
-            if Hand.contains c player.Hand then
+            if Hand.contains c p.Hand then
                 match card with
                 | PlayNitro power ->
                         [ CardPlayed card
@@ -1028,11 +1030,13 @@ module Player =
                 | PlayRut _ ->
                     [ CardPlayed card ]
                 | PlayHelicopter crossroad ->
-                    [  CardPlayed card
-                       Heliported crossroad
-                       if player.Power = PowerDown && Crossroad.isInField player.Field crossroad then
-                            PoweredUp
-                       ]
+                    if canUseHelicopter player then
+                        [  CardPlayed card
+                           Heliported crossroad
+                           if p.Power = PowerDown && Crossroad.isInField p.Field crossroad then
+                                PoweredUp ]
+                    else
+                        []
                 | PlayHayBale _ 
                 | PlayDynamite _ ->
                     [ CardPlayed card
@@ -1284,7 +1288,9 @@ module Board =
         | Play of string * Player.Command
         | Start of Start
     and Start =
-        { Players: (Color * string * string) list }
+        { Players: (Color * string * string) list
+          Goal: Goal
+        }
 
     type Event =
         | Played of string * Player.Event
@@ -1545,7 +1551,7 @@ module Board =
                         Parcel.center + Axe.N + Axe.NW
                         Parcel.center + Axe.S + Axe.SE
                         Parcel.center + Axe.S + Axe.SW
-                    ], Goal.Common 27
+                    ], cmd.Goal // Goal.Common 27
 
 
                 | [ c1,u1,n1; c2,u2,n2; c3,u3,n3 ] ->
@@ -1565,7 +1571,7 @@ module Board =
                           Parcel.center + Axe.N + Axe.NW
                           Parcel.center + Axe.S + Axe.SE
                           Parcel.center + Axe.S + Axe.SW ],
-                          Goal.Individual 11
+                          cmd.Goal // Goal.Individual 11
 
                 | [ c1,u1,n1; c2,u2,n2; c3,u3,n3; c4,u4,n4 ] ->
                     [ c1, u1, n1, Parcel.center + Axe.N + Axe.NE
@@ -1581,7 +1587,7 @@ module Board =
                          Parcel.center + 2 * Axe.S + Axe.SW
                          Parcel.center + Axe.E2 + Axe.SE
                          Parcel.center + Axe.W2 + Axe.NW ],
-                         Goal.Individual 9
+                         cmd.Goal // Goal.Individual 9
                 | _ ->
                     let playerCount = List.length cmd.Players
                     if playerCount < 2 then

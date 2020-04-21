@@ -653,13 +653,15 @@ module Join =
         function
         | Created e -> "Created", box e
         | PlayerSet e -> "PlayerSet", box e
-        | Event.Started e -> "Started", box (List.toArray e)
+        | GoalSet e -> "GoalSet", box e
+        | Event.Started e -> "Started", box e
 
     let deserialize =
         function
         | "Created", JObj e -> [Created e]
         | "PlayerSet", JObj e -> [PlayerSet e]
-        | "Started", JObj e -> [Event.Started (Array.toList e)]
+        | "GoalSet", JObj e -> [GoalSet e]
+        | "Started", JObj e -> [Event.Started e]
         | _ -> []
 
     let gameRunner container gameid =
@@ -817,12 +819,17 @@ module Join =
             | None -> ()
 
             return model, Cmd.none
+        | SetupGame gameid, SelectGoal goal ->
+            do! setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(SetGoal goal, c.Reply))
+                    |> Async.Ignore
+
+            return  model, Cmd.none
         | SetupGame gameid, Start ->
             let! events, version = setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(Command.Start, c.Reply))
             for event in events do
                 match event with
                 | SharedJoin.Event.Started e ->
-                    do! runner.PostAndAsyncReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e -> p.Color, p.PlayerId, p.Name ] }, c.Reply))
+                    do! runner.PostAndAsyncReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e.Players -> p.Color, p.PlayerId, p.Name ]; Goal = e.Goal }, c.Reply))
                          |> Async.Ignore
                 | _ -> ()
             //connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events(events, version))

@@ -97,6 +97,45 @@ h1, h2 {
     }
 }
 
+
+.goals {
+    display: flex;
+    width: 75vw;
+    flex-flow: row;
+    font-family: BigSlabHammer;
+
+    li {
+        border-radius: 15px;
+        border: 3px solid transparent;
+        padding-top: 0.5em;
+        padding-bottom: 0.5em;
+        list-style: none;
+        flex: 1 1 auto;
+        text-align: center;
+        
+        div {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: small;
+        }
+    }
+
+
+
+    &.new-game {
+        cursor: pointer;
+
+        li:hover {
+            border-color: $crazy-grey;
+        }
+    }
+
+
+
+    .selected, .selected:hover {
+        border-color: $crazy-dark;
+    }
+}
+
 .title {
     background-image: url(/img/crazyfarmers.png);
     background-repeat: no-repeat;
