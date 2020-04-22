@@ -1,3 +1,6 @@
+### 0.3.5  - 2020-04-22
+* Inline help
+
 ### 0.3.4  - 2020-04-22
 * Focus in login/register/join text fields
 * Enter in login/register/join text fields

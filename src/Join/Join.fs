@@ -405,6 +405,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                           [ p [] [ str ("Arena id: " + game.GameId) ]
 
                             p [ ClassName "info"] [ str "Send this game id to your friends, and tell them to join the game using this code."]
+                            p [ ClassName "info"] [ str "You can also send them "; a [ Href (Browser.Dom.document.location.ToString())  ] [ str "the arena join link."] ]
                             p [ ClassName "info"] [ str "Select your team, and start the game once your friends joined."]
                           ]
 

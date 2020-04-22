@@ -122,6 +122,11 @@ type Hand =
 module Hand =
     let empty = Private 0
 
+    let isEmpty =
+        function
+        | Public p -> List.isEmpty p
+        | Private p -> p = 0
+
     let toPrivate =
         function
         | Public p -> Private p.Length
@@ -176,7 +181,8 @@ and Playing =
       } 
 and Moves =
     { Capacity: int
-      Done: int}
+      Done: int
+      Acceleration: bool }
 and Bonus =
     { NitroOne: int
       NitroTwo: int
@@ -736,17 +742,21 @@ type Move =
 module Moves =
     let empty = 
         { Capacity = 0
-          Done = 0}
+          Done = 0
+          Acceleration = false }
 
     let startTurn fence bonus =
+        let acceleration = Fence.givesAcceleration fence
         { Capacity = 
             let baseMoves = 
-                if Fence.givesAcceleration fence then
+                if acceleration then
                     4
                 else
                     3
             baseMoves + Bonus.moveCapacityChange bonus
-          Done = 0 }
+          Done = 0 
+          Acceleration = acceleration
+          }
 
     let canMove m =
         m.Done < m.Capacity

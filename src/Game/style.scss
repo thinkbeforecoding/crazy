@@ -141,16 +141,20 @@ i.fa-bars {
     height: 3vw;
 }
 
-
-.dashboard {
-    background-color: $crazy-green;
+.header {
     position: fixed;
     width: 100%;
     top: 0;
     z-index: 100;
     display: flex;
-    flex-flow: row wrap;
+    flex-flow: column;
+    align-content: stretch;
+}
 
+.dashboard {
+    background-color: $crazy-green;
+    display: flex;
+    flex-flow: row wrap;
 
     .player-dashboard {
         flex: 1 1 25vw;
@@ -316,6 +320,14 @@ i.fa-bars {
         height: 1em;
     }
 }
+
+.help {
+    background-color: $crazy-tree;
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+    padding-left: 2em;
+}
+
 .blue {
     .fence {
         background-image: url(/img/fence-blue.png);

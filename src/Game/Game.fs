@@ -727,76 +727,114 @@ let playersDashboard model dispatch =
     | Board board
     | Won(_,board) ->
 
-        div [ classBaseList "dashboard" [ "closed",not model.DashboardOpen  ] ]
-            [  
-                span [ OnClick (fun _ -> dispatch SwitchDashboard)]
-                    [ bars ]
+        div [ ClassName "header"] [
 
-                let currentPlayer = board.Table.Player
-                for playerid in board.Table.AllPlayers do
-                    let isActive = currentPlayer = playerid
-                    let player = board.Players.[playerid]
-                    div[ classBaseList "player-dashboard" [ "local", Some playerid = model.PlayerId ]] [
-                        div [ ClassName "player-top"]
-                            [
-                                div [ ClassName "description"]
-                                  [ div [ ClassName (colorName (Player.color player)) ]
-                                        [ div [ classBaseList "player" [ "selected", isActive ; "ko", Player.isKo player ] ] []]
-                                    
-                                   
-                                    div [ ClassName "name"] [ str board.Table.Names.[playerid] ] 
-                                    
-                                    div [ ClassName "moves" ] 
-                                        [ if isActive then
-                                            match player with
-                                            | Starting _->
-                                                for _ in 1 .. 3 do
-                                                    flash false 
-                                            | Playing p ->
-                                                for i in 1 .. p.Moves.Capacity do
-                                                    flash  (i <= p.Moves.Done)
-                                            | Ko _ -> ()
+            div [ classBaseList "dashboard" [ "closed",not model.DashboardOpen  ] ]
+                [  
+                    span [ OnClick (fun _ -> dispatch SwitchDashboard)]
+                        [ bars ]
+
+                    let currentPlayer = board.Table.Player
+                    for playerid in board.Table.AllPlayers do
+                        let isActive = currentPlayer = playerid
+                        let player = board.Players.[playerid]
+                        div[ classBaseList "player-dashboard" [ "local", Some playerid = model.PlayerId ]] [
+                            div [ ClassName "player-top"]
+                                [
+                                    div [ ClassName "description"]
+                                      [ div [ ClassName (colorName (Player.color player)) ]
+                                            [ div [ classBaseList "player" [ "selected", isActive ; "ko", Player.isKo player ] ] []]
+                                        
+                                       
+                                        div [ ClassName "name"] [ str board.Table.Names.[playerid] ] 
+                                        
+                                        div [ ClassName "moves" ] 
+                                            [ if isActive then
+                                                match player with
+                                                | Starting _->
+                                                    for _ in 1 .. 3 do
+                                                        flash false 
+                                                | Playing p ->
+                                                    for i in 1 .. p.Moves.Capacity do
+                                                        flash  (i <= p.Moves.Done)
+                                                | Ko _ -> ()
+                                            ]
+
                                         ]
 
-                                    ]
+                                    
+                                                          
 
-                                
-                                                      
+                                    bonusMarkers (Player.bonus player)
+                                    match player, board.Goal with
+                                    | Ko _, _ -> ()
+                                    | _, Individual goal ->
+                                       div [ ClassName "individual-goal" ]
+                                           [ div [ ClassName ("stack " + colorName (Player.color player))]
+                                                 [ div [ ClassName ("tile")] []  ]
+                                             div [ClassName "tile-count"]
+                                                 [ str (sprintf "x %d" (goal - Player.fieldTotalSize player)) ] 
+                                           ]
+                                    | _ -> ()
 
-                                bonusMarkers (Player.bonus player)
-                                match player, board.Goal with
-                                | Ko _, _ -> ()
-                                | _, Individual goal ->
-                                   div [ ClassName "individual-goal" ]
-                                       [ div [ ClassName ("stack " + colorName (Player.color player))]
-                                             [ div [ ClassName ("tile")] []  ]
-                                         div [ClassName "tile-count"]
-                                             [ str (sprintf "x %d" (goal - Player.fieldTotalSize player)) ] 
-                                       ]
-                                | _ -> ()
+                                ]
 
-                            ]
+                           
 
-                       
+                            if model.DashboardOpen then
+                                handView dispatch model.PlayerId board model.CardAction (Player.hand player)
 
-                        if model.DashboardOpen then
-                            handView dispatch model.PlayerId board model.CardAction (Player.hand player)
-
-                        //goalView board
-                    ]
-                match board.Goal with
-                | Common goal ->
-                    div [ ClassName "common-goal" ]
-                        [ let colors = [ for KeyValue(_,p) in board.Players -> Player.color p]
-                          for c in colors do
-                            div [ ClassName ("stack " + colorName c)]
-                                [ div [ ClassName ("tile")] [] ]
-                          div [ClassName "tile-count"]
-                            [ str (sprintf "x%d" (goal - Board.totalSize board)) ]
+                            //goalView board
                         ]
-                | _ -> ()
+                    match board.Goal with
+                    | Common goal ->
+                        div [ ClassName "common-goal" ]
+                            [ let colors = [ for KeyValue(_,p) in board.Players -> Player.color p]
+                              for c in colors do
+                                div [ ClassName ("stack " + colorName c)]
+                                    [ div [ ClassName ("tile")] [] ]
+                              div [ClassName "tile-count"]
+                                [ str (sprintf "x%d" (goal - Board.totalSize board)) ]
+                            ]
+                    | _ -> () ]
 
- ]
+            if model.DashboardOpen then
+                div [ ClassName "help"] [ 
+                    let currentPlayer = board.Table.Player
+                    let isActive = model.PlayerId.IsSome && currentPlayer = model.PlayerId.Value
+                    let player = board.Players.[board.Table.Player]
+                    if isActive then
+                        match player with
+                        | Starting p ->
+                            str (sprintf "Let's go ! Select a crossroad around your %s field to start." (colorName p.Color) )
+                        | Playing p ->
+                            if Moves.canMove p.Moves then
+                                if p.Moves.Done = 0 then
+                                    match p.Bonus.Rutted with
+                                    | 0 ->
+                                        if p.Moves.Acceleration then
+                                            str "You started the turn with at least 4 fences, you get an extra move. "
+                                        else
+                                            str "You have 3 moves this turn. "
+                                    | 1 ->
+                                        str "You're victime of a rut, you lost 2 moves. "
+                                    | n ->
+                                        str (sprintf "You're victime of %d ruts, you lost %d moves. " n (n*2))
+
+                                     
+                                str "Select a crossroad around you to move. "
+                                if not (Hand.isEmpty p.Hand) then
+                                    str "You can also play a card."
+                            else
+                                str "Play a card, or click on your character to end your turn."
+                        | Ko p ->
+                            str (sprintf "You're eliminated. Take your revenge in the next game !")
+                    else
+                        str "Wait for your turn"
+                
+                ]
+        ]
+
 
 
 let playedCard dispatch card =
