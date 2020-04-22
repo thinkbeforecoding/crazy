@@ -498,7 +498,7 @@ let sendChallenge config email name =
                 { id = userid + "-" + code 
                   userid = userid
                   challenge = code
-                  ttl = 300<s>
+                  ttl = 600<s>
                 }
 
             do! Storage.saveChallenge config.Cosmos challenge
@@ -573,7 +573,7 @@ let auth (form: AuthWaitForm): HttpHandler = fun _ ctx ->
 let postAuth (form: AuthForm) : HttpHandler = fun next ctx ->
     task {
         match! Storage.tryGetChallenge serverConfig.Cosmos  form.Userid form.Code with
-        | Some challenge ->
+        | Some challenge  ->
             let! user = Storage.getUserById serverConfig.Cosmos form.Userid
             let jwt = 
                 JwtBuilder()
@@ -587,7 +587,7 @@ let postAuth (form: AuthForm) : HttpHandler = fun next ctx ->
             return! (redirectTo false "/"  ) next ctx
 
         | None ->
-            return! redirectTo false ("/auth/" + form.Userid ) next ctx
+            return! (redirectTo false "/") next ctx
     }
 
 let claim jwt = 
@@ -623,7 +623,7 @@ let requireLogin (handler: _ -> HttpHandler) : HttpHandler = fun next ctx ->
     task {
         match claim ctx.Request.Cookies.["crazyfarmers"] with
         | Error _ ->
-            return! redirectTo false "/auth/login" next ctx
+            return! redirectTo false "/" next ctx
         | Ok claim ->
             return! handler claim next ctx
     }
@@ -877,8 +877,8 @@ let subs =
     let container = client.GetContainer("crazyfarmers", "crazyfarmers")
 
     EventStore.subscription client container ("game-"+Environment.MachineName)
-        [ EventStore.handler "game-" deserialize handleGame
-          EventStore.handler "join-" Join.deserialize Join.handleJoin ]
+        [ EventStore.handler @"^game-(?<id>[\w\d]+)$" deserialize handleGame
+          EventStore.handler @"^join-(?<id>[\w\d]+)$" Join.deserialize Join.handleJoin ]
         
 
 

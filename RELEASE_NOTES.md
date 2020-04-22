@@ -1,3 +1,12 @@
+### 0.3.4  - 2020-04-22
+* Focus in login/register/join text fields
+* Enter in login/register/join text fields
+* Description and text on login/register
+
+### 0.3.3  - 2020-04-22
+* Longer TTL for verification codes
+* Fix subscription stream parsing, following saved commands
+
 ### 0.3.2  - 2020-04-21
 * Save commands with correlation ids
 

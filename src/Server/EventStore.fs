@@ -3,6 +3,7 @@ open Microsoft.Azure.Cosmos
 open FSharp.Control.Tasks
 open System.Threading.Tasks
 open System
+open System.Text.RegularExpressions
 
 [<CLIMutable>]
 type BatchData =
@@ -107,14 +108,16 @@ let fold deserialize (container: Container) f stream state start =
     fold (state,start-1)
 
 
-let handler (streamPrefix: string) deserialize f =
-    let prefixLength = streamPrefix.Length
+let handler (streamRegex: string) deserialize f =
+    let regex = Regex(streamRegex, RegexOptions.Compiled)
+
     fun (c: BatchData) ->
-        if c.p.StartsWith(streamPrefix) then
+        let m = regex.Match c.p
+        if m.Success then
+            let id = m.Groups.["id"].Value
             let events = 
                 [ for ed in c.e do
                     yield! deserialize (ed.c, ed.d) ]
-            let id = c.p.Substring(prefixLength) 
 
             f id c.i events
 

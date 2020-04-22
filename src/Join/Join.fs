@@ -383,7 +383,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 div [ ClassName "content" ]
                     [ mainTitle "Play Online"
 
-                      div [ ClassName "pitch" ] [
+                      div [ ClassName "text" ] [
                         str "2042... L'agriculture a périclité, les fermiers ont dû se reconvertir et développer
                              l’Ultimate Farming Championship (UFC pour les intimes) mélange improbable de Monster Truck,
                              catch mexicain et foire agricole, qui a rapidement fait le Buzz sur les écrans.
@@ -401,9 +401,12 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 header dispatch model.Player
                 div [ ClassName "content" ]
                     [ mainTitle "Open new Arena"
-                      p [] [ str ("Game id: " + game.GameId) ]
-                      p [ ClassName "info"] [ str "Send this game id to your friends, and tell them to join the game using this code."]
-                      p [ ClassName "info"] [ str "Select your team, and start the game once your friends joined."]
+                      div [ ClassName "text"]
+                          [ p [] [ str ("Arena id: " + game.GameId) ]
+
+                            p [ ClassName "info"] [ str "Send this game id to your friends, and tell them to join the game using this code."]
+                            p [ ClassName "info"] [ str "Select your team, and start the game once your friends joined."]
+                          ]
 
                       div [ ClassName "players" ]
                           [ for color in [ Blue; Yellow; Purple; Red ] do
@@ -429,7 +432,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
                 div [ ClassName "content" ]
                     [ mainTitle "Join an Arena"
-                      str ("Game id: " + game.GameId)
+                      str ("Arena id: " + game.GameId)
 
                       div [ ClassName "info"] 
                           [ str "Select your team ! If you don't select any, you can still watch the game. "  ]
@@ -450,15 +453,15 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 header dispatch model.Player
 
                 div [ ClassName "content" ]
-                    [ mainTitle "Join game"
+                    [ mainTitle "Join an Arena"
 
                       div [ ClassName "info"] 
-                          [ str "Get a game id from an friend, and paste it here to join the game."  ]
+                          [ str "Get an Arena id from an friend, and paste it here to join the game."  ]
 
-                      input [ Type "text"; Id "gameid" ]
+                      input [ Type "text"; Id "gameid"; AutoFocus true; OnKeyUp (fun e -> if e.keyCode = 13. then dispatch (Join  e.Value) ) ]
                 
                       div [ Style [ Clear ClearOptions.Both ]]
-                          [ button [ OnClick (fun _ -> 
+                          [ button [ Type "submit"; OnClick (fun _ -> 
                                      let elt = Browser.Dom.document.getElementById("gameid") :?> Browser.Types.HTMLInputElement
 
                                      dispatch (Join elt.value))] [ str "Join" ]
@@ -474,15 +477,17 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
                     mainTitle "Login"
                     div []
-                        [ label [] [ str "Email" ]
-                          input [ Type "email"; Id "email" ] ]
-                    button [ OnClick (fun _ ->
+                        [ div [ ClassName "text "]
+                            [ p [] [ str "Please provide the email you used for your registration. You will receive a verification code by email." ] ]
+                          label [] [ str "Email" ]
+                          input [ Type "email"; Id "email"; AutoFocus true; OnKeyUp (fun e -> if e.keyCode = 13. then dispatch (Login  e.Value) ) ] ]
+
+                    button [ Type "submit"; OnClick (fun _ ->
                         let email = Browser.Dom.document.getElementById("email") :?> Browser.Types.HTMLInputElement
                         dispatch (Login email.value)
-                    )
-                    
-                        ] [ str "Login" ]
+                    ) ] [ str "Login" ] 
                     cancel dispatch
+                        
                     div [ ClassName "switch" ]
                         [ str "Don't have an accout yet ? "
                           a [ Href "#"; OnClick (fun _ -> dispatch OpenRegister) ] [ str "Register"]]
@@ -495,13 +500,17 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
                     mainTitle "Register"
 
+                    div [ ClassName "text "]
+                        [ p [] [ str "Please enter your email for account verification. No password is required, you will simply receive an email containing a verification code." ]
+                          p [ ClassName "info" ] [ str "Your email is used for account verification only and will not be used for any other purpose or shared with any other party." ] ]
+
                     div []
                         [ label [] [ str "Email" ]
-                          input [ Type "email" ; Id "email" ] ]
+                          input [ Type "email" ; Id "email"; AutoFocus true ] ]
                     div []
                         [ label [] [ str "Name" ]
                           input [ Type "text"; Id "name" ] ]
-                    button [ OnClick (fun _ ->
+                    button [ Type "submit"; OnClick (fun _ ->
                         let email = Browser.Dom.document.getElementById("email") :?> Browser.Types.HTMLInputElement
                         let name = Browser.Dom.document.getElementById("name") :?> Browser.Types.HTMLInputElement
                         dispatch (Register(email.value,name.value))
@@ -517,17 +526,20 @@ let view (model : Model) (dispatch : Msg -> unit) =
             div [ ClassName "title" ] [
                 div [ ClassName "content" ] [
 
-                    mainTitle "Check"
+                    mainTitle "Verification"
+
+                    div [ ClassName "text" ]
+                        [ p [] [ str "Check your email. You should have received a message from Crazy Farmers with your verification code." ] ]
 
                     form [ Action "/auth/check"; HTMLAttr.Method "POST" ]
                         [
                         div []
                             [ label [] [ str "Code" ]
-                              input [ Type "text"; Name "code"  ]
+                              input [ Type "text"; Name "code"; AutoFocus true  ]
                               input [ Type "hidden"; Name "userid"; Value playerid]
                               ]
 
-                        button [ ] [ str "Check" ]
+                        button [ Type "submit" ] [ str "Verification" ]
                         ]
                     cancel dispatch
                 ]
