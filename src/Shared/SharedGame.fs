@@ -1401,7 +1401,8 @@ module Board =
                  currentOtherPlayers board
                  |> List.map (fun (_, player) -> 
                         let field = Player.field player
-                        if Field.size field = 1 then
+                        let bonus = Player.bonus player
+                        if Field.size field = 1 || bonus.Watched  then
                             Field.empty
                         else
                             match player with

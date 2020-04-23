@@ -809,7 +809,15 @@ let playersDashboard model dispatch =
                             str (sprintf "Let's go ! Select a crossroad around your %s field to start." (colorName p.Color) )
                         | Playing p ->
                             if Moves.canMove p.Moves then
-                                if p.Moves.Done = 0 then
+                                if p.Power = PowerDown then
+                                    str "You're fence has been cut. Go back to your field to draw a new one. "
+                                    match p.Bonus.Rutted with
+                                    | 0 -> ()
+                                    | 1 ->
+                                        str "You're victime of a rut, you lost 2 moves. "
+                                    | n ->
+                                        str (sprintf "You're victime of %d ruts, you lost %d moves. " n (n*2))
+                                elif p.Moves.Done = 0 then
                                     match p.Bonus.Rutted with
                                     | 0 ->
                                         if p.Moves.Acceleration then
