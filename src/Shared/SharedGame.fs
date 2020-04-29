@@ -2,12 +2,10 @@ namespace Shared
 
 
 [<Struct>]
-type Axe = Axe of int * int
+type Axe = Axe of q:int * r:int
     with
     static member (+) (Axe(q1,r1), Axe(q2,r2)) =
         Axe(q1+q2, r1+r2)
-    static member ( * ) (Axe(q,r), a) =
-        Axe(q*a, r*a)
     static member ( * ) (a,Axe(q,r)) =
         Axe(q*a, r*a)
 
@@ -37,25 +35,24 @@ module Axe =
 type CrossroadSide = CLeft | CRight
 
 [<Struct>]
-type Crossroad = Crossroad of Axe * CrossroadSide
+type Crossroad = Crossroad of tile:Axe * side:CrossroadSide
 
 type BorderSide = BNW | BN | BNE
 
 [<Struct>]
-type Path = Path of Axe * BorderSide
+type Path = Path of tile:Axe * border:BorderSide
 
 type Direction = Up | Down | Horizontal
 
-
 [<Struct>]
-type Parcel = Parcel of Axe
+type Parcel = Parcel of tile:Axe
     with
     static member (+) (Parcel p, v: Axe) =
         Parcel (p+v)
 
 
 [<Struct>]
-type Field = Field of Parcel Set
+type Field = Field of parcels:Parcel Set
     with
     static member (+) (Field x,Field y) =
         Field (x + y)
@@ -64,7 +61,7 @@ type Field = Field of Parcel Set
 
 
 [<Struct>]
-type Fence = Fence of (Path*Direction) list
+type Fence = Fence of paths:(Path*Direction) list
 
 type Barns =
     { Free: Field
@@ -83,9 +80,9 @@ type Power =
 
 
 type Card =
-    | Nitro of CardPower
+    | Nitro of power:CardPower
     | Rut
-    | HayBale of CardPower
+    | HayBale of power:CardPower
     | Dynamite
     | HighVoltage
     | Watchdog
@@ -94,14 +91,14 @@ type Card =
 and CardPower = One | Two
 
 type PlayCard =
-    | PlayNitro of CardPower
-    | PlayRut of string
-    | PlayHayBale of Path list
-    | PlayDynamite of Path
+    | PlayNitro of power:CardPower
+    | PlayRut of victim:string
+    | PlayHayBale of path:Path list
+    | PlayDynamite of path:Path
     | PlayHighVoltage
     | PlayWatchdog
-    | PlayHelicopter of Crossroad
-    | PlayBribe of Parcel
+    | PlayHelicopter of destination:Crossroad
+    | PlayBribe of parcel:Parcel
 
 module Card =
     let ofPlayCard =
@@ -116,47 +113,48 @@ module Card =
         | PlayBribe _ -> Bribe
 
 type Hand =
-    | Private of int
-    | Public of Card list
+    | PrivateHand of cards:int
+    | PublicHand of cards:Card list
 
 module Hand =
-    let empty = Private 0
+    let empty = PrivateHand 0
 
     let isEmpty =
         function
-        | Public p -> List.isEmpty p
-        | Private p -> p = 0
+        | PublicHand p -> List.isEmpty p
+        | PrivateHand p -> p = 0
 
     let toPrivate =
         function
-        | Public p -> Private p.Length
+        | PublicHand p -> PrivateHand (List.length p)
         | priv -> priv
 
     let count =
         function
-        | Public p -> p.Length
-        | Private c -> c
+        | PublicHand p -> p.Length
+        | PrivateHand c -> c
 
 
     let contains card =
         function
-        | Public p -> List.contains card p
-        | Private _ -> false
+        | PublicHand p -> List.contains card p
+        | PrivateHand _ -> false
        
-    let remove card =
-        function
-        | Public p -> 
-            let i = List.findIndex (fun c -> c = card) p
-            let left, right = List.splitAt i p
-            Public (left @ List.tail right)
-
-        | Private p -> Private(p-1)
+    let remove card hand =
+        match hand with
+        | PublicHand p -> 
+            match List.tryFindIndex (fun c -> c = card) p with
+            | Some i -> 
+                let left, right = List.splitAt i p
+                PublicHand (left @ List.tail right)
+            | None -> hand
+        | PrivateHand p -> PrivateHand (p-1)
 
     let canPlay =
         function
-        | Public p -> 
+        | PublicHand p -> 
             p |> List.isEmpty |> not
-        | Private p -> p > 0
+        | PrivateHand p -> p > 0
 
 
 type Player =
@@ -1130,7 +1128,7 @@ module Player =
         | _ -> failwith "Not playing"
 
     let start color parcel pos =
-        Starting  { Parcel = parcel; Color = color; Hand = Public []; Bonus = Bonus.empty  }
+        Starting  { Parcel = parcel; Color = color; Hand = PublicHand []; Bonus = Bonus.empty  }
         |> exec [] Barns.empty (SelectFirstCrossroad { Crossroad = pos})
 
 
@@ -1205,16 +1203,16 @@ module Player =
                 { p with 
                     Hand = 
                         match p.Hand, cards with
-                        | Public h, Public c -> Public (h @ c)
-                        | Private h, Private c -> Private (h + c)  
+                        | PublicHand h, PublicHand c -> PublicHand (h @ c)
+                        | PrivateHand h, PrivateHand c -> PrivateHand (h + c)  
                         | _ -> failwith "Unexpected mix" }
         | Starting p ->
             Starting
                 { p with
                     Hand = 
                         match p.Hand, cards with
-                        | Public h, Public c -> Public (h @ c)
-                        | Private h, Private c -> Private (h + c)  
+                        | PublicHand h, PublicHand c -> PublicHand (h @ c)
+                        | PrivateHand h, PrivateHand c -> PrivateHand (h + c)  
                         | _ -> failwith "Unexpected mix" }
         | Ko _ -> player
 
@@ -1451,7 +1449,7 @@ module Board =
         | InitialState, Started s ->
             Board 
                 { Players =
-                    Map.ofList [ for c,u,n,p in s.Players -> u, Starting { Color = c; Parcel = p; Hand = Public []; Bonus = Bonus.empty}]
+                    Map.ofList [ for c,u,n,p in s.Players -> u, Starting { Color = c; Parcel = p; Hand = PublicHand []; Bonus = Bonus.empty}]
                   Table =  Table.start [ for _,p,n,_ in s.Players -> p,n ] 
                   DrawPile = s.DrawPile
                   DiscardPile = []
@@ -1685,7 +1683,7 @@ module Board =
                                     yield! es
                                     PlayerDrewCards 
                                         { Player = playerid
-                                          Cards = Public (drawPile |> DrawPile.take cardsToTake) }
+                                          Cards = PublicHand (drawPile |> DrawPile.take cardsToTake) }
                                 else
                                     match nextState with
                                     | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) ->
@@ -1818,13 +1816,3 @@ type ClientMsg =
     | Message of string
     | Sync of BoardState * int
     | SyncPlayer of  string
-
-
-
-            
-
-            
-
-        
-
-

@@ -48,3 +48,11 @@ group Build
     nuget Fake.Core.Target
     nuget Fake.DotNet.Cli
     nuget Fake.IO.FileSystem
+
+group Transpiler
+    source https://api.nuget.org/v3/index.json
+    framework: netstandard2.0
+    storage: none
+    generate_load_scripts: true
+
+    nuget FSharp.Compiler.Service

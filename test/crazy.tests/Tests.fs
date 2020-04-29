@@ -245,7 +245,7 @@ let ``cut player should be powered up after helicopter``() =
     let events = 
         [ started (Common 3)
           yield! startfences p1 (left (N+NE))  [Horizontal]
-          PlayerDrewCards { Player = "p1"; Cards = Public [ Helicopter ]}
+          PlayerDrewCards { Player = "p1"; Cards = PublicHand [ Helicopter ]}
           Next
           p2 ( CutFence { Player =  "p1" })
           Next

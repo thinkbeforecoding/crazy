@@ -448,7 +448,7 @@ let handView dispatch playerId board cardAction hand =
             ]
 
     match hand with 
-    | Public cards -> 
+    | PublicHand cards -> 
        div [ ClassName "cards" ]
            [ for i,c in List.indexed cards do
                div [ClassName "card-container" ]
@@ -522,7 +522,7 @@ let handView dispatch playerId board cardAction hand =
                         | _ -> ()
                     ]
            ]
-    | Private cards ->
+    | PrivateHand cards ->
         div [ ClassName "cards"]
             [ for c in 1..cards do
                div [ClassName "card-container" ]
