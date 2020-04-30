@@ -32,6 +32,29 @@
         $rm3 = Shared_002EHandModule___remove(new Card_Bribe(), $rm2);
         $rm4 = Shared_002EHandModule___remove(new Card_Watchdog(), $rm3);
         echo "CanPlay: ", var_dump(Shared_002EHandModule___canPlay($rm3)), "<br/>";
+
+        $l0 = FSharpList::ofArray([2,3,4,5]);
+        $l = FSharpList::map(function ($x) { return $x + 1;}, $l0 );
+        
+        echo "map: ", var_dump($l), "<br/>";
+
+        $s = FSharpList::splitAt(2,$l0);
+        echo "splitAt: ", var_dump($s), "<br/>";
+
+        echo "<ul>";
+        foreach($l as $e)
+        {
+            echo "<li>item: ", $e,"</li>"; 
+        }
+        echo "</ul>";
+
+        $mf = FSharpList::mapFold(function($acc,$i){ return [$acc, $i+$acc];}, 0, $l);
+        echo "<ul>";
+        foreach($mf[0] as $e)
+        {
+            echo "<li>item: ", $e,"</li>"; 
+        }
+        echo "</ul>"
     ?>
     </body>
 </html>

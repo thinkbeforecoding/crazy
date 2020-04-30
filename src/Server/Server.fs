@@ -84,7 +84,7 @@ let connections =
 
 type GameRunnerCmd =
     | GetState of ((Board * int) option -> unit)
-    | Exec of Board.Command * (Board.Event list -> unit)
+    | Exec of Board.BoardCommand * (Board.Event list -> unit)
 
 open Newtonsoft.Json.Linq
 let (|JObj|_|) (o: obj) : 'e option =

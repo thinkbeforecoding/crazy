@@ -95,11 +95,16 @@ type PhpConst =
     | PhpConstUnit
 
 type PhpArrayIndex =
+    | PhpArrayNoIndex
     | PhpArrayInt of int
     | PhpArrayString of string
 type PhpField =
     { Name: string 
       Type: string }
+
+type Prop =
+    | Field of PhpField
+    | StrField of string
 
 and PhpExpr =
     | PhpVar of string * typ: PhpType option
@@ -107,24 +112,24 @@ and PhpExpr =
     | PhpConst of PhpConst
     | PhpUnaryOp of string * PhpExpr
     | PhpBinaryOp of string *PhpExpr * PhpExpr
-    | PhpProp of PhpExpr * PhpField
+    | PhpProp of PhpExpr * Prop * typ: PhpType option
     | PhpArrayAccess of PhpExpr * PhpExpr
     | PhpNew of ty:PhpType * args:PhpExpr list
-    | PhpArray of args: PhpExpr list
-    | PhpArrayMap of (PhpArrayIndex * PhpExpr) list
-    | PhpCall of func:string * args: PhpExpr list
+    | PhpArray of args: (PhpArrayIndex * PhpExpr) list
+    | PhpCall of f: PhpExpr * args: PhpExpr list
     | PhpMethod of this: PhpExpr * func:string * args: PhpExpr list
     | PhpTernary of gard: PhpExpr * thenExpr: PhpExpr * elseExpr: PhpExpr
     | PhpIsA of expr: PhpExpr * PhpType
-    | PhpAnonymousFunc of args: string list * uses: string list * body: PhpExpr
+    | PhpAnonymousFunc of args: string list * uses: string list * body: PhpStatement list
    
 and PhpStatement =
     | Return of PhpExpr
     | Expr of PhpExpr
     | Switch of PhpExpr * (PhpCase * PhpStatement list) list
     | Break
-    | Assign of name:string * PhpExpr
+    | Assign of target:PhpExpr * value:PhpExpr
     | If of guard: PhpExpr * thenCase: PhpStatement list * elseCase: PhpStatement list
+    | Throw of string
 and PhpCase =
     | IntCase of int
     | StringCase of string
@@ -153,7 +158,7 @@ type PhpDecl =
     | PhpType of PhpType
 
 type PhpFile =
-    { Decls: PhpDecl list }
+    { Decls: (int * PhpDecl) list }
 
 
 module Output =
@@ -241,10 +246,12 @@ module Output =
             write ctx "$GLOBALS['"
             write ctx v
             write ctx "']"
-        | PhpProp(l,r) ->
+        | PhpProp(l,r, _) ->
             writeExpr ctx l
             write ctx "->"
-            write ctx r.Name
+            match r with
+            | Field r -> write ctx r.Name
+            | StrField r -> write ctx r
         | PhpNew(t,args) ->
             write ctx "new "
             write ctx t.Name
@@ -253,10 +260,6 @@ module Output =
             write ctx ")"
         | PhpArray(args) ->
             write ctx "[ "
-            writeArgs ctx args
-            write ctx " ]"
-        | PhpArrayMap(args) ->
-            write ctx "[ "
             let mutable first = true
             for key,value in args do
                 if first then
@@ -264,7 +267,6 @@ module Output =
                 else
                     write ctx ", "
                 writeArrayIndex ctx key
-                write ctx " => "
                 writeExpr ctx value
             write ctx "]"
         | PhpArrayAccess(array, index) ->
@@ -274,7 +276,12 @@ module Output =
             write ctx "]"
 
         | PhpCall(f,args) ->
-            write ctx f
+            let anonymous = match f with PhpAnonymousFunc _ -> true | _ -> false
+            if anonymous then
+                write ctx "("
+            writeExpr ctx f
+            if anonymous then
+                write ctx ")"
             write ctx "("
             writeArgs ctx args
             write ctx ")"
@@ -305,9 +312,21 @@ module Output =
                 write ctx " use ("
                 writeVarList ctx uses
                 write ctx ")"
-            write ctx " { return "
-            writeExpr ctx body
-            write ctx "; }"
+            
+            write ctx " { "
+            let multiline = body.Length > 1 
+            let bodyCtx =
+                if multiline then
+                    writeln ctx ""
+                    indent ctx
+                else
+                    ctx
+            for st in  body do
+                writeStatement bodyCtx st
+            if multiline then
+                writei ctx "}"
+            else
+                write ctx " }"
     and writeArgs ctx args =
         let mutable first = true
         for arg in args do
@@ -321,14 +340,17 @@ module Output =
         | PhpArrayString s  ->
             write ctx "'"
             write ctx s
-            write ctx "'"
+            write ctx "' => "
         | PhpArrayInt n  ->
             write ctx (string n)
+            write ctx " => "
+        | PhpArrayNoIndex ->
+            ()
 
         
-    let rec writeStatement ctx st =
+    and writeStatement ctx st =
         match st with
-        | Return expr ->
+        | PhpStatement.Return expr ->
             writei ctx "return "
             writeExpr ctx expr
             writeln ctx ";"
@@ -337,8 +359,8 @@ module Output =
             writeExpr ctx expr
             writeln ctx ";"
         | Assign(name, expr) ->
-            writei ctx "$"
-            write ctx name
+            writei ctx ""
+            writeExpr ctx name
             write ctx " = "
             writeExpr ctx expr
             writeln ctx ";"
@@ -378,6 +400,10 @@ module Output =
             for st in elseCase do
                 writeStatement body st
             writeiln ctx "}"
+        | Throw s ->
+            writei ctx "throw new Exception('"
+            write ctx s
+            writeln ctx "');"
 
 
     let writeFunc ctx (f: PhpFun) =
@@ -474,10 +500,10 @@ module Output =
 
     let writeFile ctx (file: PhpFile) =
         writeln ctx "<?php"
-        for d in file.Decls do
+        for i,d in file.Decls do
+            write ctx ( "#" + string i)
             writeDecl ctx d
             writeln ctx ""
-
 
 
 
@@ -485,9 +511,19 @@ module Output =
 open Fable.AST
 
 module PhpList =
-    let list  = { Name = "List"; Fields = []; Methods = []; Abstract = true; BaseType = None }
-    let cons = { Name = "Cons"; Fields = []; Methods = []; Abstract = false; BaseType = Some list } 
+    let list  = { Name = "FSharpList"; Fields = []; Methods = []; Abstract = true; BaseType = None }
+    let value = { Name = "value"; Type = "" }
+    let next = { Name = "next"; Type = "FSharpList" }
+    let cons = { Name = "Cons"; Fields = [ value; next ]; Methods = []; Abstract = false; BaseType = Some list } 
     let nil = { Name = "Nil"; Fields = []; Methods = []; Abstract = false; BaseType = Some list }
+
+module PhpResult =
+    let result = { Name = "Result"; Fields = []; Methods = []; Abstract = true; BaseType = None}
+    let ok = { Name = "Ok"; Fields = []; Methods = []; Abstract = true; BaseType = Some result }
+    let errorValue = { Name = "ErrorValue"; Type = ""}
+    let error = { Name = "Error"; Fields = [errorValue] ; Methods = []; Abstract = true; BaseType = Some result }
+
+
 
 type PhpCompiler =
     { mutable Types: Map<string,PhpType> 
@@ -499,7 +535,11 @@ type PhpCompiler =
 
         { Types = Map.ofList [ "List" , PhpList.list
                                "Cons" , PhpList.cons
-                               "Nil", PhpList.nil ]  
+                               "Nil", PhpList.nil
+                               "Result", PhpResult.result
+                               "Ok", PhpResult.ok
+                               "Error", PhpResult.error
+                               ]  
           DecisionTargets = []
           LocalVars = Set.empty
           CapturedVars = Set.empty
@@ -539,7 +579,7 @@ let fixName (name: string) =
 
 let caseName (case: FSharpUnionCase) =
     let entity = case.ReturnType.TypeDefinition
-    if entity.UnionCases.Count = 1 then
+    if entity.UnionCases.Count = 1 || entity.CompiledName = "FSharpResult`2" then
         case.Name
     else
         entity.CompiledName + "_" + case.Name
@@ -577,6 +617,42 @@ let convertUnion (ctx: PhpCompiler) (info: Fable.UnionConstructorInfo) =
               BaseType = Some baseType }
         ctx.AddType(t) |> PhpType ]
 
+let convertRecord (ctx: PhpCompiler) (info: Fable.CompilerGeneratedConstructorInfo) = 
+    [ let t =
+        { Name = info.Entity.CompiledName
+          Fields = [ for e in info.Entity.FSharpFields do 
+                        { Name = e.Name 
+                          Type  = convertType e.FieldType } ]
+          Methods = [ ]
+          Abstract = false
+          BaseType = None}
+      ctx.AddType(t) |> PhpType ]
+
+type ReturnStrategy =
+    | Return
+    | Let of string
+
+
+let convertTest ctx test phpExpr =
+    match test with
+    | Fable.TestKind.UnionCaseTest(case,_) ->
+        let t = Map.find (caseName case) ctx.Types
+        PhpIsA(phpExpr, t)
+    | Fable.TestKind.ListTest(isCons) ->
+        PhpIsA(phpExpr, if isCons then PhpList.cons else PhpList.nil)
+    | Fable.OptionTest(isSome) ->
+       let isNull = PhpCall(PhpConst (PhpConstString "is_null"), [phpExpr])
+       if isSome then
+           PhpUnaryOp("!",isNull)
+       else
+           isNull 
+
+
+let rec getExprType =
+    function
+    | PhpVar(_, t) -> t
+    | PhpProp(_,_, t) -> t
+    | _ -> None
 
 let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
     match expr with
@@ -618,33 +694,60 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
                 let phpCls =
                     match cls with
                     | "List" -> "FSharpList"
+                    | "Array" -> "FSharpArray"
                     | _ -> cls
-                PhpCall(phpCls + "::" + fixName s, [ for arg in args.Args do convertExpr ctx arg])
-        | _ -> PhpCall(fixName s, [ for arg in args.Args do convertExpr ctx arg])
+                PhpCall(PhpConst(PhpConstString (phpCls + "::" + fixName s)), [ for arg in args.Args do convertExpr ctx arg])
+        | _ -> PhpCall(PhpConst(PhpConstString (fixName s)), [ for arg in args.Args do convertExpr ctx arg])
+    | Fable.Operation(Fable.Call(Fable.StaticCall(Fable.Get(Fable.IdentExpr(i),Fable.ExprGet(Fable.Value(Fable.StringConstant(m),_)),_,_)),args),_,_) ->
+        let f = 
+            match i.Name ,m with
+            | "Math", "abs" -> "abs"
+            | name, m -> fixName name + "::" + fixName m
+        PhpCall(PhpConst(PhpConstString (f)), [ for arg in args.Args -> convertExpr ctx arg])
+    | Fable.Operation(Fable.Call(Fable.StaticCall(Fable.IdentExpr(i)),args),_,_) ->
+        PhpCall(PhpConst(PhpConstString (fixName i.Name)), [ for arg in args.Args -> convertExpr ctx arg])
+
+
+        
     | Fable.Operation(Fable.Call(Fable.InstanceCall( Some (Fable.Value(Fable.StringConstant s, _ ))),{ Args = args; ThisArg = Some this}), _, _) ->
         PhpMethod(convertExpr ctx this,fixName s, [for arg in args -> convertExpr ctx arg ] )
+    | Fable.Operation(Fable.CurriedApply(expr, args),_,_) ->
+        PhpCall(convertExpr ctx expr, [for arg in args -> convertExpr ctx arg]) 
 
-    | Fable.Get(expr,Fable.UnionField(f,case,_),t,_) ->
-        let name = caseName case
-            
-        let t = Map.find name ctx.Types
-        let field = t.Fields |> List.find (fun ff -> ff.Name = f.Name)
-        PhpProp(convertExpr ctx expr, field)
-    | Fable.Get(expr,Fable.OptionValue,_,_) ->
-        convertExpr ctx expr    
-    | Fable.Get(expr,Fable.FieldGet(fieldName,_,_),_ ,_) ->
-        
-        match convertExpr ctx expr with
-        | PhpVar(_, Some phpType) as v -> 
-            let field = phpType.Fields |> List.find (fun f -> f.Name = fieldName)
-        
-            PhpProp(v,field)
+    | Fable.Get(expr, kind ,t,_) ->
+        let phpExpr = convertExpr ctx expr
+        match kind with 
+        | Fable.UnionField(f,case,_) ->
+            let name = caseName case
+                
+            let t = Map.find name ctx.Types
+            let field = t.Fields |> List.tryFind (fun ff -> ff.Name = f.Name)
+            match field with
+            | Some field ->
+                let fieldType = Map.tryFind field.Type ctx.Types
+                PhpProp(phpExpr, Field field, fieldType)
+            | None -> PhpProp(phpExpr, StrField f.Name, None)
+        | Fable.OptionValue ->
+            phpExpr
+        | Fable.FieldGet(fieldName,_,_) ->
+            match getExprType phpExpr with
+            | Some phpType ->
+                let field = phpType.Fields |> List.find (fun f -> f.Name = fieldName)
+                PhpProp(phpExpr, Field field, Map.tryFind field.Type ctx.Types ) 
+            | None -> PhpProp(phpExpr, StrField fieldName, None)
+         
+        | Fable.GetKind.TupleGet(id) ->
+            PhpArrayAccess(phpExpr, PhpConst(PhpConstNumber (float id))) 
+        | Fable.ExprGet(expr') ->
+            let prop = convertExpr ctx expr'
+            PhpArrayAccess(phpExpr, prop)
+        | Fable.ListHead ->
+            PhpProp(phpExpr, Field PhpList.value, getExprType phpExpr)
+        | Fable.ListTail ->
+            PhpProp(phpExpr, Field PhpList.next, getExprType phpExpr)
+        | Fable.UnionTag ->
+            PhpCall(PhpConst(PhpConstString ("get_class")), [phpExpr])
 
-    | Fable.Get(expr,Fable.GetKind.TupleGet(id),_,_) ->
-        PhpArrayAccess(convertExpr ctx expr, PhpConst(PhpConstNumber (float id))) 
-    | Fable.Get(expr, Fable.ExprGet(expr'),_,_) ->
-        let prop = convertExpr ctx expr'
-        PhpArrayAccess(convertExpr ctx expr, prop)
 
 
     | Fable.IdentExpr(id) ->
@@ -669,43 +772,56 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
         PhpTernary(convertExpr ctx guard,
                 convertExpr ctx thenExpr,
                 convertExpr ctx elseExpr )
-    | Fable.Test(expr, Fable.TestKind.UnionCaseTest(case,_), _ ) ->
-        let t = Map.find (caseName case) ctx.Types
-        PhpIsA(convertExpr ctx expr, t)
-    | Fable.Test(expr, Fable.TestKind.ListTest(isCons),_) ->
-        PhpIsA(convertExpr ctx expr, if isCons then PhpList.cons else PhpList.nil)
-    | Fable.Test(expr, Fable.OptionTest(isSome), _) ->
-        let isNull = PhpCall("is_null", [convertExpr ctx expr])
-        if isSome then
-            PhpUnaryOp("!",isNull)
-        else
-            isNull
+    | Fable.Test(expr, test , _ ) ->
+        let phpExpr = convertExpr ctx expr
+        convertTest ctx test phpExpr
+            
         
     | Fable.DecisionTreeSuccess(index,_,_) ->
         let _,target = ctx.DecisionTargets.[index]
         convertExpr ctx target
 
     | Fable.ObjectExpr(members, t, baseCall) ->
-         PhpArrayMap [
+         PhpArray [
             for m in members do
                 match m with
                 | Fable.ObjectMember(Fable.Value(Fable.StringConstant key,_) ,value,kind) ->
                     PhpArrayString key , convertExpr ctx value
          ]
-    | Fable.Function(Fable.Lambda(arg),body,_) ->
-        let scope = ctx.NewScope()
-        let argName = fixName arg.Name
-        scope.AddLocalVar argName
-        let phpBody = convertExpr scope body
+    | Fable.Function(kind,body,_) ->
+        convertFunction ctx kind body
 
-        PhpAnonymousFunc([argName], Set.toList scope.CapturedVars , phpBody )
+      
     | Fable.Let([], body) ->
         convertExpr ctx body
+    | Fable.Let(bindings, body) ->
+        let ctx = ctx.NewScope()
+        let body = convertExprToStatement ctx expr Return
+        PhpCall(PhpAnonymousFunc([], Set.toList ctx.CapturedVars , body),[])
     | Fable.Expr.TypeCast(expr, t) ->
         convertExpr ctx expr
         
+
+
         
         
+and convertFunction (ctx: PhpCompiler) kind body =
+    let scope = ctx.NewScope()
+    let args = 
+        match kind with
+        | Fable.Lambda(arg) ->
+            let argName = fixName arg.Name
+            scope.AddLocalVar argName
+            [argName]
+        | Fable.Delegate(args) ->
+            [ for arg in args do
+                let argName = fixName arg.Name
+                scope.AddLocalVar argName
+                argName ]
+ 
+    let phpBody = convertExprToStatement scope body Return
+
+    PhpAnonymousFunc(args, Set.toList scope.CapturedVars , phpBody ) 
 
 and convertValue (ctx:PhpCompiler) (value: Fable.ValueKind) =
     match value with
@@ -714,40 +830,38 @@ and convertValue (ctx:PhpCompiler) (value: Fable.ValueKind) =
         PhpNew(t, [for arg in args do convertExpr ctx arg ])
     | Fable.NewTuple(args) ->
         
-        PhpArray([for arg in args do convertExpr ctx arg])
+        PhpArray([for arg in args do (PhpArrayNoIndex, convertExpr ctx arg)])
     | Fable.NewRecord(args, Fable.DeclaredRecord(e), _) ->
         let t = ctx.Types.[e.CompiledName]
         PhpNew(t, [ for arg in args do convertExpr ctx arg ] )
         
 
-    | Fable.ValueKind.NumberConstant(v,_) ->
+    | Fable.NumberConstant(v,_) ->
         PhpConst(PhpConstNumber v)
-    | Fable.ValueKind.StringConstant(s) ->
+    | Fable.StringConstant(s) ->
         PhpConst(PhpConstString s)
-    | Fable.ValueKind.BoolConstant(b) ->
+    | Fable.BoolConstant(b) ->
         PhpConst(PhpConstBool b)
-    | Fable.ValueKind.UnitConstant ->
+    | Fable.UnitConstant ->
         PhpConst(PhpConstUnit)
-    | Fable.ValueKind.Null _ ->
+    | Fable.Null _ ->
         PhpConst(PhpConstNull)
+    | Fable.NewList(Some(head,tail),_) ->
+        PhpNew(PhpList.cons, [convertExpr ctx head; convertExpr ctx tail])
+    | Fable.NewList(None,_) ->
+        PhpCall(PhpConst(PhpConstString("FSharpList::get_Nil")),[])
+    | Fable.NewArray(Fable.NewArrayKind.ArrayValues(values),_) ->
+        PhpArray([for v in values -> (PhpArrayNoIndex, convertExpr ctx v)])
 
-let convertRecord (ctx: PhpCompiler) (info: Fable.CompilerGeneratedConstructorInfo) = 
-    [ let t =
-        { Name = info.Entity.CompiledName
-          Fields = [ for e in info.Entity.FSharpFields do 
-                        { Name = e.Name 
-                          Type  = convertType e.FieldType } ]
-          Methods = [ ]
-          Abstract = false
-          BaseType = None}
-      ctx.AddType(t) |> PhpType ]
-
-type ReturnStrategy =
-    | Return
-    | ReturnUnit
+    | Fable.NewOption(opt,_) ->
+        match opt with
+        | Some expr -> convertExpr ctx expr
+        | None -> PhpConst(PhpConstNull)
+    
 
 
-let rec canBeCompiledAsSwitch tree =
+
+and canBeCompiledAsSwitch tree =
     match tree with
     | Fable.IfThenElse(Fable.Test(_, Fable.UnionCaseTest(case,e),_), Fable.DecisionTreeSuccess(index,_,_), elseExpr,_) ->
         canBeCompiledAsSwitch elseExpr
@@ -755,7 +869,7 @@ let rec canBeCompiledAsSwitch tree =
         true
     | _ -> false
 
-let rec findCasesNames tree =
+and findCasesNames tree =
     [ match tree with
       | Fable.IfThenElse(Fable.Test(_, Fable.UnionCaseTest(case,e),_), Fable.DecisionTreeSuccess(index,_,_), elseExpr,_) ->
             Some case,index
@@ -766,14 +880,14 @@ let rec findCasesNames tree =
 
     
 
-let rec convertExprToStatement ctx expr returnStrategy =
+and convertExprToStatement ctx expr returnStrategy =
     match expr with
     | Fable.DecisionTree(input, targets) ->
         convertExprToStatement { ctx with DecisionTargets = targets} input returnStrategy
     | Fable.IfThenElse(Fable.Test(expr, Fable.TestKind.UnionCaseTest(case,entity), _) as guard, thenExpr , elseExpr, _) as input ->
         if (canBeCompiledAsSwitch input) then
             let cases = findCasesNames input
-            [ Switch(PhpCall("get_class", [convertExpr ctx expr]),
+            [ Switch(PhpCall(PhpConst(PhpConstString("get_class")), [convertExpr ctx expr]),
                 [ for case,i in cases ->
                     let _,target = ctx.DecisionTargets.[i]
                     let phpCase =
@@ -786,28 +900,33 @@ let rec convertExprToStatement ctx expr returnStrategy =
             ]
         else
             [ If(convertExpr ctx guard, convertExprToStatement ctx thenExpr returnStrategy, convertExprToStatement ctx elseExpr returnStrategy) ]
-    | Fable.IfThenElse(Fable.Test(expr, Fable.TestKind.OptionTest(isSome), _), thenExpr, elseExpr, _) ->
-        let isNull = PhpCall("is_null", [convertExpr ctx expr])
-        let guard = 
-            if isSome then
-                PhpUnaryOp("!",isNull)
-            else
-                isNull
+    | Fable.IfThenElse(guardExpr, thenExpr, elseExpr, _) ->
+        let guard = convertExpr ctx guardExpr
 
         [ If(guard, convertExprToStatement ctx thenExpr returnStrategy,
                     convertExprToStatement ctx elseExpr returnStrategy) ]
     | Fable.DecisionTreeSuccess(index,_,_) ->
         let _,target = ctx.DecisionTargets.[index]
         convertExprToStatement ctx target returnStrategy
-    | Fable.Let([ident, expr],body) ->
-        [ Assign(fixName ident.Name, convertExpr ctx expr)
+    | Fable.Let(bindings,body) ->
+        [ 
+          for ident, expr in bindings do 
+              yield! convertExprToStatement ctx expr (Let(fixName ident.Name))
           yield! convertExprToStatement ctx body returnStrategy ]
-    | Fable.Let([],body) ->
-        convertExprToStatement ctx body returnStrategy
 
+    | Fable.Sequential(exprs) ->
+        [ for expr in exprs do yield! convertExprToStatement ctx expr returnStrategy]
+    | Fable.Throw(Fable.Operation(Fable.Call(Fable.ConstructorCall(_ ),{ Args = [ Fable.Value(Fable.StringConstant s, _)]}),_,_) ,_,_) ->
+        [ Throw(s) ]
+
+    | Fable.Set(expr,kind,value,_) ->
+        [ Assign(convertExpr ctx expr, convertExpr ctx value)]
+            
 
     | _ ->
-        [  PhpStatement.Return (convertExpr ctx expr) ]
+        match returnStrategy with
+        | Return -> [ PhpStatement.Return (convertExpr ctx expr) ]
+        | Let(var) -> [ Assign(PhpVar(var,None), convertExpr ctx expr) ]
 
 let convertDecl ctx decl =
     match decl with
@@ -878,9 +997,14 @@ let ast2 =
 let phpComp = PhpCompiler.empty
 let fs = 
     [ 
-      for decl in ast2.Declarations.[0..56] do
-      yield! convertDecl phpComp decl
-      ]
+      for i,decl in Lsit.indexed ast.Declarations do
+        for d in convertDecl phpComp decl do
+            i,d
+      for i,decl in List.indexed ast2.Declarations do
+        for d in convertDecl phpComp decl do
+            i,d
+      //yield! convertDecl phpComp ast2.Declarations.[157] 
+    ]
 
 
 let w = new StringWriter()
@@ -890,5 +1014,5 @@ Output.writeFile ctx file
 w.ToString()
 
 IO.File.WriteAllText(@"C:\development\crazy\php\lib.php", string w)
-
+    
 

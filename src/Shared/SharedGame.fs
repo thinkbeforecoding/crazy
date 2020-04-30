@@ -205,8 +205,7 @@ type Table =
 
 module Table =
     let start players =
-        let allplayers = [| for p,_ in players -> p |]
-
+        let allplayers = [| for _,p in players -> p |]
         { Players = allplayers
           AllPlayers = allplayers
           Current = 0
@@ -570,10 +569,11 @@ module Field =
         |> set |> Field
 
     let borderTiles (Field parcels) =
-        (parcels
-         |> Seq.collect Parcel.neighbors
-         |> set)
-        - parcels
+        let allNeighbors =
+            parcels
+            |> Seq.collect Parcel.neighbors
+            |> set
+        allNeighbors - parcels
         |> Field
 
     let counterclock field (Crossroad(tile,side)) =
@@ -770,14 +770,14 @@ module Player =
     type Command =
         | Start of Start
         | SelectFirstCrossroad of SelectFirstCrossroad
-        | Move of Move
+        | Move of PlayerMove
         | PlayCard of PlayCard
         | EndTurn
     and Start =
         { Parcel: Parcel }
     and SelectFirstCrossroad =
         { Crossroad: Crossroad }
-    and Move =
+    and PlayerMove =
         { Direction: Direction
           Destination: Crossroad }
 
@@ -1293,7 +1293,7 @@ module DrawPile =
 module Board =
     let initialState = InitialState
 
-    type Command =
+    type BoardCommand =
         | Play of string * Player.Command
         | Start of Start
     and Start =
