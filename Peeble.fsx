@@ -501,7 +501,7 @@ module Output =
     let writeFile ctx (file: PhpFile) =
         writeln ctx "<?php"
         for i,d in file.Decls do
-            write ctx ( "#" + string i)
+            writeln ctx ( "#" + string i)
             writeDecl ctx d
             writeln ctx ""
 
@@ -920,13 +920,19 @@ and convertExprToStatement ctx expr returnStrategy =
         [ Throw(s) ]
 
     | Fable.Set(expr,kind,value,_) ->
-        [ Assign(convertExpr ctx expr, convertExpr ctx value)]
+        let left = convertExpr ctx expr
+        match left with
+        | PhpVar(v,_) -> ctx.AddLocalVar(v) 
+        | _ -> ()
+        [ Assign(left, convertExpr ctx value)]
             
 
     | _ ->
         match returnStrategy with
         | Return -> [ PhpStatement.Return (convertExpr ctx expr) ]
-        | Let(var) -> [ Assign(PhpVar(var,None), convertExpr ctx expr) ]
+        | Let(var) -> 
+            ctx.AddLocalVar(var)
+            [ Assign(PhpVar(var,None), convertExpr ctx expr) ]
 
 let convertDecl ctx decl =
     match decl with
@@ -997,7 +1003,7 @@ let ast2 =
 let phpComp = PhpCompiler.empty
 let fs = 
     [ 
-      for i,decl in Lsit.indexed ast.Declarations do
+      for i,decl in List.indexed ast.Declarations do
         for d in convertDecl phpComp decl do
             i,d
       for i,decl in List.indexed ast2.Declarations do

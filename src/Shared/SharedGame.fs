@@ -800,7 +800,9 @@ module Player =
         | Heliported of Crossroad
         | Bribed of Bribed
         | Eliminated
-    and Started =
+    and 
+        [<CompiledName("PlayerStarted")>]
+        Started =
         { Parcel : Parcel }
     and FirstCrossroadSelected =
         { Crossroad : Crossroad }
@@ -1293,14 +1295,16 @@ module DrawPile =
 module Board =
     let initialState = InitialState
 
-    type BoardCommand =
+    [<CompiledName("BoardCommand")>]
+    type Command =
         | Play of string * Player.Command
-        | Start of Start
-    and Start =
+        | Start of BoardStart
+    and BoardStart =
         { Players: (Color * string * string) list
           Goal: Goal
         }
 
+    [<CompiledName("BoardEvent")>]
     type Event =
         | Played of string * Player.Event
         | Started of Started
@@ -1310,7 +1314,9 @@ module Board =
         | HayBalesPlaced of Path list
         | HayBaleDynamited of Path
         | DiscardPileShuffled of Card list
-    and Started =
+    and 
+        [<CompiledName("BoardStarted")>]
+        Started =
         { Players: (Color*string*string*Parcel) list 
           DrawPile: Card list
           Barns: Parcel list
