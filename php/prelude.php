@@ -4,6 +4,7 @@ include "FSharpArray.php";
 include "FSharpList.php";
 include "Seq.php";
 include "Set.php";
+include "Map.php";
 
 $equals = function ($x,$y) { return $x == $y; };
 

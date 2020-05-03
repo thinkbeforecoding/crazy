@@ -485,7 +485,7 @@ class Set implements IteratorAggregate {
 
     static function toList($set)
     {
-        return FSharpList::ofSet($set);
+        return FSharpList::ofSeq($set);
     }
 
     public function getIterator() {

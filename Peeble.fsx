@@ -130,6 +130,7 @@ and PhpStatement =
     | Assign of target:PhpExpr * value:PhpExpr
     | If of guard: PhpExpr * thenCase: PhpStatement list * elseCase: PhpStatement list
     | Throw of string
+    | Do of PhpExpr
 and PhpCase =
     | IntCase of int
     | StringCase of string
@@ -404,6 +405,11 @@ module Output =
             writei ctx "throw new Exception('"
             write ctx s
             writeln ctx "');"
+        | Do (PhpConst PhpConstUnit)-> ()
+        | Do (expr) ->
+            writei ctx ""
+            writeExpr ctx expr
+            writeln ctx ";"
 
 
     let writeFunc ctx (f: PhpFun) =
@@ -631,6 +637,7 @@ let convertRecord (ctx: PhpCompiler) (info: Fable.CompilerGeneratedConstructorIn
 type ReturnStrategy =
     | Return
     | Let of string
+    | Do
 
 
 let convertTest ctx test phpExpr =
@@ -696,16 +703,16 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
                     | "List" -> "FSharpList"
                     | "Array" -> "FSharpArray"
                     | _ -> cls
-                PhpCall(PhpConst(PhpConstString (phpCls + "::" + fixName s)), [ for arg in args.Args do convertExpr ctx arg])
-        | _ -> PhpCall(PhpConst(PhpConstString (fixName s)), [ for arg in args.Args do convertExpr ctx arg])
+                PhpCall(PhpConst(PhpConstString (phpCls + "::" + fixName s)), convertArgs ctx args)
+        | _ -> PhpCall(PhpConst(PhpConstString (fixName s)), convertArgs ctx args)
     | Fable.Operation(Fable.Call(Fable.StaticCall(Fable.Get(Fable.IdentExpr(i),Fable.ExprGet(Fable.Value(Fable.StringConstant(m),_)),_,_)),args),_,_) ->
         let f = 
             match i.Name ,m with
             | "Math", "abs" -> "abs"
             | name, m -> fixName name + "::" + fixName m
-        PhpCall(PhpConst(PhpConstString (f)), [ for arg in args.Args -> convertExpr ctx arg])
+        PhpCall(PhpConst(PhpConstString (f)), convertArgs ctx args)
     | Fable.Operation(Fable.Call(Fable.StaticCall(Fable.IdentExpr(i)),args),_,_) ->
-        PhpCall(PhpConst(PhpConstString (fixName i.Name)), [ for arg in args.Args -> convertExpr ctx arg])
+        PhpCall(PhpConst(PhpConstString (fixName i.Name)), convertArgs ctx args)
 
 
         
@@ -803,6 +810,12 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
         
 
 
+and convertArgs ctx (args: Fable.ArgInfo) =
+    [ match args.ThisArg with
+      | Some arg -> convertExpr ctx arg
+      | None -> ()
+      for arg in args.Args do 
+        convertExpr ctx arg]
         
         
 and convertFunction (ctx: PhpCompiler) kind body =
@@ -915,7 +928,13 @@ and convertExprToStatement ctx expr returnStrategy =
           yield! convertExprToStatement ctx body returnStrategy ]
 
     | Fable.Sequential(exprs) ->
-        [ for expr in exprs do yield! convertExprToStatement ctx expr returnStrategy]
+        if List.isEmpty exprs then
+            []
+        else
+            [ for expr in exprs.[0..exprs.Length-2] do
+                    yield! convertExprToStatement ctx expr Do
+              yield! convertExprToStatement ctx exprs.[exprs.Length-1] returnStrategy
+                    ]
     | Fable.Throw(Fable.Operation(Fable.Call(Fable.ConstructorCall(_ ),{ Args = [ Fable.Value(Fable.StringConstant s, _)]}),_,_) ,_,_) ->
         [ Throw(s) ]
 
@@ -933,6 +952,7 @@ and convertExprToStatement ctx expr returnStrategy =
         | Let(var) -> 
             ctx.AddLocalVar(var)
             [ Assign(PhpVar(var,None), convertExpr ctx expr) ]
+        | Do -> [ PhpStatement.Do (convertExpr ctx expr) ]
 
 let convertDecl ctx decl =
     match decl with
@@ -1012,6 +1032,8 @@ let fs =
       //yield! convertDecl phpComp ast2.Declarations.[157] 
     ]
 
+
+convertDecl phpComp ast2.Declarations.[86]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w

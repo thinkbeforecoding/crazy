@@ -661,7 +661,7 @@ function Shared_002ETableModule___eliminate($player, $table) {
 
 #51
 function Shared_002ETableModule___isCurrent($playerid, $table__1) {
-    return Shared_002ETable__get_Player() === $playerid;
+    return Shared_002ETable__get_Player($table__1, ) === $playerid;
 }
 
 #52
@@ -1142,7 +1142,6 @@ function Shared_002EFenceModule___fenceCrossroads($tractor, $_arg1__27) {
         return Seq::append(Seq::singleton($next), Seq::delay(function ($unitVar__11) use ($next, $paths__6) {         return loop__1($next, $paths__6->next);
  }));
     } else {
-        return ;
         return Seq::empty();
     }
  });
@@ -1303,27 +1302,24 @@ function Shared_002EFieldModule___fill($paths__14) {
             return NULL;
     }
  }, $paths__14);
-    $list__6 = FSharpList::sortBy(function ($t__1) {     return [ Shared_002EAxe__get_Q(), Shared_002EAxe__get_R()];
+    $list__6 = FSharpList::sortBy(function ($t__1) {     return [ Shared_002EAxe__get_Q($t__1, ), Shared_002EAxe__get_R($t__1, )];
  }, $list__5, [ 'Compare' => $GLOBALS['compareArrays']]);
-    $sortedPaths = FSharpList::groupBy(function ($tile__8) {     return Shared_002EAxe__get_Q();
+    $sortedPaths = FSharpList::groupBy(function ($tile__8) {     return Shared_002EAxe__get_Q($tile__8, );
  }, $list__6, [ 'Equals' => function ($_x__31, $_y__32) {     return $_x__31 === $_y__32;
  }, 'GetHashCode' => $GLOBALS['structuralHash']]);
     $elements__2 = FSharpList::ofSeq(Seq::delay(function ($unitVar__12) use ($sortedPaths) {     return Seq::collect(function ($matchValue__11) {     return Seq::collect(function ($l) {     if ($l instanceof Cons) {
         if ($l->next instanceof Cons) {
             if ($l->next->next instanceof Nil) {
-                return FSharpList::ofSeq(Seq::delay(function ($unitVar__13) {                 return Seq::map(function ($r__6) use ($matchValue__11) {                 return new Parcel(new Axe($matchValue__11[0], $r__6));
- }, Seq::rangeNumber(Shared_002EAxe__get_R(), 1, Shared_002EAxe__get_R() - 1));
+                return FSharpList::ofSeq(Seq::delay(function ($unitVar__13) use ($e, $s) {                 return Seq::map(function ($r__6) use ($matchValue__11) {                 return new Parcel(new Axe($matchValue__11[0], $r__6));
+ }, Seq::rangeNumber(Shared_002EAxe__get_R($s, ), 1, Shared_002EAxe__get_R($e, ) - 1));
  }));
             } else {
-                return ;
                 return Seq::empty();
             }
         } else {
-            return ;
             return Seq::empty();
         }
     } else {
-        return ;
         return Seq::empty();
     }
  }, FSharpList::chunkBySize(2, $matchValue__11[1]));
@@ -2130,8 +2126,8 @@ function Shared_002EPlayerModule___decide($otherPlayers__1, $barns__3, $command,
  }));
  }));
                             default:
-                                $activePatternResult41404 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
-                                if (!is_null($activePatternResult41404)) {
+                                $activePatternResult11426 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
+                                if (!is_null($activePatternResult11426)) {
                                     return new Cons(new Event_FenceRemoved(new Moved($cmd__1->Direction, $nextPath__1, $nextPos__1)), FSharpList::get_Nil());
                                 } else {
                                     $matchValue__15 = Shared_002EFenceModule___findLoop($cmd__1->Direction, $player__17->Tractor, $player__17->Fence);
@@ -2162,7 +2158,6 @@ function Shared_002EPlayerModule___decide($otherPlayers__1, $barns__3, $command,
                                                     return Seq::empty();
                                                 }
                                             } else {
-                                                return ;
                                                 return Seq::empty();
                                             }
  }, $otherPlayers__1);
@@ -2185,7 +2180,6 @@ function Shared_002EPlayerModule___decide($otherPlayers__1, $barns__3, $command,
                                                     }
                                                 }
                                             } else {
-                                                return ;
                                                 return Seq::empty();
                                             }
  }, $otherPlayers__1);
@@ -2734,7 +2728,7 @@ class PlayerDrewCards {
 
 #178
 function Shared_002EBoardModule___currentPlayer($board) {
-    return Map::FSharpMap__get_Item__2B595(Shared_002ETable__get_Player());
+    return Map::FSharpMap__get_Item__2B595($board->Players, Shared_002ETable__get_Player($board->Table, ));
 }
 
 #179
@@ -2747,7 +2741,7 @@ function Shared_002EBoardModule___otherPlayers($playerid__3, $board__1) {
 
 #180
 function Shared_002EBoardModule___currentOtherPlayers($board__2) {
-    return Shared_002EBoardModule___otherPlayers(Shared_002ETable__get_Player(), $board__2);
+    return Shared_002EBoardModule___otherPlayers(Shared_002ETable__get_Player($board__2->Table, ), $board__2);
 }
 
 #181
@@ -2797,10 +2791,10 @@ function Shared_002EBoardModule___tryFindWinner($board__5) {
 
 #184
 function Shared_002EBoardModule___next($state__4) {
-    $playerId__1 = Shared_002ETable__get_Player();
-    $player__50 = Map::FSharpMap__get_Item__2B595($playerId__1);
-    $nextPlayerId = Shared_002ETable__get_Player();
-    $nextPlayer = Map::FSharpMap__get_Item__2B595($nextPlayerId);
+    $playerId__1 = Shared_002ETable__get_Player($state__4->Table, );
+    $player__50 = Map::FSharpMap__get_Item__2B595($state__4->Players, $playerId__1);
+    $nextPlayerId = Shared_002ETable__get_Player(Shared_002ETable__get_Next($state__4->Table, ), );
+    $nextPlayer = Map::FSharpMap__get_Item__2B595($state__4->Players, $nextPlayerId);
     return FSharpList::ofSeq(Seq::delay(function ($unitVar__29) {     return Seq::append((function () use ($player__50) { 
         $list__18 = Shared_002EBonusModule___endTurn(Shared_002EPlayerModule___bonus($player__50));
         return FSharpList::map(function ($c__16) use ($playerId__1) {         return new BoardEvent_Played($playerId__1, new Event_BonusDiscarded($c__16));
@@ -2836,7 +2830,7 @@ function Shared_002EBoardModule___bribeParcels($board__6) {
     if (Shared_002EBoardModule___endGameWithBribe($board__6)) {
         return new Error(new BribeBocker_InstantVictory());
     } else {
-        $player__51 = Map::FSharpMap__get_Item__2B595(Shared_002ETable__get_Player());
+        $player__51 = Map::FSharpMap__get_Item__2B595($board__6->Players, Shared_002ETable__get_Player($board__6->Table, ));
         $border__2 = Shared_002EFieldModule___borderTiles(Shared_002EPlayerModule___field($player__51));
         $barns__6 = Shared_002EField___op_Addition__Z24735800($board__6->Barns->Free, $board__6->Barns->Occupied);
         $list__20 = Shared_002EBoardModule___currentOtherPlayers($board__6);
@@ -2872,13 +2866,13 @@ function Shared_002EBoardModule___bribeParcels($board__6) {
 
 #187
 function Shared_002EBoardModule___annexed($playerid__4, $e__12, $board__7) {
-    $annexedPlayer = Shared_002EPlayerModule___evolve(Map::FSharpMap__get_Item__2B595($playerid__4), new Event_Annexed($e__12));
+    $annexedPlayer = Shared_002EPlayerModule___evolve(Map::FSharpMap__get_Item__2B595($board__7->Players, $playerid__4), new Event_Annexed($e__12));
     $newMap = Map::add($playerid__4, $annexedPlayer, $board__7->Players);
     $annexedBarns__1 = new Barns(Shared_002EFieldModule___ofParcels($e__12->FreeBarns), Shared_002EFieldModule___ofParcels($e__12->OccupiedBarns));
     $Barns = Shared_002EBarnsModule___annex($annexedBarns__1, $board__7->Barns);
     $state__5 = new PlayingBoard($newMap, $board__7->Table, $board__7->DrawPile, $board__7->DiscardPile, $Barns, $board__7->HayBales, $board__7->Goal);
     return FSharpList::fold(function ($map, $tupledArg__9) use ($board__7) { 
-        $matchValue__26 = Map::FSharpMap__get_Item__2B595($tupledArg__9[0]);
+        $matchValue__26 = Map::FSharpMap__get_Item__2B595($board__7->Players, $tupledArg__9[0]);
         if ($matchValue__26 instanceof Player_Playing) {
             $newP = new Player_Playing((function () use ($matchValue__26, $tupledArg__9) { 
                 $Field__2 = Shared_002EField___op_Subtraction__Z24735800($matchValue__26->Item->Field, Shared_002EFieldModule___ofParcels($tupledArg__9[1]));
@@ -2901,7 +2895,7 @@ function Shared_002EBoardModule___evolve($state__6, $event__2) {
                 switch (get_class($event__2->Item2))
                 {
                     case 'CutFence':
-                        $matchValue__30 = Map::FSharpMap__get_Item__2B595($playerid__6);
+                        $matchValue__30 = Map::FSharpMap__get_Item__2B595($board__9->Players, $playerid__6);
                         if ($matchValue__30 instanceof Player_Playing) {
                             $cutPlayer = new Player_Playing((function () use ($matchValue__30) { 
                                 $Power__1 = new Power_PowerDown();
@@ -2915,8 +2909,8 @@ function Shared_002EBoardModule___evolve($state__6, $event__2) {
                         $arg0__6 = Shared_002EBoardModule___annexed($playerid__7, $e__13, $board__10);
                         return new Board_Board($arg0__6);
                     case 'Bribed':
-                        $newPlayer = Shared_002EPlayerModule___evolve(Map::FSharpMap__get_Item__2B595($playerid__8), $e__15);
-                        $matchValue__31 = Map::FSharpMap__get_Item__2B595($p__63->Victim);
+                        $newPlayer = Shared_002EPlayerModule___evolve(Map::FSharpMap__get_Item__2B595($board__15->Players, $playerid__8), $e__15);
+                        $matchValue__31 = Map::FSharpMap__get_Item__2B595($board__15->Players, $p__63->Victim);
                         switch (get_class($matchValue__31))
                         {
                             case 'Playing':
@@ -2934,11 +2928,11 @@ function Shared_002EBoardModule___evolve($state__6, $event__2) {
                             return Map::add($p__63->Victim, $newVictim, $table__8);
                         })(), $board__15->Table, $board__15->DrawPile, $board__15->DiscardPile, $board__15->Barns, $board__15->HayBales, $board__15->Goal));
                     case 'Eliminated':
-                        $newPlayer__1 = Shared_002EPlayerModule___evolve(Map::FSharpMap__get_Item__2B595($playerid__9), $e__16);
+                        $newPlayer__1 = Shared_002EPlayerModule___evolve(Map::FSharpMap__get_Item__2B595($board__16->Players, $playerid__9), $e__16);
                         $newTable = Shared_002ETableModule___eliminate($playerid__9, $board__16->Table);
                         return new Board_Board(new PlayingBoard(Map::add($playerid__9, $newPlayer__1, $board__16->Players), $newTable, $board__16->DrawPile, $board__16->DiscardPile, $board__16->Barns, $board__16->HayBales, $board__16->Goal));
                     default:
-                        $player__57 = Shared_002EPlayerModule___evolve(Map::FSharpMap__get_Item__2B595($playerid__10), $e__17);
+                        $player__57 = Shared_002EPlayerModule___evolve(Map::FSharpMap__get_Item__2B595($board__17->Players, $playerid__10), $e__17);
                         if ($e__17 instanceof Event_BonusDiscarded) {
                             $newDiscardPile = new Cons($e__17->Item, $board__17->DiscardPile);
                         } else {
@@ -2954,7 +2948,7 @@ function Shared_002EBoardModule___evolve($state__6, $event__2) {
                 {
                     case 'PlayerDrewCards':
                         $newDrawPile = Shared_002EDrawPile___remove($e__14->Cards, $board__11->DrawPile);
-                        $player__55 = Map::FSharpMap__get_Item__2B595($e__14->Player);
+                        $player__55 = Map::FSharpMap__get_Item__2B595($board__11->Players, $e__14->Player);
                         $player__56 = Shared_002EPlayerModule___takeCards($e__14->Cards, $player__55);
                         return new Board_Board((function () use ($board__11, $e__14, $newDrawPile, $player__56) { 
                             $Players = Map::add($e__14->Player, $player__56, $board__11->Players);
@@ -2978,9 +2972,9 @@ function Shared_002EBoardModule___evolve($state__6, $event__2) {
                             return new PlayingBoard($board__14->Players, $board__14->Table, $DrawPile, $DiscardPile, $board__14->Barns, $board__14->HayBales, $board__14->Goal);
                         })());
                     case 'Next':
-                        $nextTable = Shared_002ETable__get_Next();
-                        $player__58 = Shared_002EPlayerModule___startTurn(Map::FSharpMap__get_Item__2B595(Shared_002ETable__get_Player()));
-                        return new Board_Board(new PlayingBoard(Map::add(Shared_002ETable__get_Player(), $player__58, $board__18->Players), $nextTable, $board__18->DrawPile, $board__18->DiscardPile, $board__18->Barns, $board__18->HayBales, $board__18->Goal));
+                        $nextTable = Shared_002ETable__get_Next($board__18->Table, );
+                        $player__58 = Shared_002EPlayerModule___startTurn(Map::FSharpMap__get_Item__2B595($board__18->Players, Shared_002ETable__get_Player($nextTable, )));
+                        return new Board_Board(new PlayingBoard(Map::add(Shared_002ETable__get_Player($nextTable, ), $player__58, $board__18->Players), $nextTable, $board__18->DrawPile, $board__18->DiscardPile, $board__18->Barns, $board__18->HayBales, $board__18->Goal));
                     default:
                         return $state__6;
                 }
@@ -3056,8 +3050,8 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                 switch (get_class($cmd__5->Item2))
                 {
                     case 'EndTurn':
-                        if (Shared_002ETable__get_Player() === $playerId__2) {
-                            $player__59 = Map::FSharpMap__get_Item__2B595($playerId__2);
+                        if (Shared_002ETable__get_Player($state__8->Table, ) === $playerId__2) {
+                            $player__59 = Map::FSharpMap__get_Item__2B595($state__8->Players, $playerId__2);
                             if ($player__59 instanceof Player_Playing) {
                                 if (!Shared_002EMovesModule___canMove($player__59->Item->Moves)) {
                                     return Shared_002EBoardModule___next($state__8);
@@ -3071,9 +3065,9 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                             return FSharpList::get_Nil();
                         }
                     default:
-                        $player__60 = Map::FSharpMap__get_Item__2B595($playerid__11);
+                        $player__60 = Map::FSharpMap__get_Item__2B595($state__9->Players, $playerid__11);
                         $others = Shared_002EBoardModule___otherPlayers($playerid__11, $state__9);
-                        if ($playerid__11 === Shared_002ETable__get_Player()) {
+                        if ($playerid__11 === Shared_002ETable__get_Player($state__9->Table, )) {
                             $events = Shared_002EPlayerModule___decide($others, $state__9->Barns, $cmd__7, $player__60);
                             return FSharpList::ofSeq(Seq::delay(function ($unitVar__34) use ($events) {                             return Seq::append(Seq::map(function ($e__18) use ($playerid__11) {                             return new BoardEvent_Played($playerid__11, $e__18);
  }, $events), Seq::delay(function ($unitVar__35) use ($events) {                             return Seq::append(Seq::collect(function ($e__19) {                             if ($e__19 instanceof Event_CardPlayed) {
@@ -3086,11 +3080,9 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                     case 'PlayDynamite':
                                         return Seq::singleton(new BoardEvent_HayBaleDynamited($bale));
                                     default:
-                                        return ;
                                         return Seq::empty();
                                 }
                             } else {
-                                return ;
                                 return Seq::empty();
                             }
  }, $events), Seq::delay(function ($unitVar__36) use ($events, $player__60) { 
@@ -3109,14 +3101,14 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                             $nextBoard = Shared_002EBoardModule___annexed($playerid__11, $e__20, $board__19);
                                             $eliminated = 0;
                                             return Seq::append(Seq::collect(function ($matchValue__35) use ($eliminated) { 
-                                                $activePatternResult41605 = $matchValue__35;
-                                                if (Shared_002EPlayerModule___isKo($activePatternResult41605[1])) {
+                                                $activePatternResult11627 = $matchValue__35;
+                                                if (Shared_002EPlayerModule___isKo($activePatternResult11627[1])) {
                                                     $eliminated = $eliminated + 1;
                                                     return Seq::empty();
                                                 } else {
-                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayerModule___field($activePatternResult41605[1]))) {
+                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayerModule___field($activePatternResult11627[1]))) {
                                                         $eliminated = $eliminated + 1;
-                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult41605[0], new Event_Eliminated()));
+                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult11627[0], new Event_Eliminated()));
                                                     } else {
                                                         return Seq::empty();
                                                     }
@@ -3144,11 +3136,9 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                                             if (!Shared_002EMovesModule___canMove($nextState->Item->Moves) ? true : Shared_002EHandModule___canPlay($nextState->Item->Hand)) {
                                                                 return Shared_002EBoardModule___next($state__9);
                                                             } else {
-                                                                return ;
                                                                 return Seq::empty();
                                                             }
                                                         } else {
-                                                            return ;
                                                             return Seq::empty();
                                                         }
                                                     }
@@ -3160,11 +3150,9 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                                 if (!Shared_002EMovesModule___canMove($nextState->Item->Moves) ? true : Shared_002EHandModule___canPlay($nextState->Item->Hand)) {
                                                     return Shared_002EBoardModule___next($state__9);
                                                 } else {
-                                                    return ;
                                                     return Seq::empty();
                                                 }
                                             } else {
-                                                return ;
                                                 return Seq::empty();
                                             }
                                     }
@@ -3173,11 +3161,9 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                         if (!Shared_002EMovesModule___canMove($nextState->Item->Moves) ? true : Shared_002EHandModule___canPlay($nextState->Item->Hand)) {
                                             return Shared_002EBoardModule___next($state__9);
                                         } else {
-                                            return ;
                                             return Seq::empty();
                                         }
                                     } else {
-                                        return ;
                                         return Seq::empty();
                                     }
                                 }
@@ -3210,8 +3196,8 @@ function Shared_002EBoardModule___toState($board__20) {
  }, $source__9);
                 return FSharpArray::ofSeq($source__10, $Array);
             })(), new STable($board__20->Item2->Table->Players, $board__20->Item2->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__40) use ($board__20) {             return Seq::collect(function ($matchValue__38) { 
-                $activePatternResult41619 = $matchValue__38;
-                return Seq::singleton([ $activePatternResult41619[0], $activePatternResult41619[1]]);
+                $activePatternResult11641 = $matchValue__38;
+                return Seq::singleton([ $activePatternResult11641[0], $activePatternResult11641[1]]);
             }, $board__20->Item2->Table->Names);
  }), $Array), $board__20->Item2->Table->Current), FSharpArray::ofList($board__20->Item2->DiscardPile, $Array), (function () use ($Array, $board__20) { 
                 $list__24 = Shared_002EFieldModule___parcels($board__20->Item2->Barns->Free);
@@ -3227,8 +3213,8 @@ function Shared_002EBoardModule___toState($board__20) {
  }, $source__7);
                 return FSharpArray::ofSeq($source__8, $Array);
             })(), new STable($board__20->Item->Table->Players, $board__20->Item->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__39) use ($board__20) {             return Seq::collect(function ($matchValue__37) { 
-                $activePatternResult41615 = $matchValue__37;
-                return Seq::singleton([ $activePatternResult41615[0], $activePatternResult41615[1]]);
+                $activePatternResult11637 = $matchValue__37;
+                return Seq::singleton([ $activePatternResult11637[0], $activePatternResult11637[1]]);
             }, $board__20->Item->Table->Names);
  }), $Array), $board__20->Item->Table->Current), FSharpArray::ofList($board__20->Item->DiscardPile, $Array), (function () use ($Array, $board__20) { 
                 $list__22 = Shared_002EFieldModule___parcels($board__20->Item->Barns->Free);
