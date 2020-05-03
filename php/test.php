@@ -78,6 +78,8 @@
         $sub = Set::FSharpSet___op_Subtraction($set,$set2);
         echo_list("sub",$sub);
         
+        $int = Set::intersect($set,$set2);
+        echo_list("intersect",$int);
         ?>
     </body>
 </html>

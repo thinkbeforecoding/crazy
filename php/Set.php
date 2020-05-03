@@ -354,6 +354,33 @@ class SetTree {
         return SetTree::diffAux($comparer, $b, $a);
     }
 
+    static function intersectionAux($comparer, $b, $m, $acc)
+    { 
+        switch( get_class($m))
+        {
+            case 'SetNode':
+                $k = $m->value;
+                $l = $m->left;
+                $r = $m->right;
+                $acc = SetTree::intersectionAux($comparer, $b, $r, $acc);
+                $acc = SetTree::mem($comparer, $k, $b) ? SetTree::add($comparer, $k, $acc) : $acc;
+                return SetTree::intersectionAux($comparer, $b, $l, $acc);
+            case 'SetOne': 
+                $k = $m->value; 
+                if (SetTree::mem($comparer, $k, $b))
+                    return SetTree::add($comparer, $k, $acc);
+                else 
+                    return $acc;
+            default:
+                return $acc;
+        }
+    }
+
+    static function intersection($comparer, $a, $b) 
+    {
+        return SetTree::intersectionAux($comparer, $b, $a, new SetEmpty());
+    }
+
 }
 
 class SetEmpty extends SetTree { }
@@ -405,7 +432,7 @@ class Set implements IteratorAggregate {
 
     }
 
-    public function FSharpSet___op_Subtraction($set1, $set2)
+    static function FSharpSet___op_Subtraction($set1, $set2)
     {
         if ($set1->Tree instanceof SetEmpty)
             return $set1; //(* 0 - B = 0 *)
@@ -414,12 +441,21 @@ class Set implements IteratorAggregate {
         return new Set($set1->Comparer, SetTree::diff($set1->Comparer, $set1->Tree, $set2->Tree));
     }
 
-    public function contains($value, $s)
+    static function intersect($a, $b)
+    {
+        if ($b->Tree instanceof SetEmpty)
+            return $b; //  (* A INTER 0 = 0 *)
+        if ($a->Tree instanceof SetEmpty) 
+            return $a; // (* 0 INTER B = 0 *)
+        return new Set($a->Comparer, SetTree::intersection($a->Comparer, $a->Tree, $b->Tree));
+    }
+
+    static function contains($value, $s)
     {
         return SetTree::mem($s->Comparer, $value, $s->Tree);
     }
 
-    public function ofSeq($seq)
+    static function ofSeq($seq)
     {
         $tree = new SetEmpty();
         $comparer = [ 'Compare' => $GLOBALS['comparePrimitives'] ];
@@ -430,6 +466,26 @@ class Set implements IteratorAggregate {
         }
 
         return new Set($comparer, $tree);
+    }
+
+    static function empty($comparer)
+    {
+        return new Set($comparer, new SetEmpty());
+    }
+
+    static function isEmpty($set)
+    {
+        return $set->Tree instanceof SetEmpty;
+    }
+
+    static function count($set)
+    {
+        return SetTree::count($set->Tree);
+    }
+
+    static function toList($set)
+    {
+        return FSharpList::ofSet($set);
     }
 
     public function getIterator() {
@@ -453,7 +509,6 @@ class Set implements IteratorAggregate {
             break;
             }
         }
-        
     } 
     
 
