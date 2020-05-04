@@ -458,7 +458,7 @@ class Set implements IteratorAggregate {
     static function ofSeq($seq)
     {
         $tree = new SetEmpty();
-        $comparer = [ 'Compare' => $GLOBALS['comparePrimitives'] ];
+        $comparer = [ 'Compare' => 'Util::comparePrimitives'];
 
         foreach($seq as $item)
         {

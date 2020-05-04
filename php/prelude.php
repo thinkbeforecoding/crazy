@@ -28,29 +28,34 @@ class Util {
     {
         return rand ($min , $max );
     }
+
+
+    static function comparePrimitives($x,$y) 
+    { return $x == $y ? 0 : ($x > $y ? 1 : -1); }
+
+    static function compareArrays ($x,$y) { 
+        $i = 0;
+        $xl = count($x);
+        $yl = count($y);
+        while(true)
+        {
+            if ($i == $xl && $i == $yl)
+                return 0;
+            if ($i == $xl)
+                return -1;
+            if ($i == $yl)
+                return 1;
+
+            if ($x[$i] > $y[$i])
+                return 1;
+            if ($x[$i] < $y[$i])
+                return -1;
+            $i++;
+        }
+    }
 }
 
 
-$comparePrimitives = function($x,$y) { return $x == $y ? 0 : ($x > $y ? 1 : -1); };
-$compareArrays = function($x,$y) { 
-    $i = 0;
-    $xl = count($x);
-    $yl = count($y);
-    while(true)
-    {
-        if ($i == $xl && $i == $yl)
-            return 0;
-        if ($i == $xl)
-            return -1;
-        if ($i == $yl)
-            return 1;
 
-        if ($x[$i] > $y[$i])
-            return 1;
-        if ($x[$i] < $y[$i])
-            return -1;
-        $i++;
-    }
- };
 
 

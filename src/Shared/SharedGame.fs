@@ -205,7 +205,7 @@ type Table =
 
 module Table =
     let start players =
-        let allplayers = [| for _,p in players -> p |]
+        let allplayers = [| for p,_ in players -> p |]
         { Players = allplayers
           AllPlayers = allplayers
           Current = 0

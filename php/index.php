@@ -4,6 +4,16 @@
         include 'prelude.php';
         include 'lib.php';
 
+        function echo_list ($name, $l)
+        {
+            echo "<p>",$name,"</p><ul>";
+            foreach($l as $e)
+            {
+                echo "<li>", var_dump($e), "</li>";
+            }
+            echo "</ul>";
+            
+        }
 #        $a = new Axe(2,3);
 #        echo "Axe: ", var_dump(Shared_002EAxe___op_Multiply__Z425F7B5E(2,$a));
 
@@ -54,7 +64,17 @@
         {
             echo "<li>item: ", $e,"</li>"; 
         }
-        echo "</ul>"
+        echo "</ul>";
+
+        $cmd = new BoardCommand_Start(new BoardStart(FSharpList::ofArray([ [new Color_Blue(), "p1", "Player1" ], [new Color_Red(), "p2", "Player2"]]), new Goal_Common(27)));
+        $s = new Board_InitialState();
+        $es = Shared_002EBoardModule___decide($cmd, $s);
+        $s = FSharpList::fold('Shared_002EBoardModule___evolve', $s, $es);
+        $cmd = new BoardCommand_Play("p1", new Command_SelectFirstCrossroad(new SelectFirstCrossroad(new Crossroad(Shared_002EAxe___op_Multiply__Z425F7B5E(2, $Shared_002EAxeModule___N), new CrossroadSide_CLeft()) )) );
+
+        $es =  Shared_002EBoardModule___decide($cmd, $s);
+
+        echo var_dump($es), "<br/>";
     ?>
     </body>
 </html>

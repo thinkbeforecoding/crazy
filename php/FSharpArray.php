@@ -20,7 +20,7 @@ class FSharpArray {
         else
         {
             $array = [];
-            foreach($array as $item)
+            foreach($seq as $item)
             {
                 $array[] = $item;
             }

@@ -235,11 +235,14 @@ module Output =
         | PhpConst cst -> 
             match cst with
             | PhpConstNumber n -> write ctx (string n)
-            | PhpConstString s -> write ctx s
+            | PhpConstString s -> 
+                write ctx "'"
+                write ctx s
+                write ctx "'"
             | PhpConstBool true -> write ctx "true"
             | PhpConstBool false -> write ctx "false"
             | PhpConstNull -> write ctx "NULL"
-            | PhpConstUnit -> ()
+            | PhpConstUnit -> write ctx "NULL"
         | PhpVar (v,_) -> 
             write ctx "$"
             write ctx v
@@ -280,7 +283,10 @@ module Output =
             let anonymous = match f with PhpAnonymousFunc _ -> true | _ -> false
             if anonymous then
                 write ctx "("
-            writeExpr ctx f
+            match f with
+            | PhpConst (PhpConstString f) ->
+                write ctx f
+            | _ -> writeExpr ctx f
             if anonymous then
                 write ctx ")"
             write ctx "("
@@ -536,6 +542,7 @@ type PhpCompiler =
       DecisionTargets: (Fable.Ident list * Fable.Expr) list
       mutable LocalVars: string Set
       mutable CapturedVars: string Set
+      mutable Id: int
     }
     static member empty =
 
@@ -549,6 +556,7 @@ type PhpCompiler =
           DecisionTargets = []
           LocalVars = Set.empty
           CapturedVars = Set.empty
+          Id = 0
           }
     member this.AddType(phpType: PhpType) =
         this.Types <- Map.add phpType.Name phpType this.Types
@@ -560,6 +568,10 @@ type PhpCompiler =
     member this.UseVar(var) =
         if not (Set.contains var this.LocalVars) then
             this.CapturedVars <- Set.add var this.CapturedVars
+
+    member this.MakeUniqueVar(name) =
+        this.Id <- this.Id + 1
+        "_" + name + "__" + string this.Id
 
     member this.NewScope() =
         { this with 
@@ -638,6 +650,7 @@ type ReturnStrategy =
     | Return
     | Let of string
     | Do
+    | Target of string
 
 
 let convertTest ctx test phpExpr =
@@ -768,10 +781,14 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
             | _ -> None 
         
         PhpVar(name, phpType)
-    | Fable.Import(expr,_,_,_,_) ->
-        match convertExpr ctx expr with
-        | PhpConst (PhpConstString s) -> PhpGlobal (fixName s)
-        | exp -> exp
+    | Fable.Import(expr,p,k,t,_) ->
+        match convertExpr ctx expr,t with
+        | PhpConst (PhpConstString s), Fable.Any  ->
+            match p with
+            | Fable.Value(Fable.StringConstant p, _) when p <> "." -> PhpConst (PhpConstString ( p + "::" + fixName s))
+            | _ -> PhpConst (PhpConstString (fixName s))
+        | PhpConst (PhpConstString s), _ -> PhpGlobal (fixName s)
+        | exp, _ -> exp
 
     | Fable.DecisionTree(expr,targets) ->
         convertExpr { ctx with DecisionTargets = targets } expr
@@ -874,53 +891,121 @@ and convertValue (ctx:PhpCompiler) (value: Fable.ValueKind) =
 
 
 
-and canBeCompiledAsSwitch tree =
+and canBeCompiledAsSwitch evalExpr tree =
     match tree with
-    | Fable.IfThenElse(Fable.Test(_, Fable.UnionCaseTest(case,e),_), Fable.DecisionTreeSuccess(index,_,_), elseExpr,_) ->
-        canBeCompiledAsSwitch elseExpr
+    | Fable.IfThenElse(Fable.Test(caseExpr, Fable.UnionCaseTest(case,e),_), Fable.DecisionTreeSuccess(index,_,_), elseExpr,_) 
+        when caseExpr = evalExpr ->
+        canBeCompiledAsSwitch evalExpr elseExpr
     | Fable.DecisionTreeSuccess(index, _,_) ->
         true
     | _ -> false
 
-and findCasesNames tree =
+and findCasesNames evalExpr tree =
+
     [ match tree with
-      | Fable.IfThenElse(Fable.Test(_, Fable.UnionCaseTest(case,e),_), Fable.DecisionTreeSuccess(index,_,_), elseExpr,_) ->
-            Some case,index
-            yield! findCasesNames elseExpr
-      | Fable.DecisionTreeSuccess(index, _,_) ->
-            None, index
+      | Fable.IfThenElse(Fable.Test(caseExpr, Fable.UnionCaseTest(case,e),_), Fable.DecisionTreeSuccess(index,bindings,_), elseExpr,_)
+            when caseExpr = evalExpr ->
+            Some case, bindings, index
+            yield! findCasesNames evalExpr elseExpr
+      | Fable.DecisionTreeSuccess(index, bindings,_) ->
+            None, bindings, index
+      | _ -> ()
     ]
 
-    
+and hasGroupedCases indices tree =
+    match tree with
+    | Fable.IfThenElse(Fable.Test(_, _, _), Fable.DecisionTreeSuccess(index,_,_), elseExpr,_) ->
+        if Set.contains index indices then
+            true
+        else
+            hasGroupedCases (Set.add index indices) elseExpr
+    | Fable.DecisionTreeSuccess(index, _, _) ->
+        if Set.contains index indices then
+            true
+        else
+            false
+    | Fable.IfThenElse(Fable.Test(_, _, _), _,_,_) ->
+        false
+
+and getCases cases tree =
+    match tree with
+    | Fable.IfThenElse(Fable.Test(_, _, _), Fable.DecisionTreeSuccess(index,boundValues,_), elseExpr,_) ->
+        getCases (Map.add index boundValues cases) elseExpr
+    | Fable.DecisionTreeSuccess(index, boundValues, _) ->
+        Map.add index boundValues cases
+    | Fable.IfThenElse(Fable.Test(_, _, _), _,_,_) ->
+        cases
+
+
+and convertMatching ctx input guard thenExpr elseExpr expr returnStrategy =
+    if (canBeCompiledAsSwitch expr input) then
+        let cases = findCasesNames expr input 
+        let inputExpr = convertExpr ctx expr
+        [ Switch(PhpCall(PhpConst(PhpConstString("get_class")), [inputExpr]),
+            [ for case,bindings, i in cases ->
+                let idents,target = ctx.DecisionTargets.[i]
+                let phpCase =
+                    match case with
+                    | Some c -> StringCase (caseName c)
+                    | None -> DefaultCase
+
+
+                phpCase, 
+                    [ for ident, binding in List.zip idents bindings do
+                        Assign(PhpVar(fixName ident.Name, None), convertExpr ctx binding)
+                      match returnStrategy with
+                      | Target t -> Assign(PhpVar(fixName t, None), PhpConst(PhpConstNumber(float i)))
+                      | _ -> yield! convertExprToStatement ctx target returnStrategy
+                    ]] 
+            )
+        
+        ]
+    else
+        [ If(convertExpr ctx guard, convertExprToStatement ctx thenExpr returnStrategy, convertExprToStatement ctx elseExpr returnStrategy) ]
 
 and convertExprToStatement ctx expr returnStrategy =
     match expr with
     | Fable.DecisionTree(input, targets) ->
         convertExprToStatement { ctx with DecisionTargets = targets} input returnStrategy
     | Fable.IfThenElse(Fable.Test(expr, Fable.TestKind.UnionCaseTest(case,entity), _) as guard, thenExpr , elseExpr, _) as input ->
-        if (canBeCompiledAsSwitch input) then
-            let cases = findCasesNames input
-            [ Switch(PhpCall(PhpConst(PhpConstString("get_class")), [convertExpr ctx expr]),
-                [ for case,i in cases ->
-                    let _,target = ctx.DecisionTargets.[i]
-                    let phpCase =
-                        match case with
-                        | Some c -> StringCase c.Name
-                        | None -> DefaultCase
-                    phpCase, convertExprToStatement ctx target returnStrategy ] 
+        let groupCases = hasGroupedCases Set.empty input
+        if groupCases then
+            let targetName = ctx.MakeUniqueVar("target")
+            let targetVar = PhpVar(targetName, None)
+            let switch1 = convertMatching ctx input guard thenExpr elseExpr expr (Target targetName)
+
+            let cases = getCases Map.empty input
+            let switch2 =
+                Switch(targetVar,
+                    [ for i, (idents,expr) in  List.indexed ctx.DecisionTargets do
+                        IntCase i, [
+                            for id, b in List.zip idents cases.[i] do
+                                Assign(PhpVar(fixName id.Name, None), convertExpr ctx b)
+                            yield! convertExprToStatement ctx expr returnStrategy
+                        ]
+                    
+                    ]
                 )
-            
-            ]
+            switch1 @ [ switch2 ]
+                
         else
-            [ If(convertExpr ctx guard, convertExprToStatement ctx thenExpr returnStrategy, convertExprToStatement ctx elseExpr returnStrategy) ]
+            convertMatching ctx input guard thenExpr elseExpr expr returnStrategy
+
+
     | Fable.IfThenElse(guardExpr, thenExpr, elseExpr, _) ->
         let guard = convertExpr ctx guardExpr
 
         [ If(guard, convertExprToStatement ctx thenExpr returnStrategy,
                     convertExprToStatement ctx elseExpr returnStrategy) ]
-    | Fable.DecisionTreeSuccess(index,_,_) ->
-        let _,target = ctx.DecisionTargets.[index]
-        convertExprToStatement ctx target returnStrategy
+    | Fable.DecisionTreeSuccess(index,boundValues,_) ->
+        match returnStrategy with
+        | Target target -> [ Assign(PhpVar(target,None), PhpConst(PhpConstNumber (float index))) ]
+        | _ ->
+            let idents,target = ctx.DecisionTargets.[index]
+            [ for ident, boundValue in List.zip idents boundValues do
+                Assign(PhpVar(fixName ident.Name, None), convertExpr ctx boundValue)
+              yield! convertExprToStatement ctx target returnStrategy ]
+
     | Fable.Let(bindings,body) ->
         [ 
           for ident, expr in bindings do 
@@ -953,6 +1038,7 @@ and convertExprToStatement ctx expr returnStrategy =
             ctx.AddLocalVar(var)
             [ Assign(PhpVar(var,None), convertExpr ctx expr) ]
         | Do -> [ PhpStatement.Do (convertExpr ctx expr) ]
+        | Target _ -> failwithf "Target should be assigned by decisiontree success"
 
 let convertDecl ctx decl =
     match decl with
@@ -1033,7 +1119,7 @@ let fs =
     ]
 
 
-convertDecl phpComp ast2.Declarations.[86]
+convertDecl phpComp ast2.Declarations.[39]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w

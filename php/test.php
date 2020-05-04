@@ -48,7 +48,7 @@
        echo_list("chunk",$c);
 
 
-        echo "maxby", var_dump(FSharpList::maxBy(function($s) { return strlen($s);}, FSharpList::ofArray(["hello", "every", "body", "wonderfull", "yo"]), [ 'Compare' => $GLOBALS['comparePrimitives']] )), "<br/>";
+        echo "maxby", var_dump(FSharpList::maxBy(function($s) { return strlen($s);}, FSharpList::ofArray(["hello", "every", "body", "wonderfull", "yo"]), [ 'Compare' => 'Util::comparePrimitives'] )), "<br/>";
 
         echo "compareArray", var_dump($compareArrays([1], [])), "<br/>";
 
@@ -81,7 +81,7 @@
         $int = Set::intersect($set,$set2);
         echo_list("intersect",$int);
 
-        $m = Map::empty([ 'Compare' => $GLOBALS['comparePrimitives'] ]);
+        $m = Map::empty([ 'Compare' => 'Util::comparePrimitives' ]);
         $m = Map::add(3, "a", $m);
         $m = Map::add(5, "b", $m);
         $m = Map::add(2, "c", $m);

@@ -305,7 +305,7 @@ class Map implements IteratorAggregate
     static function ofList($list)
     {
         $tree = new MapEmpty();
-        $comparer = [ 'Compare' => $GLOBALS['comparePrimitives'] ];
+        $comparer = [ 'Compare' => 'Util::comparePrimitives' ];
 
         while ($list instanceof Cons)
         {
@@ -319,7 +319,7 @@ class Map implements IteratorAggregate
     static function ofSeq($seq)
     {
         $tree = new MapEmpty();
-        $comparer = [ 'Compare' => $GLOBALS['comparePrimitives'] ];
+        $comparer = [ 'Compare' => 'Util::comparePrimitives' ];
 
         foreach ($seq as $item)
         {
@@ -332,7 +332,7 @@ class Map implements IteratorAggregate
     static function ofArray($seq)
     {
         $tree = new MapEmpty();
-        $comparer = [ 'Compare' => $GLOBALS['comparePrimitives'] ];
+        $comparer = [ 'Compare' => 'Util::comparePrimitives' ];
 
         foreach ($seq as $item)
         {
@@ -380,7 +380,7 @@ class Map implements IteratorAggregate
 
     static function FSharpMap__get_Item__2B595($table, $key)
     {
-        return MapTree::find($comparer, $key, $tree);
+        return MapTree::find($table->Comparer, $key, $table->Tree);
     }
 
     public function getIterator() {

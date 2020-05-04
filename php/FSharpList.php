@@ -228,6 +228,7 @@ abstract class FSharpList implements IteratorAggregate {
         }
         return $state;
     }
+
     static function mapFold($aggregator, $state, $list)
     {
         $lst = NULL;
