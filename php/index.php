@@ -74,7 +74,28 @@
 
         $es =  Shared_002EBoardModule___decide($cmd, $s);
 
-        echo var_dump($es), "<br/>";
+        echo var_dump($es), "<br/><br/>";
+
+        function toJson($obj) {
+            if ($obj instanceof Union)
+            {
+                $case = $obj->get_Case();
+                $array = array();
+                foreach(get_object_vars($obj) as $prop => $value)
+                {
+                    $array[$prop] = toJson($value);
+                }
+                $array['_case'] = $case;
+                return $array;
+            }
+            else
+            {
+                return $obj;
+            }
+        } 
+        
+        echo "json: ", var_dump($es->value), "<br/>";
+        echo "json: ", var_dump(toJson($es->value)), "<br/>";
     ?>
     </body>
 </html>

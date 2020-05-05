@@ -63,6 +63,21 @@
     
     */
 
+    public function SelectFirstCrossroad()
+    {
+        self::setAjaxMode();
+
+        // Retrieve arguments
+        // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
+        $q = self::getArg( "q", AT_int, true );
+        $r = self::getArg( "r", AT_int, true );
+        $side = self::getArg( "side", AT_bool, true );
+
+        // Then, call the appropriate method in your game logic, like "playCard" or "myAction"
+        $this->game->SelectFirstCrossroad(new Crossroad(new Axe($q,$r), $side ? new CrossroadSide_CRight() : new CrossroadSide_CLeft()) );
+
+        self::ajaxResponse( );
+    }
   }
   
 

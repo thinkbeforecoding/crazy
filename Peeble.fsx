@@ -150,6 +150,7 @@ and PhpType =
       Methods: PhpFun list
       Abstract: bool
       BaseType: PhpType option
+      Interfaces: PhpType list
     }
 
 
@@ -482,6 +483,10 @@ module Output =
             write ctx t.Name
         | None -> ()
 
+        for itf in t.Interfaces do
+            write ctx " implements "
+            write ctx itf.Name
+
         writeln ctx " {" 
         let mbctx = indent ctx
         for m in t.Fields do
@@ -523,19 +528,20 @@ module Output =
 open Fable.AST
 
 module PhpList =
-    let list  = { Name = "FSharpList"; Fields = []; Methods = []; Abstract = true; BaseType = None }
+    let list  = { Name = "FSharpList"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = [] }
     let value = { Name = "value"; Type = "" }
     let next = { Name = "next"; Type = "FSharpList" }
-    let cons = { Name = "Cons"; Fields = [ value; next ]; Methods = []; Abstract = false; BaseType = Some list } 
-    let nil = { Name = "Nil"; Fields = []; Methods = []; Abstract = false; BaseType = Some list }
+    let cons = { Name = "Cons"; Fields = [ value; next ]; Methods = []; Abstract = false; BaseType = Some list; Interfaces = [] } 
+    let nil = { Name = "Nil"; Fields = []; Methods = []; Abstract = false; BaseType = Some list; Interfaces = [] }
 
 module PhpResult =
-    let result = { Name = "Result"; Fields = []; Methods = []; Abstract = true; BaseType = None}
-    let ok = { Name = "Ok"; Fields = []; Methods = []; Abstract = true; BaseType = Some result }
+    let result = { Name = "Result"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
+    let ok = { Name = "Ok"; Fields = []; Methods = []; Abstract = true; BaseType = Some result; Interfaces = [] }
     let errorValue = { Name = "ErrorValue"; Type = ""}
-    let error = { Name = "Error"; Fields = [errorValue] ; Methods = []; Abstract = true; BaseType = Some result }
+    let error = { Name = "Error"; Fields = [errorValue] ; Methods = []; Abstract = true; BaseType = Some result; Interfaces = [] }
 
-
+module PhpUnion =
+    let union = { Name = "Union"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
 
 type PhpCompiler =
     { mutable Types: Map<string,PhpType> 
@@ -613,7 +619,8 @@ let convertUnion (ctx: PhpCompiler) (info: Fable.UnionConstructorInfo) =
                               Type  = convertType e.FieldType } ]
               Methods = [ ]
               Abstract = false
-              BaseType = None}
+              BaseType = None
+              Interfaces = [] }
           ctx.AddType(t) |> PhpType ]
     else
     [ let baseType =
@@ -621,7 +628,8 @@ let convertUnion (ctx: PhpCompiler) (info: Fable.UnionConstructorInfo) =
               Fields = []
               Methods = []
               Abstract = true 
-              BaseType = None }
+              BaseType = None
+              Interfaces = [PhpUnion.union ]}
       ctx.AddType(baseType) |> PhpType
 
       for case in info.Entity.UnionCases do
@@ -630,9 +638,16 @@ let convertUnion (ctx: PhpCompiler) (info: Fable.UnionConstructorInfo) =
               Fields = [ for e in case.UnionCaseFields do 
                             { Name = e.Name 
                               Type  = convertType e.FieldType } ]
-              Methods = [ ]
+              Methods = [ { PhpFun.Name = "get_Case";
+                            PhpFun.Args = []
+                            PhpFun.Matchings = []
+                            PhpFun.Static = false
+                            PhpFun.Body = 
+                                [ PhpStatement.Return(PhpConst(PhpConstString(caseName case)))]
+                            }  ]
               Abstract = false
-              BaseType = Some baseType }
+              BaseType = Some baseType
+              Interfaces = [] }
         ctx.AddType(t) |> PhpType ]
 
 let convertRecord (ctx: PhpCompiler) (info: Fable.CompilerGeneratedConstructorInfo) = 
@@ -643,7 +658,8 @@ let convertRecord (ctx: PhpCompiler) (info: Fable.CompilerGeneratedConstructorIn
                           Type  = convertType e.FieldType } ]
           Methods = [ ]
           Abstract = false
-          BaseType = None}
+          BaseType = None
+          Interfaces = []}
       ctx.AddType(t) |> PhpType ]
 
 type ReturnStrategy =
@@ -819,9 +835,12 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
     | Fable.Let([], body) ->
         convertExpr ctx body
     | Fable.Let(bindings, body) ->
-        let ctx = ctx.NewScope()
-        let body = convertExprToStatement ctx expr Return
-        PhpCall(PhpAnonymousFunc([], Set.toList ctx.CapturedVars , body),[])
+        let innerCtx = ctx.NewScope()
+        let body = convertExprToStatement innerCtx expr Return
+        for capturedVar in innerCtx.CapturedVars do
+            ctx.UseVar(capturedVar)
+        PhpCall(PhpAnonymousFunc([], Set.toList innerCtx.CapturedVars , body),[])
+
     | Fable.Expr.TypeCast(expr, t) ->
         convertExpr ctx expr
         
@@ -851,6 +870,8 @@ and convertFunction (ctx: PhpCompiler) kind body =
  
     let phpBody = convertExprToStatement scope body Return
 
+    for capturedVar in scope.CapturedVars do
+        ctx.UseVar(capturedVar)
     PhpAnonymousFunc(args, Set.toList scope.CapturedVars , phpBody ) 
 
 and convertValue (ctx:PhpCompiler) (value: Fable.ValueKind) =
@@ -1118,7 +1139,7 @@ let fs =
       //yield! convertDecl phpComp ast2.Declarations.[157] 
     ]
 
-
+    
 //convertDecl phpComp ast2.Declarations.[39]
 
 let w = new StringWriter()
@@ -1128,5 +1149,6 @@ Output.writeFile ctx file
 w.ToString()
 
 IO.File.WriteAllText(@"C:\development\crazy\bga\modules\crazyfarmers.php", string w)
+IO.File.WriteAllText(@"C:\development\crazy\php\lib.php", string w)
     
 

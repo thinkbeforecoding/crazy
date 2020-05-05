@@ -1,11 +1,5 @@
 module SharedJoin
 open Shared
-
-type GoalType =
-    | Fast
-    | Regular
-    | Expert
-
 type Game =
    | InitialState
    | Setup of Setup
@@ -41,21 +35,6 @@ and PlayerSet =
 and Started =
     { Players: PlayerSet list
       Goal: Goal }
-
-let goalFromType playerCount goal =
-    match playerCount, goal with
-    | 2, Fast -> Common 23 |> Some
-    | 3, Fast -> Individual 9 |> Some
-    | 4, Fast -> Individual 8 |> Some
-    | 2, Regular -> Common 27 |> Some
-    | 3, Regular -> Individual 11 |> Some
-    | 4, Regular -> Individual 9 |> Some
-    | 2, Expert -> Common 31 |> Some
-    | 3, Expert -> Individual 13 |> Some
-    | 4, Expert -> Individual 11 |> Some
-    | _ -> None
-
-
 let decide cmd state =
     match state, cmd with
     | InitialState, Create cmd ->
@@ -69,7 +48,7 @@ let decide cmd state =
         [ GoalSet goal ]
 
     | Setup s, Start ->
-        match goalFromType s.Players.Count s.Goal  with
+        match Goal.fromType s.Players.Count s.Goal  with
         | Some goal ->
             [ Started 
                 { Players = 

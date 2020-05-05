@@ -18,7 +18,8 @@
 define([
     "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
-    "ebg/counter"
+    "ebg/counter",
+    g_gamethemeurl + "modules/game.js"
 ],
 function (dojo, declare) {
     return declare("bgagame.crazyfarmers", ebg.core.gamegui, {

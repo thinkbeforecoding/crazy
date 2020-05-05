@@ -215,8 +215,8 @@ module.exports = [{
     // Add a hash to the output file name in production
     // to prevent browser caching if code changes
     output: {
-        path: resolve("./bga-deploy"),
-        filename: isProduction ? '[name].js' : '[name].js'
+        path: resolve("./bga-deploy/"),
+        filename: isProduction ? 'modules/[name].js' : 'modules/[name].js'
     },
     mode: isProduction ? 'production' : 'development',
     devtool: isProduction ? 'source-map' : 'eval-source-map',

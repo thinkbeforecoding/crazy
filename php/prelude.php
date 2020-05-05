@@ -55,6 +55,10 @@ class Util {
     }
 }
 
+interface Union {
+    public function get_Case();
+}
+
 
 
 

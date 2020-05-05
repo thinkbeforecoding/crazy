@@ -56,6 +56,19 @@ class CrazyFarmers extends Table
         In this method, you must setup the game according to the game rules, so that
         the game is ready to be played.
     */
+    static function get_Color($color)
+    {
+        static $colors = NULL;
+        if (is_null($colors)) {
+            $colors =
+                [ "AEDBDE" => new Color_Blues(),
+                "EFC54C" => new Color_Yellow(),
+                "A87BBE" => new Color_Purple(),
+                "EA222F" => new Color_Red()
+        ]; };
+        return $colors[$color];
+    }
+
     protected function setupNewGame( $players, $options = array() )
     {    
         // Set the colors of the players with HTML color code
@@ -68,9 +81,11 @@ class CrazyFarmers extends Table
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
         $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
         $values = array();
+        $crazyPlayers = array();
         foreach( $players as $player_id => $player )
         {
             $color = array_shift( $default_colors );
+            $crazyPlayers[] = [ CrazyFarmers::get_Color($color), $player_id, $player['player_name']  ];
             $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
         }
         $sql .= implode( $values, ',' );
@@ -89,7 +104,21 @@ class CrazyFarmers extends Table
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
         // TODO: setup the initial game situation here
-       
+        $goalType = new GoalType_Regular();
+
+        $goal = Shared_002EGoalModule___fromType(count($players), $goalType);
+
+        $cmd = new BoardCommand_Start(
+                new BoardStart(
+                        FSharpList::ofArray($crazyPlayers),
+                        $goal));
+        $board = new Board_InitialState();
+        $es = Shared_002EBoardModule___decide($cmd, $s);
+        $board = FSharpList::fold('Shared_002EBoardModule___evolve', $board, $es);
+
+
+
+        self::setGameStateInitialValue( 'my_first_global_variable', $board );
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -184,6 +213,11 @@ class CrazyFarmers extends Table
     }
     
     */
+
+    function SelectFirstCrossroad($crossroad)
+    {
+        $player_id = self::getActivePlayerId();
+    }
 
     
 //////////////////////////////////////////////////////////////////////////////
