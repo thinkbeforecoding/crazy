@@ -157,7 +157,7 @@ module Hand =
         | PrivateHand p -> p > 0
 
 
-type Player =
+type CrazyPlayer =
     | Starting of Starting
     | Playing of Playing
     | Ko of Color
@@ -192,7 +192,7 @@ and Bonus =
 
 
 
-type Table =
+type GameTable =
     { Players: string[]
       AllPlayers: string[]
       Names: Map<string,string>
@@ -215,7 +215,7 @@ module Table =
         { table with
             Players = Array.filter (fun p -> p <> player) table.Players }
 
-    let isCurrent playerid (table:Table) =
+    let isCurrent playerid (table:GameTable) =
         table.Player = playerid
 
 module Bonus =
@@ -272,8 +272,8 @@ type Board =
     | Board of PlayingBoard
     | Won of string * PlayingBoard
 and PlayingBoard =
-    { Players: Map<string, Player>
-      Table: Table
+    { Players: Map<string, CrazyPlayer>
+      Table: GameTable
       DrawPile: Card list
       DiscardPile: Card list
       Barns: Barns
@@ -929,7 +929,7 @@ module Player =
         | _ -> false
      
 
-    let decide (otherPlayers: (string * Player) list) barns command player =
+    let decide (otherPlayers: (string * CrazyPlayer) list) barns command player =
         match player, command with
         | Starting _, SelectFirstCrossroad cmd ->
             [ FirstCrossroadSelected { Crossroad = cmd.Crossroad } ]
@@ -1220,7 +1220,7 @@ module Player =
 
 
 
-    let toState (p: Player) =
+    let toState (p: CrazyPlayer) =
         match p with
         | Starting p -> 
             SStarting 

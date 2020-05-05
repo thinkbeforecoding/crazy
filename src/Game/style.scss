@@ -20,7 +20,7 @@
     /*src: url('webfont.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
     /*url('webfont.woff2') format('woff2'), Super modern browsers */
     //src: url('webfont.woff') format('woff'), /* Modern browsers */
-    src: url(/font/BigSlabHammer.ttf) format('truetype') /* Safari, Android, iOS */
+    src: url(~fonts/BigSlabHammer.ttf) format('truetype') /* Safari, Android, iOS */
 }
 
 $crazy-tree: #9DAA52;
@@ -41,7 +41,7 @@ body {
 }
 
 .board {
-    background-image: url(/img/board.jpg);
+    background-image: url(~img/board.jpg);
     background-size: contain;
     position: relative;
     width: 100vw;
@@ -80,11 +80,11 @@ body {
     width: 9vw;
     height: 9vw;
     position: absolute;
-    background-image: url(/img/barn.png);
+    background-image: url(~img/barn.png);
     background-repeat: no-repeat;
 }
 .barn.occupied {
-    background-image: url(/img/barn-occupied.png);
+    background-image: url(~img/barn-occupied.png);
 }
 
 i.fa-bars {
@@ -127,7 +127,7 @@ i.fa-bars {
     }
 }
 .hay-bale {
-    background-image: url(/img/hay-bale.png);
+    background-image: url(~img/hay-bale.png);
     background-repeat: no-repeat;
     background-size: contain;
     position: absolute;
@@ -211,27 +211,27 @@ i.fa-bars {
         }
 
         .rut-marker {
-            background-image: url(/img/rut-marker.png);
+            background-image: url(~img/rut-marker.png);
         }
 
         .nitro-1-marker {
-            background-image: url(/img/nitro-1-marker.png);
+            background-image: url(~img/nitro-1-marker.png);
         }
 
         .nitro-2-marker {
-            background-image: url(/img/nitro-2-marker.png);
+            background-image: url(~img/nitro-2-marker.png);
         }
 
         .watchdog-marker {
-            background-image: url(/img/watchdog-marker.png);
+            background-image: url(~img/watchdog-marker.png);
         }
 
         .highvoltage-marker {
-            background-image: url(/img/highvoltage-marker.png);
+            background-image: url(~img/highvoltage-marker.png);
         }
 
         .helicopter-marker {
-            background-image: url(/img/helicopter-marker.png);
+            background-image: url(~img/helicopter-marker.png);
         }
     }
 
@@ -298,7 +298,7 @@ i.fa-bars {
     }
 
     .flash {
-        background-image: url(/img/flash.png);
+        background-image: url(~img/flash.png);
         width: 1.5em;
         height: 1.5em;
         display: inline-block;
@@ -307,7 +307,7 @@ i.fa-bars {
     }
 
     .flash.inactive {
-        background-image: url(/img/flash-inactive.png);
+        background-image: url(~img/flash-inactive.png);
     }
 }
 
@@ -330,83 +330,83 @@ i.fa-bars {
 
 .blue {
     .fence {
-        background-image: url(/img/fence-blue.png);
+        background-image: url(~img/fence-blue.png);
     }
 
     .player {
-        background-image: url(/img/player-blue.png);
+        background-image: url(~img/player-blue.png);
     }
 
     .player.selected {
-        background-image: url(/img/selected-player-blue.png);
+        background-image: url(~img/selected-player-blue.png);
     }
 
     .player.ko {
-        background-image: url(/img/ko-player-blue.png);
+        background-image: url(~img/ko-player-blue.png);
     }
 
     .tile {
-        background-image: url(/img/tile-blue.png);
+        background-image: url(~img/tile-blue.png);
     }
 }
 .yellow {
     .fence {
-        background-image: url(/img/fence-yellow.png);
+        background-image: url(~img/fence-yellow.png);
     }
 
     .player {
-        background-image: url(/img/player-yellow.png);
+        background-image: url(~img/player-yellow.png);
     }
     .player.selected {
-        background-image: url(/img/selected-player-yellow.png);
+        background-image: url(~img/selected-player-yellow.png);
     }
     .ko.selected {
-        background-image: url(/img/ko-player-yellow.png);
+        background-image: url(~img/ko-player-yellow.png);
     }
 
     .tile {
-        background-image: url(/img/tile-yellow.png);
+        background-image: url(~img/tile-yellow.png);
     }
 }
 
 .red {
     .fence {
-        background-image: url(/img/fence-red.png);
+        background-image: url(~img/fence-red.png);
     }
 
     .player {
-        background-image: url(/img/player-red.png);
+        background-image: url(~img/player-red.png);
     }
 
     .player.selected {
-        background-image: url(/img/selected-player-red.png);
+        background-image: url(~img/selected-player-red.png);
     }
     .player.ko {
-        background-image: url(/img/ko-player-red.png);
+        background-image: url(~img/ko-player-red.png);
     }
 
     .tile {
-        background-image: url(/img/tile-red.png);
+        background-image: url(~img/tile-red.png);
     }
 }
 
 .purple {
     .fence {
-        background-image: url(/img/fence-purple.png);
+        background-image: url(~img/fence-purple.png);
     }
 
     .player {
-        background-image: url(/img/player-purple.png);
+        background-image: url(~img/player-purple.png);
     }
     .player.selected {
-        background-image: url(/img/selected-player-purple.png);
+        background-image: url(~img/selected-player-purple.png);
     }
     .player.ko {
-        background-image: url(/img/ko-player-purple.png);
+        background-image: url(~img/ko-player-purple.png);
     }
 
     .tile {
-        background-image: url(/img/tile-purple.png);
+        background-image: url(~img/tile-purple.png);
     }
 }
 
@@ -432,47 +432,47 @@ div.card {
 
 div.back {
     position: relative;
-    background-image: url(/img/card-back.jpg);
+    background-image: url(~img/card-back.jpg);
 }
 
 .nitro-1 {
-    background-image: url(/img/card-nitro-1.jpg);
+    background-image: url(~img/card-nitro-1.jpg);
 }
 
 .nitro-2 {
-    background-image: url(/img/card-nitro-2.jpg);
+    background-image: url(~img/card-nitro-2.jpg);
 }
 
 .rut {
-    background-image: url(/img/card-rut.jpg);
+    background-image: url(~img/card-rut.jpg);
 }
 
 .hay-bale-1 {
-    background-image: url(/img/card-1-hay-bale.jpg);
+    background-image: url(~img/card-1-hay-bale.jpg);
 }
 
 .hay-bale-2 {
-    background-image: url(/img/card-2-hay-bales.jpg);
+    background-image: url(~img/card-2-hay-bales.jpg);
 }
 
 .dynamite {
-    background-image: url(/img/card-dynamite.jpg);
+    background-image: url(~img/card-dynamite.jpg);
 }
 
 .high-voltage {
-    background-image: url(/img/card-high-voltage.jpg);
+    background-image: url(~img/card-high-voltage.jpg);
 }
 
 .watchdog {
-    background-image: url(/img/card-watchdog.jpg);
+    background-image: url(~img/card-watchdog.jpg);
 }
 
 .helicopter {
-    background-image: url(/img/card-helicopter.jpg);
+    background-image: url(~img/card-helicopter.jpg);
 }
 
 .bribe {
-    background-image: url(/img/card-bribe.jpg);
+    background-image: url(~img/card-bribe.jpg);
 }
 
 
@@ -572,7 +572,7 @@ div.back {
     height: 30vw;
     top: 20vw;
     left: 20vw;
-    background-image: url(/img/victory.png);
+    background-image: url(~img/victory.png);
     background-size: contain;
     background-repeat: no-repeat;
 

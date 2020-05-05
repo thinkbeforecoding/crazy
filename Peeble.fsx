@@ -497,9 +497,9 @@ module Output =
 
 
     let writeAssign ctx n expr =
-        writei ctx "$"
+        writei ctx "$GLOBALS['"
         write ctx n
-        write ctx " = "
+        write ctx "'] = "
         writeExpr ctx expr
         writeln ctx ";"
 
@@ -1119,7 +1119,7 @@ let fs =
     ]
 
 
-convertDecl phpComp ast2.Declarations.[39]
+//convertDecl phpComp ast2.Declarations.[39]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w
@@ -1127,6 +1127,6 @@ let file = { Decls = fs }
 Output.writeFile ctx file
 w.ToString()
 
-IO.File.WriteAllText(@"C:\development\crazy\php\lib.php", string w)
+IO.File.WriteAllText(@"C:\development\crazy\bga\modules\crazyfarmers.php", string w)
     
 

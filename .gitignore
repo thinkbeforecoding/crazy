@@ -17,3 +17,4 @@ deploy
 *.user
 prep/
 .paket/load/
+bga-deploy/

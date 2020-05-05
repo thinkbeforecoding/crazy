@@ -82,7 +82,7 @@ var commonPlugins = [
     })
 ];
 
-module.exports = {
+module.exports = [{
     // In development, split the JavaScript and CSS files in order to
     // have a faster HMR support. In production bundle styles together
     // with the code because the MiniCssExtractPlugin will extract the
@@ -132,7 +132,8 @@ module.exports = {
         // See https://github.com/fable-compiler/Fable/issues/1490
         symlinks: false,
         alias: {
-            fonts: path.resolve(__dirname, "src/Game/public/font")
+            fonts: path.resolve(__dirname, "src/Game/public/font"),
+            img: path.resolve(__dirname, "src/Game/public/img")
         }
 
     },
@@ -191,12 +192,134 @@ module.exports = {
                 ],
             },
             {
-                test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)(\?.*)?$/,
-                use: ['file-loader']
+                test: /\.(png|jpg|jpeg|gif|svg)(\?.*)?$/,
+                use: [isProduction ? 'file-loader?name=/img/[name].[ext]' : 'file-loader?name=[name].[ext]']
+            },
+            {
+                test: /\.(woff|woff2|ttf|eot)(\?.*)?$/,
+                use: [isProduction ? 'file-loader?name=/font/[name].[ext]' : 'file-loader?name=[name].[ext]'] 
             }
         ]
     }
-};
+},
+
+{
+    /// BGA
+    entry: isProduction ? {
+        game: [resolve(CONFIG.fsharpEntry),
+              resolve(CONFIG.cssEntry)],
+    } : {
+            game: [resolve(CONFIG.fsharpEntry)],
+            style: [resolve(CONFIG.cssEntry)]
+        },
+    // Add a hash to the output file name in production
+    // to prevent browser caching if code changes
+    output: {
+        path: resolve("./bga-deploy"),
+        filename: isProduction ? '[name].js' : '[name].js'
+    },
+    mode: isProduction ? 'production' : 'development',
+    devtool: isProduction ? 'source-map' : 'eval-source-map',
+    optimization: {
+        splitChunks: {
+            chunks: 'all'
+        },
+    },
+    // Besides the HtmlPlugin, we use the following plugins:
+    // PRODUCTION
+    //      - MiniCssExtractPlugin: Extracts CSS from bundle to a different file
+    //          To minify CSS, see https://github.com/webpack-contrib/mini-css-extract-plugin#minimizing-for-production    
+    //      - CopyWebpackPlugin: Copies static assets to output directory
+    // DEVELOPMENT
+    //      - HotModuleReplacementPlugin: Enables hot reloading when code changes without refreshing
+    plugins: isProduction ?
+        commonPlugins.concat([
+            new MiniCssExtractPlugin({ filename: 'crazyfarmers.css' }),
+            new CopyWebpackPlugin([{ from: resolve(CONFIG.assetsDir) }]),
+            new CopyWebpackPlugin([{ from: resolve('./bga') }]), 
+        ])
+        : commonPlugins.concat([
+            new webpack.HotModuleReplacementPlugin(),
+        ]),
+    resolve: {
+        // See https://github.com/fable-compiler/Fable/issues/1490
+        symlinks: false,
+        alias: {
+            fonts: path.resolve(__dirname, "src/Game/public/font"),
+            img: path.resolve(__dirname, "src/Game/public/img")
+        }
+
+    },
+    // Configuration for webpack-dev-server
+    devServer: {
+        publicPath: '/1/',
+        contentBase: resolve(CONFIG.assetsDir),
+        host: '0.0.0.0',
+        port: CONFIG.devServerPort,
+        proxy: CONFIG.devServerProxy,
+        historyApiFallback: {
+             rewrites: [
+                { from: /^\/game\/.*/, to: '/game/index.html' },
+             ]
+        },
+        hot: true,
+        inline: true
+    },
+    // - fable-loader: transforms F# into JS
+    // - babel-loader: transforms JS to old syntax (compatible with old browsers)
+    // - sass-loaders: transforms SASS/SCSS into JS
+    // - file-loader: Moves files referenced in the code (fonts, images) into output folder
+    module: {
+        rules: [
+            {
+                test: /\.fs(x|proj)?$/,
+                use: {
+                    loader: 'fable-loader',
+                    options: {
+                        babel: CONFIG.babel
+                    }
+                }
+            },
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                    options: CONFIG.babel
+                },
+            },
+            {
+                test: /\.(sass|scss|css)$/,
+                use: [
+                    isProduction
+                        ? MiniCssExtractPlugin.loader
+                        : 'style-loader',
+                    'css-loader',
+                    {
+                        loader: 'resolve-url-loader',
+                    },
+                    {
+                      loader: 'sass-loader',
+                      options: { implementation: require('sass') }
+                    }
+                ],
+            },
+            {
+                test: /\.(png|jpg|jpeg|gif|svg)(\?.*)?$/,
+                use: [isProduction ? 'file-loader?name=./img/[name].[ext]' : 'file-loader?name=[name].[ext]']
+            },
+            {
+                test: /\.(woff|woff2|ttf|eot)(\?.*)?$/,
+                use: [isProduction ? 'file-loader?name=./font/[name].[ext]' : 'file-loader?name=[name].[ext]'] 
+            }
+
+
+        ]
+    }
+}]
+
+
+;
 
 function resolve(filePath) {
     return path.isAbsolute(filePath) ? filePath : path.join(__dirname, filePath);
