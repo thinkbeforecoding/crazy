@@ -83,7 +83,7 @@ let localDecide command state =
         [ GoalSet goal]
     | NewGame g, Command.Start ->
         if g.CanStart then
-            match goalFromType g.Players.Count g.Goal with
+            match Goal.fromType g.Players.Count g.Goal with
             | Some goal ->
                 [ Event.Started { 
                     Players = [ for c,(p,n) in Map.toSeq g.Players -> { Color = c; PlayerId = p; Name = n}]
@@ -362,7 +362,7 @@ let goalView dispatch goal players newGame =
                  OnClick (fun _ -> dispatch (SelectGoal value))
            ] [ str (goalName value)
                div [] [ str (goalTime value)]
-               div [] [ str (goalDetails (goalFromType players value)) ]
+               div [] [ str (goalDetails (Goal.fromType players value)) ]
            ]
         
     ul [ classBaseList "goals" [ "new-game", newGame ] ]

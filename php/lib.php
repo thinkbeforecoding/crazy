@@ -847,7 +847,7 @@ function Shared_002EGameTable__get_Next($this___3, $unitVar1__3) {
 function Shared_002ETable___start($players) {
     $allplayers = FSharpArray::ofSeq(Seq::delay(function ($unitVar) use ($players) {     return Seq::collect(function ($matchValue__3) {     return Seq::singleton($matchValue__3[0]);
  }, $players);
- }), $Array);
+ }));
     return new GameTable($allplayers, $allplayers, Map::ofList($players, [ 'Compare' => 'Util::comparePrimitives']), 0);
 }
 
@@ -2468,8 +2468,8 @@ function Shared_002EPlayer___decide($otherPlayers__1, $barns__3, $command, $play
  }));
  }));
                             default:
-                                $activePatternResult93640 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
-                                if (!is_null($activePatternResult93640)) {
+                                $activePatternResult114793 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
+                                if (!is_null($activePatternResult114793)) {
                                     return new Cons(new Event_FenceRemoved(new Moved($cmd__1->Direction, $nextPath__1, $nextPos__1)), FSharpList::get_Nil());
                                 } else {
                                     $matchValue__15 = Shared_002EFenceModule___findLoop($cmd__1->Direction, $player__17->Tractor, $player__17->Fence);
@@ -3610,14 +3610,14 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                             $nextBoard = Shared_002EBoardModule___annexed($playerid__11, $e__20, $board__19);
                                             $eliminated = 0;
                                             return Seq::append(Seq::collect(function ($matchValue__35) use ($eliminated) { 
-                                                $activePatternResult93841 = $matchValue__35;
-                                                if (Shared_002EPlayer___isKo($activePatternResult93841[1])) {
+                                                $activePatternResult114994 = $matchValue__35;
+                                                if (Shared_002EPlayer___isKo($activePatternResult114994[1])) {
                                                     $eliminated = $eliminated + 1;
                                                     return Seq::empty();
                                                 } else {
-                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult93841[1]))) {
+                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult114994[1]))) {
                                                         $eliminated = $eliminated + 1;
-                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult93841[0], new Event_Eliminated()));
+                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult114994[0], new Event_Eliminated()));
                                                     } else {
                                                         return Seq::empty();
                                                     }
@@ -3702,39 +3702,39 @@ function Shared_002EBoardModule___toState($board__20) {
         case 'Board_InitialState':
             return new BoardState([ ], new STable(NULL, NULL, NULL, 0), [ ], NULL, NULL, NULL, new Goal_Common(0), NULL);
         case 'Board_Won':
-            return new BoardState((function () use ($Array, $board__20) { 
+            return new BoardState((function () use ($board__20) { 
                 $source__9 = Map::toSeq($board__20->Item2->Players);
                 $source__10 = Seq::map(function ($tupledArg__11) {                 return [ $tupledArg__11[0], Shared_002EPlayer___toState($tupledArg__11[1])];
  }, $source__9);
-                return FSharpArray::ofSeq($source__10, $Array);
+                return FSharpArray::ofSeq($source__10);
             })(), new STable($board__20->Item2->Table->Players, $board__20->Item2->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__40) use ($board__20) {             return Seq::collect(function ($matchValue__38) { 
-                $activePatternResult93855 = $matchValue__38;
-                return Seq::singleton([ $activePatternResult93855[0], $activePatternResult93855[1]]);
+                $activePatternResult115008 = $matchValue__38;
+                return Seq::singleton([ $activePatternResult115008[0], $activePatternResult115008[1]]);
             }, $board__20->Item2->Table->Names);
- }), $Array), $board__20->Item2->Table->Current), FSharpArray::ofList($board__20->Item2->DiscardPile, $Array), (function () use ($Array, $board__20) { 
+ })), $board__20->Item2->Table->Current), FSharpArray::ofList($board__20->Item2->DiscardPile), (function () use ($board__20) { 
                 $list__24 = Shared_002EFieldModule___parcels($board__20->Item2->Barns->Free);
-                return FSharpArray::ofList($list__24, $Array);
-            })(), (function () use ($Array, $board__20) { 
+                return FSharpArray::ofList($list__24);
+            })(), (function () use ($board__20) { 
                 $list__25 = Shared_002EFieldModule___parcels($board__20->Item2->Barns->Occupied);
-                return FSharpArray::ofList($list__25, $Array);
-            })(), Set::toArray($board__20->Item2->HayBales, $Array), $board__20->Item2->Goal, $board__20->Item1);
+                return FSharpArray::ofList($list__25);
+            })(), Set::toArray($board__20->Item2->HayBales), $board__20->Item2->Goal, $board__20->Item1);
         default:
-            return new BoardState((function () use ($Array, $board__20) { 
+            return new BoardState((function () use ($board__20) { 
                 $source__7 = Map::toSeq($board__20->Item->Players);
                 $source__8 = Seq::map(function ($tupledArg__10) {                 return [ $tupledArg__10[0], Shared_002EPlayer___toState($tupledArg__10[1])];
  }, $source__7);
-                return FSharpArray::ofSeq($source__8, $Array);
+                return FSharpArray::ofSeq($source__8);
             })(), new STable($board__20->Item->Table->Players, $board__20->Item->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__39) use ($board__20) {             return Seq::collect(function ($matchValue__37) { 
-                $activePatternResult93851 = $matchValue__37;
-                return Seq::singleton([ $activePatternResult93851[0], $activePatternResult93851[1]]);
+                $activePatternResult115004 = $matchValue__37;
+                return Seq::singleton([ $activePatternResult115004[0], $activePatternResult115004[1]]);
             }, $board__20->Item->Table->Names);
- }), $Array), $board__20->Item->Table->Current), FSharpArray::ofList($board__20->Item->DiscardPile, $Array), (function () use ($Array, $board__20) { 
+ })), $board__20->Item->Table->Current), FSharpArray::ofList($board__20->Item->DiscardPile), (function () use ($board__20) { 
                 $list__22 = Shared_002EFieldModule___parcels($board__20->Item->Barns->Free);
-                return FSharpArray::ofList($list__22, $Array);
-            })(), (function () use ($Array, $board__20) { 
+                return FSharpArray::ofList($list__22);
+            })(), (function () use ($board__20) { 
                 $list__23 = Shared_002EFieldModule___parcels($board__20->Item->Barns->Occupied);
-                return FSharpArray::ofList($list__23, $Array);
-            })(), Set::toArray($board__20->Item->HayBales, $Array), $board__20->Item->Goal, NULL);
+                return FSharpArray::ofList($list__23);
+            })(), Set::toArray($board__20->Item->HayBales), $board__20->Item->Goal, NULL);
     }
 }
 
@@ -3887,6 +3887,29 @@ class ClientMsg_SyncPlayer extends ClientMsg {
     }
     function get_Case() {
         return 'ClientMsg_SyncPlayer';
+    }
+}
+
+#0
+function SharedServer___privateGame($id, $game) {
+    return new PlayingBoard(Map::map(function ($playerid, $player) use ($id) {     if ($playerid === $id) {
+        return $player;
+    } else {
+        return Shared_002EPlayer___toPrivate($player);
+    }
+ }, $game->Players), $game->Table, $game->DrawPile, $game->DiscardPile, $game->Barns, $game->HayBales, $game->Goal);
+}
+
+#1
+function SharedServer___privateBoard($playerId, $board) {
+    switch (get_class($board))
+    {
+        case 'Board_Won':
+            return new Board_Won($board->Item1, SharedServer___privateGame($playerId, $board->Item2));
+        case 'Board_InitialState':
+            return new Board_InitialState();
+        default:
+            return new Board_Board(SharedServer___privateGame($playerId, $board->Item));
     }
 }
 

@@ -16,22 +16,21 @@
  */
 
 define([
-    "dojo",
-    "dojo/_base/declare",
+    "dojo","dojo/_base/declare",
     "ebg/core/gamegui",
     "ebg/counter",
-    g_gamethemeurl + "modules/vendors~crazy.js",
-    g_gamethemeurl + "modules/crazy.js"
+    g_gamethemeurl + "modules/vendors~game.js",
+    g_gamethemeurl + "modules/game.js"
 ],
-function (dojo, declare,ui,c,v,crazy) {
+function (dojo, declare) {
     return declare("bgagame.crazyfarmers", ebg.core.gamegui, {
         constructor: function(){
             console.log('crazyfarmers constructor');
+              
             // Here, you can init the global variables of your user interface
             // Example:
             // this.myGlobalValue = 0;
-            this.crazy = window.crazyfarmers;
-            this.crazy.constructor();
+
         },
         
         /*
@@ -49,10 +48,8 @@ function (dojo, declare,ui,c,v,crazy) {
         
         setup: function( gamedatas )
         {
-            
             console.log( "Starting game setup" );
-            this.crazy.setup(gamedatas);
-            //this.cf.setup(gamedatas);
+            
             // Setting up player boards
             for( var player_id in gamedatas.players )
             {
@@ -80,9 +77,7 @@ function (dojo, declare,ui,c,v,crazy) {
         onEnteringState: function( stateName, args )
         {
             console.log( 'Entering state: '+stateName );
-            this.crazy.onEnteringState(stateName, args);
             
-            // this.cf.onEnteringState(stateName, args);
             switch( stateName )
             {
             
@@ -108,8 +103,7 @@ function (dojo, declare,ui,c,v,crazy) {
         onLeavingState: function( stateName )
         {
             console.log( 'Leaving state: '+stateName );
-            // this.cf.onLeavingState(stateName, args);
-   
+            
             switch( stateName )
             {
             
@@ -135,7 +129,6 @@ function (dojo, declare,ui,c,v,crazy) {
         onUpdateActionButtons: function( stateName, args )
         {
             console.log( 'onUpdateActionButtons: '+stateName );
-            //this.cf.onUpdateActionButtons(stateName, args);
                       
             if( this.isCurrentPlayerActive() )
             {            

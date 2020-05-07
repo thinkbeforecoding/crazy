@@ -1,0 +1,22 @@
+version: '2.0'
+services:
+  php:
+    image: php:7.2-apache
+    ports:
+    - "80:80"
+    volumes:
+    - c:\Development\crazy\php:/var/www/html
+    links:
+    - mysql
+  mysql:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080

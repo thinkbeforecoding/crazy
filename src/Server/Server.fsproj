@@ -16,6 +16,7 @@
         <Compile Include="..\Shared\Shared.fs" />
         <Compile Include="..\Shared\SharedGame.fs" />
         <Compile Include="..\Shared\SharedJoin.fs" />
+        <Compile Include="SharedServer.fs" />
         <Compile Include="Model.fs" />
         <Compile Include="Storage.fs" />
         <Compile Include="EventStore.fs" />

@@ -373,9 +373,9 @@ abstract class FSharpList implements IteratorAggregate {
         }
     } 
 
-    static private $nil;
 
     static public function get_Nil() {
+        static $nil;
         if ($nil === null) {
             $nil = new Nil();
         }

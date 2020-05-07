@@ -72,30 +72,154 @@
         $s = FSharpList::fold('Shared_002EBoardModule___evolve', $s, $es);
         $cmd = new BoardCommand_Play("p1", new Command_SelectFirstCrossroad(new SelectFirstCrossroad(new Crossroad(Shared_002EAxe___op_Multiply__Z425F7B5E(2, $Shared_002EAxeModule___N), new CrossroadSide_CLeft()) )) );
 
-        $es =  Shared_002EBoardModule___decide($cmd, $s);
+        $es2 =  Shared_002EBoardModule___decide($cmd, $s);
 
-        echo var_dump($es), "<br/><br/>";
+        echo var_dump($es2), "<br/><br/>";
 
         function toJson($obj) {
-            if ($obj instanceof Union)
+            if (is_null($obj)) {
+                return NULL;
+            }
+            else if ($obj instanceof FSharpList)
             {
-                $case = $obj->get_Case();
-                $array = array();
+                $array = [];
+                foreach($obj as $value)
+                {
+                    $array[] = toJson($value);
+                }
+
+                return [ '_list' => $array];
+
+            }
+            else if ($obj instanceof Union)
+            {
+                $props = [];
                 foreach(get_object_vars($obj) as $prop => $value)
                 {
-                    $array[$prop] = toJson($value);
+                    $props[] = toJson($value);
                 }
-                $array['_case'] = $case;
+                return ['_case' => $obj->get_Case(), 'fields' => $props ];
+            }
+            else if (is_array($obj))
+            {
+                $array = [];
+                foreach($obj as $key => $value)
+                {
+                    $array[$key] = toJson($value);
+                }
                 return $array;
             }
-            else
+            else if (is_object($obj))
             {
-                return $obj;
+                $props = [];
+                foreach(get_object_vars($obj) as $prop => $value)
+                {
+                    $props[$prop] = toJson($value);
+                }
+                return $props;
             }
+            else
+                return $obj;
         } 
+
+        function fromJson($json) {
+            if (is_null($json))
+            {
+                return NULL;
+            }
+            else if (is_object($json) && property_exists($json, '_case'))
+            {
+                $case = $json->_case;
+
+                $args=[];
+                foreach($json->fields as $value)
+                {
+                    $args[] = fromJson($value);
+                }
+
+
+                return new $case(...$args);
+            }
+            else if (is_object($json) && property_exists($json, '_list'))
+            {
+                $array = [];
+                foreach($json->_list as $value)
+                {
+                    $array[] = fromJson($value);
+                }
+                return FSharpList::ofArray($array);
+            }
+            else if (is_array($json))
+            {
+                    $array = [];
+                    foreach($json as $value)
+                    {
+                        $array[] = fromJson($value);
+                    }
+                    return $array;
+            }
+            else if (is_object($json))
+            {
+                $props = [];
+                foreach(get_object_vars($json) as $prop => $value)
+                {
+                    $props[$prop] = fromJson($value);
+                }
+
+                return (object)$props;
+            }
+            else
+                return $json;
+
+        }
+
+        echo "listjson:", json_encode(toJson(FSharpList::ofArray([1,2,3])));
         
         echo "json: ", var_dump($es->value), "<br/>";
-        echo "json: ", var_dump(toJson($es->value)), "<br/>";
+        $js = json_encode(toJson($es->value));
+        echo "json: ", var_dump($js), "<br/>";
+
+        echo "back: ", var_dump(fromJson(json_decode($js))), "<br/>";
+
+        $db = new PDO('mysql:host=mysql;dbname=crazyfarmers', "root", "test");
+
+        $insert = $db->prepare("INSERT INTO `Events` (`type`, `body`) VALUES (:t, :b )");
+
+        // foreach ($es as $e) {
+        //     $je = toJson($e);
+        //     $insert->execute([':t' => $je['_case'], ':b' =>  json_encode($je['fields']) ]);
+        // }
+
+        // foreach ($es2 as $e) {
+        //     $je = toJson($e);
+        //     $insert->execute([':t' => $je['_case'], ':b' =>  json_encode($je['fields']) ]);
+        // }
+
+//        $db->query("INSERT INTO `Events` (`type`, `body`) VALUES ('Test', 'body' )");
+        $r = $db->query("SELECT `type`,`body` FROM `Events` ORDER BY `id`");
+
+        echo "<b>Loaded Events:</b><br/><br/>";
+
+
+
+        $s2 = new Board_InitialState();
+
+        foreach($r as $row) {
+            
+            $js = (object)[ '_case' => $row['type'],
+                            'fields' => json_decode($row['body'])];
+
+            $e = fromJson($js);
+         echo var_dump($e), "<br/><br/>";
+
+         $s2 = Shared_002EBoardModule___evolve($s2,$e);
+        }
+        
+
+        echo "loaded state: ", var_dump($s2), "<br/><br/>";
+
+
+
     ?>
     </body>
 </html>

@@ -79,10 +79,18 @@ var commonPlugins = [
         filename: 'index.html',
         template: resolve('./src/Join/index.html'),
         excludeChunks: ['game', 'style']
+    }),
+
+];
+var bgaPlugins = [
+    new HtmlWebpackPlugin({
+        filename: 'game/bga.html',
+        template: resolve('./src/BgaGame/index.html'),
+        excludeChunks: ['join', 'game', 'joinstyle']
     })
 ];
 
-module.exports = [{
+module.exports = [/*{
     // In development, split the JavaScript and CSS files in order to
     // have a faster HMR support. In production bundle styles together
     // with the code because the MiniCssExtractPlugin will extract the
@@ -92,13 +100,12 @@ module.exports = [{
               resolve(CONFIG.cssEntry)],
 
         join: [resolve('./src/Join/Join.fsproj'),
-               resolve('./src/Join/join-style.scss')]
-
+            resolve('./src/Join/join-style.scss')],
     } : {
             game: [resolve(CONFIG.fsharpEntry)],
             join: [resolve('./src/Join/Join.fsproj')],
             joinstyle: [resolve('./src/Join/join-style.scss')],
-            style: [resolve(CONFIG.cssEntry)]
+            style: [resolve(CONFIG.cssEntry)],
         },
     // Add a hash to the output file name in production
     // to prevent browser caching if code changes
@@ -146,7 +153,7 @@ module.exports = [{
         proxy: CONFIG.devServerProxy,
         historyApiFallback: {
              rewrites: [
-                { from: /^\/game\/.*/, to: '/game/index.html' },
+                { from: /^\/game\/.* /, to: '/game/index.html' },
              ]
         },
         hot: true,
@@ -201,22 +208,25 @@ module.exports = [{
             }
         ]
     }
-},
+},*/
 
 {
     /// BGA
     entry: isProduction ? {
-        game: [resolve(CONFIG.fsharpEntry),
+        crazy: [resolve('./src/BgaGame/BGAGame.fsproj'),
               resolve(CONFIG.cssEntry)],
     } : {
-            game: [resolve(CONFIG.fsharpEntry)],
-            style: [resolve(CONFIG.cssEntry)]
+            crazy: [resolve('./src/BgaGame/BGAGame.fsproj')],
+            style: [resolve(CONFIG.cssEntry)],
+
         },
     // Add a hash to the output file name in production
     // to prevent browser caching if code changes
     output: {
         path: resolve("./bga-deploy/"),
-        filename: isProduction ? 'modules/[name].js' : 'modules/[name].js'
+        filename: isProduction ? 'modules/[name].js' : 'modules/[name].js',
+        //libraryTarget: 'var',
+        //library: 'crazy'
     },
     mode: isProduction ? 'production' : 'development',
     devtool: isProduction ? 'source-map' : 'eval-source-map',
@@ -233,12 +243,12 @@ module.exports = [{
     // DEVELOPMENT
     //      - HotModuleReplacementPlugin: Enables hot reloading when code changes without refreshing
     plugins: isProduction ?
-        commonPlugins.concat([
+        bgaPlugins.concat([
             new MiniCssExtractPlugin({ filename: 'crazyfarmers.css' }),
             new CopyWebpackPlugin([{ from: resolve(CONFIG.assetsDir) }]),
             new CopyWebpackPlugin([{ from: resolve('./bga') }]), 
         ])
-        : commonPlugins.concat([
+        : bgaPlugins.concat([
             new webpack.HotModuleReplacementPlugin(),
         ]),
     resolve: {

@@ -63,7 +63,7 @@
     
     */
 
-    public function SelectFirstCrossroad()
+    public function selectFirstCrossroad()
     {
         self::setAjaxMode();
 
@@ -74,9 +74,9 @@
         $side = self::getArg( "side", AT_bool, true );
 
         // Then, call the appropriate method in your game logic, like "playCard" or "myAction"
-        $this->game->SelectFirstCrossroad(new Crossroad(new Axe($q,$r), $side ? new CrossroadSide_CRight() : new CrossroadSide_CLeft()) );
+        $this->game->selectFirstCrossroad(new Crossroad(new Axe($q,$r), $side ? new CrossroadSide_CRight() : new CrossroadSide_CLeft()) );
 
-        self::ajaxResponse( );
+        self::ajaxResponse();
     }
   }
   

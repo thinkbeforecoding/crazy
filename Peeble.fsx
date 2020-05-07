@@ -732,6 +732,8 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
                     | "List" -> "FSharpList"
                     | "Array" -> "FSharpArray"
                     | _ -> cls
+
+
                 PhpCall(PhpConst(PhpConstString (phpCls + "::" + fixName s)), convertArgs ctx args)
         | _ -> PhpCall(PhpConst(PhpConstString (fixName s)), convertArgs ctx args)
     | Fable.Operation(Fable.Call(Fable.StaticCall(Fable.Get(Fable.IdentExpr(i),Fable.ExprGet(Fable.Value(Fable.StringConstant(m),_)),_,_)),args),_,_) ->
@@ -851,7 +853,10 @@ and convertArgs ctx (args: Fable.ArgInfo) =
       | Some arg -> convertExpr ctx arg
       | None -> ()
       for arg in args.Args do 
-        convertExpr ctx arg]
+        match arg with
+        | Fable.IdentExpr({ Name = "Array"; Kind = Fable.CompilerGenerated }) -> ()
+        | _ -> convertExpr ctx arg
+    ]
         
         
 and convertFunction (ctx: PhpCompiler) kind body =
@@ -1078,13 +1083,18 @@ let convertDecl ctx decl =
         [ PhpDeclValue(fixName decl.Name, convertExpr ctx expr) ]
     | _ -> [] 
 
+
+let files = 
+    [ @"C:\development\crazy\src\Shared\Shared.fs"
+      @"C:\development\crazy\src\Shared\SharedGame.fs"
+      @"C:\development\crazy\src\Server\SharedServer.fs" ]
+
 let opts   =
     let projOptions: FSharpProjectOptions =
              {
                  ProjectId = None
                  ProjectFileName = @"C:\development\crazy\src\Game\Game.fsproj"
-                 SourceFiles = [| @"C:\development\crazy\src\Shared\Shared.fs"
-                                  @"C:\development\crazy\src\Shared\SharedGame.fs"|]
+                 SourceFiles = List.toArray files 
                  OtherOptions = [||]
                  ReferencedProjects = [||] //p2pProjects |> Array.ofList
                  IsIncompleteTypeCheckEnvironment = false
@@ -1114,33 +1124,26 @@ let compOptions =
       CompilerOptions.outputPublicInlinedFunctions = false
       CompilerOptions.precompiledLib = None
       CompilerOptions.verbosity = Verbosity.Normal}
-let com = Compiler(@"C:\development\crazy\src\Shared\Shared.fs", proj, compOptions, "")
-let ast = 
-    Fable.Transforms.FSharp2Fable.Compiler.transformFile com proj.ImplementationFiles
-    |> Fable.Transforms.FableTransforms.optimizeFile com
-ast.Declarations
 
-let com2 = Compiler(@"C:\development\crazy\src\Shared\SharedGame.fs", proj, compOptions, "")
-let ast2 =
-    Fable.Transforms.FSharp2Fable.Compiler.transformFile com2 proj.ImplementationFiles
-    |> Fable.Transforms.FableTransforms.optimizeFile com
+let asts =
+    [ for file in files do
+        let com = Compiler(file, proj, compOptions, "")
+        Fable.Transforms.FSharp2Fable.Compiler.transformFile com proj.ImplementationFiles
+        |> Fable.Transforms.FableTransforms.optimizeFile com ]
+
 
 
 
 let phpComp = PhpCompiler.empty
 let fs = 
     [ 
-      for i,decl in List.indexed ast.Declarations do
-        for d in convertDecl phpComp decl do
-            i,d
-      for i,decl in List.indexed ast2.Declarations do
-        for d in convertDecl phpComp decl do
-            i,d
-      //yield! convertDecl phpComp ast2.Declarations.[157] 
+      for ast in asts do
+          for i,decl in List.indexed ast.Declarations do
+            for d in convertDecl phpComp decl do
+                i,d
     ]
 
-    
-//convertDecl phpComp ast2.Declarations.[39]
+convertDecl phpComp asts.[1].Declarations.[49]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w

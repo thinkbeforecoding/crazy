@@ -20,6 +20,7 @@
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 require_once('modules/FSharp.Core.php');
 require_once('modules/crazyfarmers.php');
+require_once('modules/Serialization.php');
 
 class CrazyFarmers extends Table
 {
@@ -34,7 +35,7 @@ class CrazyFarmers extends Table
         parent::__construct();
         
         self::initGameStateLabels( array( 
-            //    "my_first_global_variable" => 10,
+            "board" => 10,
             //    "my_second_global_variable" => 11,
             //      ...
             //    "my_first_game_variant" => 100,
@@ -61,7 +62,7 @@ class CrazyFarmers extends Table
         static $colors = NULL;
         if (is_null($colors)) {
             $colors =
-                [ "AEDBDE" => new Color_Blues(),
+                [ "AEDBDE" => new Color_Blue(),
                 "EFC54C" => new Color_Yellow(),
                 "A87BBE" => new Color_Purple(),
                 "EA222F" => new Color_Red()
@@ -113,12 +114,15 @@ class CrazyFarmers extends Table
                         FSharpList::ofArray($crazyPlayers),
                         $goal));
         $board = new Board_InitialState();
-        $es = Shared_002EBoardModule___decide($cmd, $s);
-        $board = FSharpList::fold('Shared_002EBoardModule___evolve', $board, $es);
+        $es = Shared_002EBoardModule___decide($cmd, $board);
+        
+        self::saveEvents($es);
+        
+        
+        $board = self::fold($board, $es);
 
 
-
-        self::setGameStateInitialValue( 'my_first_global_variable', $board );
+        self::setGameStateInitialValue( 'board', json_encode(convertToJson($board)) );
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -141,11 +145,15 @@ class CrazyFarmers extends Table
     
         $current_player_id = self::getCurrentPlayerId();    // !! We must only return informations visible by this player !!
     
+        
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
         $sql = "SELECT player_id id, player_score score FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
+        $board = self::loadState();
+        $result['board'] = SharedServer___privateBoard($current_player_id, $board);
+
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
   
         return $result;
@@ -173,11 +181,66 @@ class CrazyFarmers extends Table
 //////////// Utility functions
 ////////////    
 
-    /*
-        In this space, you can put any utility methods useful for your game logic
-    */
+    function fold($board, $es)
+    {
+        return FSharpList::fold('Shared_002EBoardModule___evolve', $board, $es);
+    }
+
+    function saveEvent($e)
+    {
+        $je = convertToJson($e);
+
+        $type = $je['_case'];
+        $body = json_encode($je['fields']);
+
+        $sql = "INSERT INTO `Events` (`type`, `body`) VALUES ('".$type."','".addslashes($body)."')";
+        self::DbQuery( $sql );
+    }
 
 
+    function saveEvents($es)
+    {
+        foreach($es as $e)
+            self::saveEvent($e);
+    }
+
+    function loadEvents()
+    {
+        $r = self::getCollectionFromDb("SELECT `type`,`body` FROM `Events` ORDER BY `id`");
+
+        foreach($r as $row) {
+            
+            $js = (object)[ '_case' => $row['type'],
+                            'fields' => json_decode($row['body'])];
+
+            $e = convertFromJson($js);
+
+            yield $e;
+        }
+    }
+
+    function loadState()
+    {
+        $s = new Board_InitialState();
+        foreach(self::loadEvents() as $e)
+        {
+            $s = Shared_002EBoardModule___evolve($s,$e);
+        }
+
+        return $s;
+    }
+
+
+
+    function getBoard()
+    {
+        return  convertFromJson(json_decode(self::getGameStateValue('board')));
+    }
+
+    function setBoard($board)
+    {
+        self::setGameStateValue('board', json_encode(convertToJson($board)));
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
@@ -214,9 +277,18 @@ class CrazyFarmers extends Table
     
     */
 
-    function SelectFirstCrossroad($crossroad)
+    function selectFirstCrossroad($crossroad)
     {
+        self::checkAction('SelectFirstCrossroad');
+
         $player_id = self::getActivePlayerId();
+        $board = self::getBoard();
+        $cmd = new Command_SelectFirstCrossroad(new SelectFirstCrossroad($crossroad));
+
+        $es = Shared_002EBoardModule___decide($cmd, $board);
+        self::saveEvents($es);
+        $board = fold($board, $es);
+        self::setBoard($board);
     }
 
     

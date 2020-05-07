@@ -274,6 +274,22 @@ class MapTree {
         }
     }
 
+    static function mapi($f,$m)
+    {
+        switch(get_class($m))
+        {
+            case 'MapEmpty';
+                return $m;
+            case 'MapOne':
+                return new MapOne ($m->key, $f($m->key, $m->value));
+            default: 
+                $k = $m->key;
+                $l2 = MapTree::mapi($f, $m->left); 
+                $v2 = $f($k, $m->value); 
+                $r2 = MapTree::mapi($f, $m->right); 
+                return new MapNode ($k, $v2, $l2, $r2, $m->height);
+        }
+    }
 }
 
 class Map implements IteratorAggregate
@@ -377,7 +393,10 @@ class Map implements IteratorAggregate
     {
         return MapTree::exists($f, $table->Tree);
     }
-
+    static function map($f, $table)
+    {
+        return MapTree::mapi($f, $table->Tree);
+    }
     static function FSharpMap__get_Item__2B595($table, $key)
     {
         return MapTree::find($table->Comparer, $key, $table->Tree);

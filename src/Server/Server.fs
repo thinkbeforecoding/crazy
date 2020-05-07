@@ -10,6 +10,7 @@ open Microsoft.Extensions.DependencyInjection
 open FSharp.Control.Tasks.V2
 open Giraffe
 open Shared
+open SharedServer
 
 open Elmish
 open Elmish.Bridge
@@ -300,23 +301,9 @@ let update claim clientDispatch msg (model: PlayerState) =
                 Map.tryFind claim.sub game.Players
                 |> Option.map Player.color
 
-            let privateGame =
-                { game with
-                    Players = 
-                        game.Players
-                        |> Map.map (fun playerid player ->
-                            if playerid = claim.sub then
-                                player
-                            else
-                                Player.toPrivate player
-                        )
-                }
-            let privateBoard =
-                match s with
-                | Board _ -> Board privateGame
-                | Won(p,_) -> Won(p, privateGame)
-                | InitialState -> InitialState
-            clientDispatch (Sync (Board.toState privateBoard, version))
+            let pboard = privateBoard claim.sub s
+
+            clientDispatch (Sync (Board.toState pboard, version))
             return  Connected {GameId = gameid; Color = color; Player = claim.sub } ,  Cmd.none
         | _ ->
             return model, Cmd.none

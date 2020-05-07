@@ -33,3 +33,12 @@
 -- Example 2: add a custom field to the standard "player" table
 -- ALTER TABLE `player` ADD `player_my_custom_field` INT UNSIGNED NOT NULL DEFAULT '0';
 
+CREATE TABLE IF NOT EXISTS `Events` (
+    `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+    `type` varchar(60) NOT NULL,
+    `body` varchar(65535) NOT NULL,
+    PRIMARY KEY (`id`)
+    
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE INDEX `STREAM_INDEX` ON `Events` (`id`);

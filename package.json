@@ -12,6 +12,7 @@
         "copy-webpack-plugin": "^5.1.1",
         "core-js": "^3.3.2",
         "css-loader": "^2.0.1",
+        "dojo-webpack-plugin": "^2.8.14",
         "fable-compiler": "^2.4.6",
         "fable-loader": "^2.1.8",
         "file-loader": "^4.2.0",

@@ -62,15 +62,43 @@ $machinestates = array(
     ),
     
     // Note: ID=2 => your first state
+    2 => [
+        "name" => "selectFirstCrossroad",
+        "description" => clienttranslate('${actplayer} must select a crossroad around his field from where to start' ),
+        "descriptionmyturn" => clienttranslate('${you} must select a crossroad around his field from where to start' ),
+        "type" => "activeplayer",
+        "possibleactions" => array("selectFirstCrossroad"),
+        "transitions" => ["selectFirstCrossroad" => 3 ]
+ 
 
-    2 => array(
+    ],
+
+    3 => [
     		"name" => "playerTurn",
-    		"description" => clienttranslate('${actplayer} must play a card or pass'),
-    		"descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
+    		"description" => clienttranslate('${actplayer} must move or play a card'),
+    		"descriptionmyturn" => clienttranslate('${you} must move or play a card'),
     		"type" => "activeplayer",
-    		"possibleactions" => array( "playCard", "pass" ),
-    		"transitions" => array( "playCard" => 2, "pass" => 2 )
-    ),
+    		"possibleactions" => [ "move" ],
+    		"transitions" => [ "move" => 3, "next" => 10 , "endTurn" => 4, "endGame" => 99 ]
+    ], 
+
+    4 => [
+        "name" => "endTurn",
+    	"description" => clienttranslate('${actplayer} must play a card or end turn'),
+    	"descriptionmyturn" => clienttranslate('${you} must play a card or end turn'),
+    	"type" => "activeplayer",
+    	"possibleactions" => [  ],
+    	"transitions" => [ "next" => 10, "endGame" => 99 ]
+    ],
+
+    10 => [
+        "name" => "next",
+        "description" => '',
+        "type" => "game",
+        "action" => "stNextPlayer",
+        "updateGameProgression" => true,   
+        "transitions" => ["nextPlayer" => 10 ]
+    ],
     
 /*
     Examples:
