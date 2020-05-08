@@ -38,6 +38,7 @@ function convertToJson($obj) {
     else if (is_object($obj))
     {
         $props = [];
+        $props['_type'] = get_class($obj);
         foreach(get_object_vars($obj) as $prop => $value)
         {
             $props[$prop] = convertToJson($value);
@@ -71,6 +72,19 @@ function convertFromJson($json) {
 
             return new $case(...$args);
         }
+        if (property_exists($json, '_type'))
+        {
+            $type = $json->_type;
+            $args=[];
+            foreach(get_object_vars($json) as $prop => $value)
+            {
+                if ($prop != '_type')
+                {
+                    $args[] = convertFromJson($value);
+                }
+            }
+            return new $type(...$args);
+        }
         if (property_exists($json, '_list'))
         {
             $array = [];
@@ -101,3 +115,61 @@ function convertFromJson($json) {
     return $json;
 
 }
+
+
+
+// converts an object tree to another that
+// can be converted to json
+function convertToSimpleJson($obj) {
+    if (is_null($obj)) {
+        return NULL;
+    }
+    else if ($obj instanceof FSharpList)
+    {
+        $array = [];
+        foreach($obj as $value)
+        {
+            $array[] = convertToSimpleJson($value);
+        }
+
+        return $array;
+
+    }
+    else if ($obj instanceof FSharpUnion)
+    {
+        $props = [];
+        foreach(get_object_vars($obj) as $prop => $value)
+        {
+            $props[] = convertToSimpleJson($value);
+        }
+        if (empty($props))
+        {
+            return $obj->get_FSharpCase();
+        }
+        else
+        {
+            return [ $obj->get_FSharpCase() =>  $props ];
+        }
+    }
+    else if (is_array($obj))
+    {
+        $array = [];
+        foreach($obj as $key => $value)
+        {
+            $array[$key] = convertToSimpleJson($value);
+        }
+        return $array;
+    }
+    else if (is_object($obj))
+    {
+        $props = [];
+        foreach(get_object_vars($obj) as $prop => $value)
+        {
+            $props[$prop] = convertToSimpleJson($value);
+        }
+        return $props;
+    }
+    else
+        return $obj;
+} 
+

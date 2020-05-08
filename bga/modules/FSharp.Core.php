@@ -59,4 +59,7 @@ class Util {
 interface Union {
     public function get_Case();
 }
+interface FSharpUnion {
+    public function get_FSharpCase();
+}
 

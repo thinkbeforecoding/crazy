@@ -51,7 +51,7 @@ function (dojo, declare,ui,c,v,crazy) {
         {
             
             console.log( "Starting game setup" );
-            this.crazy.setup(gamedatas);
+            this.crazy.setup(this.player_id, gamedatas.board,gamedatas.version);
             //this.cf.setup(gamedatas);
             // Setting up player boards
             for( var player_id in gamedatas.players )

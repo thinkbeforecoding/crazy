@@ -395,7 +395,7 @@ class Map implements IteratorAggregate
     }
     static function map($f, $table)
     {
-        return MapTree::mapi($f, $table->Tree);
+        return new Map($table->Comparer, MapTree::mapi($f, $table->Tree));
     }
     static function FSharpMap__get_Item__2B595($table, $key)
     {

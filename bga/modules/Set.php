@@ -488,6 +488,11 @@ class Set implements IteratorAggregate {
         return FSharpList::ofSeq($set);
     }
 
+    static function toArray($set)
+    {
+        return iterator_to_array($set);
+    }
+
     public function getIterator() {
         $stack = [];
         $tree = $this->Tree;

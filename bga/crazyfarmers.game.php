@@ -151,8 +151,14 @@ class CrazyFarmers extends Table
         $sql = "SELECT player_id id, player_score score FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
-        $board = self::loadState();
-        $result['board'] = SharedServer___privateBoard($current_player_id, $board);
+        $r = self::loadState();
+        $board = $r[1];
+        $pboard = SharedServer___privateBoard($current_player_id, $board);
+
+        // var_dump(convertToSimpleJson(Shared_002EBoardModule___toState($pboard)));
+
+        $result['board'] = convertToSimpleJson(Shared_002EBoardModule___toState($pboard));
+        $result['version'] = $r[0];
 
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
   
@@ -206,7 +212,7 @@ class CrazyFarmers extends Table
 
     function loadEvents()
     {
-        $r = self::getCollectionFromDb("SELECT `type`,`body` FROM `Events` ORDER BY `id`");
+        $r = self::getCollectionFromDb("SELECT `id`, `type`,`body` FROM `Events` ORDER BY `id`");
 
         foreach($r as $row) {
             
@@ -215,19 +221,22 @@ class CrazyFarmers extends Table
 
             $e = convertFromJson($js);
 
-            yield $e;
+            yield [$row['id'], $e];
         }
     }
 
     function loadState()
     {
         $s = new Board_InitialState();
-        foreach(self::loadEvents() as $e)
+        $v = 0;
+        foreach(self::loadEvents() as $r)
         {
+            $v = $r[0];
+            $e = $r[1];
             $s = Shared_002EBoardModule___evolve($s,$e);
         }
 
-        return $s;
+        return [$v,$s];
     }
 
 

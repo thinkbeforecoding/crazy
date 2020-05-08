@@ -483,9 +483,15 @@ module Output =
             write ctx t.Name
         | None -> ()
 
-        for itf in t.Interfaces do
+        if t.Interfaces <> [] then 
             write ctx " implements "
-            write ctx itf.Name
+            let mutable first = true
+            for itf in t.Interfaces do
+                if first then
+                    first <- false
+                else
+                    write ctx ", "
+                write ctx itf.Name
 
         writeln ctx " {" 
         let mbctx = indent ctx
@@ -542,6 +548,7 @@ module PhpResult =
 
 module PhpUnion =
     let union = { Name = "Union"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
+    let fSharpUnion = { Name = "FSharpUnion"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
 
 type PhpCompiler =
     { mutable Types: Map<string,PhpType> 
@@ -617,10 +624,18 @@ let convertUnion (ctx: PhpCompiler) (info: Fable.UnionConstructorInfo) =
               Fields = [ for e in case.UnionCaseFields do 
                             { Name = e.Name 
                               Type  = convertType e.FieldType } ]
-              Methods = [ ]
+              Methods = [ 
+                  { PhpFun.Name = "get_FSharpCase";
+                    PhpFun.Args = []
+                    PhpFun.Matchings = []
+                    PhpFun.Static = false
+                    PhpFun.Body = 
+                      [ PhpStatement.Return(PhpConst(PhpConstString(case.Name)))] } 
+              ]
               Abstract = false
               BaseType = None
-              Interfaces = [] }
+              Interfaces = [ PhpUnion.fSharpUnion ]
+              }
           ctx.AddType(t) |> PhpType ]
     else
     [ let baseType =
@@ -629,7 +644,7 @@ let convertUnion (ctx: PhpCompiler) (info: Fable.UnionConstructorInfo) =
               Methods = []
               Abstract = true 
               BaseType = None
-              Interfaces = [PhpUnion.union ]}
+              Interfaces = [PhpUnion.union; PhpUnion.fSharpUnion ]}
       ctx.AddType(baseType) |> PhpType
 
       for case in info.Entity.UnionCases do
@@ -644,7 +659,15 @@ let convertUnion (ctx: PhpCompiler) (info: Fable.UnionConstructorInfo) =
                             PhpFun.Static = false
                             PhpFun.Body = 
                                 [ PhpStatement.Return(PhpConst(PhpConstString(caseName case)))]
-                            }  ]
+                            } 
+                          { PhpFun.Name = "get_FSharpCase";
+                            PhpFun.Args = []
+                            PhpFun.Matchings = []
+                            PhpFun.Static = false
+                            PhpFun.Body = 
+                                [ PhpStatement.Return(PhpConst(PhpConstString(case.Name)))]
+                            } 
+                            ]
               Abstract = false
               BaseType = Some baseType
               Interfaces = [] }

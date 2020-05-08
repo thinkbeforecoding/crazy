@@ -1,6 +1,6 @@
 <?php
 #0
-abstract class Color implements Union {
+abstract class Color implements Union, FSharpUnion {
 }
 
 #0
@@ -9,6 +9,9 @@ class Color_Blue extends Color {
     }
     function get_Case() {
         return 'Color_Blue';
+    }
+    function get_FSharpCase() {
+        return 'Blue';
     }
 }
 
@@ -19,6 +22,9 @@ class Color_Yellow extends Color {
     function get_Case() {
         return 'Color_Yellow';
     }
+    function get_FSharpCase() {
+        return 'Yellow';
+    }
 }
 
 #0
@@ -27,6 +33,9 @@ class Color_Purple extends Color {
     }
     function get_Case() {
         return 'Color_Purple';
+    }
+    function get_FSharpCase() {
+        return 'Purple';
     }
 }
 
@@ -37,10 +46,13 @@ class Color_Red extends Color {
     function get_Case() {
         return 'Color_Red';
     }
+    function get_FSharpCase() {
+        return 'Red';
+    }
 }
 
 #1
-abstract class Goal implements Union {
+abstract class Goal implements Union, FSharpUnion {
 }
 
 #1
@@ -51,6 +63,9 @@ class Goal_Common extends Goal {
     }
     function get_Case() {
         return 'Goal_Common';
+    }
+    function get_FSharpCase() {
+        return 'Common';
     }
 }
 
@@ -63,10 +78,13 @@ class Goal_Individual extends Goal {
     function get_Case() {
         return 'Goal_Individual';
     }
+    function get_FSharpCase() {
+        return 'Individual';
+    }
 }
 
 #2
-abstract class GoalType implements Union {
+abstract class GoalType implements Union, FSharpUnion {
 }
 
 #2
@@ -75,6 +93,9 @@ class GoalType_Fast extends GoalType {
     }
     function get_Case() {
         return 'GoalType_Fast';
+    }
+    function get_FSharpCase() {
+        return 'Fast';
     }
 }
 
@@ -85,6 +106,9 @@ class GoalType_Regular extends GoalType {
     function get_Case() {
         return 'GoalType_Regular';
     }
+    function get_FSharpCase() {
+        return 'Regular';
+    }
 }
 
 #2
@@ -93,6 +117,9 @@ class GoalType_Expert extends GoalType {
     }
     function get_Case() {
         return 'GoalType_Expert';
+    }
+    function get_FSharpCase() {
+        return 'Expert';
     }
 }
 
@@ -147,12 +174,15 @@ function Shared_002EGoalModule___fromType($playerCount, $goal) {
 }
 
 #0
-class Axe {
+class Axe implements FSharpUnion {
     public $q;
     public $r;
     function __construct($q, $r) {
         $this->q = $q;
         $this->r = $r;
+    }
+    function get_FSharpCase() {
+        return 'Axe';
     }
 }
 
@@ -209,7 +239,7 @@ function Shared_002EAxeModule___cube($_arg1__1) {
 }
 
 #15
-abstract class CrossroadSide implements Union {
+abstract class CrossroadSide implements Union, FSharpUnion {
 }
 
 #15
@@ -218,6 +248,9 @@ class CrossroadSide_CLeft extends CrossroadSide {
     }
     function get_Case() {
         return 'CrossroadSide_CLeft';
+    }
+    function get_FSharpCase() {
+        return 'CLeft';
     }
 }
 
@@ -228,20 +261,26 @@ class CrossroadSide_CRight extends CrossroadSide {
     function get_Case() {
         return 'CrossroadSide_CRight';
     }
+    function get_FSharpCase() {
+        return 'CRight';
+    }
 }
 
 #16
-class Crossroad {
+class Crossroad implements FSharpUnion {
     public $tile;
     public $side;
     function __construct($tile, $side) {
         $this->tile = $tile;
         $this->side = $side;
     }
+    function get_FSharpCase() {
+        return 'Crossroad';
+    }
 }
 
 #17
-abstract class BorderSide implements Union {
+abstract class BorderSide implements Union, FSharpUnion {
 }
 
 #17
@@ -250,6 +289,9 @@ class BorderSide_BNW extends BorderSide {
     }
     function get_Case() {
         return 'BorderSide_BNW';
+    }
+    function get_FSharpCase() {
+        return 'BNW';
     }
 }
 
@@ -260,6 +302,9 @@ class BorderSide_BN extends BorderSide {
     function get_Case() {
         return 'BorderSide_BN';
     }
+    function get_FSharpCase() {
+        return 'BN';
+    }
 }
 
 #17
@@ -269,20 +314,26 @@ class BorderSide_BNE extends BorderSide {
     function get_Case() {
         return 'BorderSide_BNE';
     }
+    function get_FSharpCase() {
+        return 'BNE';
+    }
 }
 
 #18
-class Path {
+class Path implements FSharpUnion {
     public $tile;
     public $border;
     function __construct($tile, $border) {
         $this->tile = $tile;
         $this->border = $border;
     }
+    function get_FSharpCase() {
+        return 'Path';
+    }
 }
 
 #19
-abstract class Direction implements Union {
+abstract class Direction implements Union, FSharpUnion {
 }
 
 #19
@@ -291,6 +342,9 @@ class Direction_Up extends Direction {
     }
     function get_Case() {
         return 'Direction_Up';
+    }
+    function get_FSharpCase() {
+        return 'Up';
     }
 }
 
@@ -301,6 +355,9 @@ class Direction_Down extends Direction {
     function get_Case() {
         return 'Direction_Down';
     }
+    function get_FSharpCase() {
+        return 'Down';
+    }
 }
 
 #19
@@ -310,13 +367,19 @@ class Direction_Horizontal extends Direction {
     function get_Case() {
         return 'Direction_Horizontal';
     }
+    function get_FSharpCase() {
+        return 'Horizontal';
+    }
 }
 
 #20
-class Parcel {
+class Parcel implements FSharpUnion {
     public $tile;
     function __construct($tile) {
         $this->tile = $tile;
+    }
+    function get_FSharpCase() {
+        return 'Parcel';
     }
 }
 
@@ -326,10 +389,13 @@ function Shared_002EParcel___op_Addition__ZF6EFE4B($_arg1__2, $v) {
 }
 
 #22
-class Field {
+class Field implements FSharpUnion {
     public $parcels;
     function __construct($parcels) {
         $this->parcels = $parcels;
+    }
+    function get_FSharpCase() {
+        return 'Field';
     }
 }
 
@@ -344,10 +410,13 @@ function Shared_002EField___op_Subtraction__Z24735800($_arg3__1, $_arg4) {
 }
 
 #25
-class Fence {
+class Fence implements FSharpUnion {
     public $paths;
     function __construct($paths) {
         $this->paths = $paths;
+    }
+    function get_FSharpCase() {
+        return 'Fence';
     }
 }
 
@@ -375,7 +444,7 @@ function Shared_002EDirectionModule___rev($_arg1__4) {
 }
 
 #28
-abstract class Power implements Union {
+abstract class Power implements Union, FSharpUnion {
 }
 
 #28
@@ -384,6 +453,9 @@ class Power_PowerUp extends Power {
     }
     function get_Case() {
         return 'Power_PowerUp';
+    }
+    function get_FSharpCase() {
+        return 'PowerUp';
     }
 }
 
@@ -394,10 +466,13 @@ class Power_PowerDown extends Power {
     function get_Case() {
         return 'Power_PowerDown';
     }
+    function get_FSharpCase() {
+        return 'PowerDown';
+    }
 }
 
 #29
-abstract class Card implements Union {
+abstract class Card implements Union, FSharpUnion {
 }
 
 #29
@@ -409,6 +484,9 @@ class Card_Nitro extends Card {
     function get_Case() {
         return 'Card_Nitro';
     }
+    function get_FSharpCase() {
+        return 'Nitro';
+    }
 }
 
 #29
@@ -417,6 +495,9 @@ class Card_Rut extends Card {
     }
     function get_Case() {
         return 'Card_Rut';
+    }
+    function get_FSharpCase() {
+        return 'Rut';
     }
 }
 
@@ -429,6 +510,9 @@ class Card_HayBale extends Card {
     function get_Case() {
         return 'Card_HayBale';
     }
+    function get_FSharpCase() {
+        return 'HayBale';
+    }
 }
 
 #29
@@ -437,6 +521,9 @@ class Card_Dynamite extends Card {
     }
     function get_Case() {
         return 'Card_Dynamite';
+    }
+    function get_FSharpCase() {
+        return 'Dynamite';
     }
 }
 
@@ -447,6 +534,9 @@ class Card_HighVoltage extends Card {
     function get_Case() {
         return 'Card_HighVoltage';
     }
+    function get_FSharpCase() {
+        return 'HighVoltage';
+    }
 }
 
 #29
@@ -455,6 +545,9 @@ class Card_Watchdog extends Card {
     }
     function get_Case() {
         return 'Card_Watchdog';
+    }
+    function get_FSharpCase() {
+        return 'Watchdog';
     }
 }
 
@@ -465,6 +558,9 @@ class Card_Helicopter extends Card {
     function get_Case() {
         return 'Card_Helicopter';
     }
+    function get_FSharpCase() {
+        return 'Helicopter';
+    }
 }
 
 #29
@@ -474,10 +570,13 @@ class Card_Bribe extends Card {
     function get_Case() {
         return 'Card_Bribe';
     }
+    function get_FSharpCase() {
+        return 'Bribe';
+    }
 }
 
 #30
-abstract class CardPower implements Union {
+abstract class CardPower implements Union, FSharpUnion {
 }
 
 #30
@@ -486,6 +585,9 @@ class CardPower_One extends CardPower {
     }
     function get_Case() {
         return 'CardPower_One';
+    }
+    function get_FSharpCase() {
+        return 'One';
     }
 }
 
@@ -496,10 +598,13 @@ class CardPower_Two extends CardPower {
     function get_Case() {
         return 'CardPower_Two';
     }
+    function get_FSharpCase() {
+        return 'Two';
+    }
 }
 
 #31
-abstract class PlayCard implements Union {
+abstract class PlayCard implements Union, FSharpUnion {
 }
 
 #31
@@ -510,6 +615,9 @@ class PlayCard_PlayNitro extends PlayCard {
     }
     function get_Case() {
         return 'PlayCard_PlayNitro';
+    }
+    function get_FSharpCase() {
+        return 'PlayNitro';
     }
 }
 
@@ -522,6 +630,9 @@ class PlayCard_PlayRut extends PlayCard {
     function get_Case() {
         return 'PlayCard_PlayRut';
     }
+    function get_FSharpCase() {
+        return 'PlayRut';
+    }
 }
 
 #31
@@ -532,6 +643,9 @@ class PlayCard_PlayHayBale extends PlayCard {
     }
     function get_Case() {
         return 'PlayCard_PlayHayBale';
+    }
+    function get_FSharpCase() {
+        return 'PlayHayBale';
     }
 }
 
@@ -544,6 +658,9 @@ class PlayCard_PlayDynamite extends PlayCard {
     function get_Case() {
         return 'PlayCard_PlayDynamite';
     }
+    function get_FSharpCase() {
+        return 'PlayDynamite';
+    }
 }
 
 #31
@@ -553,6 +670,9 @@ class PlayCard_PlayHighVoltage extends PlayCard {
     function get_Case() {
         return 'PlayCard_PlayHighVoltage';
     }
+    function get_FSharpCase() {
+        return 'PlayHighVoltage';
+    }
 }
 
 #31
@@ -561,6 +681,9 @@ class PlayCard_PlayWatchdog extends PlayCard {
     }
     function get_Case() {
         return 'PlayCard_PlayWatchdog';
+    }
+    function get_FSharpCase() {
+        return 'PlayWatchdog';
     }
 }
 
@@ -573,6 +696,9 @@ class PlayCard_PlayHelicopter extends PlayCard {
     function get_Case() {
         return 'PlayCard_PlayHelicopter';
     }
+    function get_FSharpCase() {
+        return 'PlayHelicopter';
+    }
 }
 
 #31
@@ -583,6 +709,9 @@ class PlayCard_PlayBribe extends PlayCard {
     }
     function get_Case() {
         return 'PlayCard_PlayBribe';
+    }
+    function get_FSharpCase() {
+        return 'PlayBribe';
     }
 }
 
@@ -614,7 +743,7 @@ function Shared_002ECardModule___ofPlayCard($_arg1__5) {
 }
 
 #33
-abstract class Hand implements Union {
+abstract class Hand implements Union, FSharpUnion {
 }
 
 #33
@@ -626,6 +755,9 @@ class Hand_PrivateHand extends Hand {
     function get_Case() {
         return 'Hand_PrivateHand';
     }
+    function get_FSharpCase() {
+        return 'PrivateHand';
+    }
 }
 
 #33
@@ -636,6 +768,9 @@ class Hand_PublicHand extends Hand {
     }
     function get_Case() {
         return 'Hand_PublicHand';
+    }
+    function get_FSharpCase() {
+        return 'PublicHand';
     }
 }
 
@@ -716,7 +851,7 @@ function Shared_002EHandModule___canPlay($_arg1__10) {
 }
 
 #41
-abstract class CrazyPlayer implements Union {
+abstract class CrazyPlayer implements Union, FSharpUnion {
 }
 
 #41
@@ -727,6 +862,9 @@ class CrazyPlayer_Starting extends CrazyPlayer {
     }
     function get_Case() {
         return 'CrazyPlayer_Starting';
+    }
+    function get_FSharpCase() {
+        return 'Starting';
     }
 }
 
@@ -739,6 +877,9 @@ class CrazyPlayer_Playing extends CrazyPlayer {
     function get_Case() {
         return 'CrazyPlayer_Playing';
     }
+    function get_FSharpCase() {
+        return 'Playing';
+    }
 }
 
 #41
@@ -749,6 +890,9 @@ class CrazyPlayer_Ko extends CrazyPlayer {
     }
     function get_Case() {
         return 'CrazyPlayer_Ko';
+    }
+    function get_FSharpCase() {
+        return 'Ko';
     }
 }
 
@@ -925,7 +1069,7 @@ function Shared_002EBonusModule___discard($card__2, $bonus__3) {
 }
 
 #57
-abstract class Board implements Union {
+abstract class Board implements Union, FSharpUnion {
 }
 
 #57
@@ -934,6 +1078,9 @@ class Board_InitialState extends Board {
     }
     function get_Case() {
         return 'Board_InitialState';
+    }
+    function get_FSharpCase() {
+        return 'InitialState';
     }
 }
 
@@ -945,6 +1092,9 @@ class Board_Board extends Board {
     }
     function get_Case() {
         return 'Board_Board';
+    }
+    function get_FSharpCase() {
+        return 'Board';
     }
 }
 
@@ -958,6 +1108,9 @@ class Board_Won extends Board {
     }
     function get_Case() {
         return 'Board_Won';
+    }
+    function get_FSharpCase() {
+        return 'Won';
     }
 }
 
@@ -982,7 +1135,7 @@ class PlayingBoard {
 }
 
 #59
-abstract class PlayerState implements Union {
+abstract class PlayerState implements Union, FSharpUnion {
 }
 
 #59
@@ -993,6 +1146,9 @@ class PlayerState_SStarting extends PlayerState {
     }
     function get_Case() {
         return 'PlayerState_SStarting';
+    }
+    function get_FSharpCase() {
+        return 'SStarting';
     }
 }
 
@@ -1005,6 +1161,9 @@ class PlayerState_SPlaying extends PlayerState {
     function get_Case() {
         return 'PlayerState_SPlaying';
     }
+    function get_FSharpCase() {
+        return 'SPlaying';
+    }
 }
 
 #59
@@ -1015,6 +1174,9 @@ class PlayerState_SKo extends PlayerState {
     }
     function get_Case() {
         return 'PlayerState_SKo';
+    }
+    function get_FSharpCase() {
+        return 'SKo';
     }
 }
 
@@ -1277,7 +1439,7 @@ class LMax {
 }
 
 #80
-abstract class OrientedPath implements Union {
+abstract class OrientedPath implements Union, FSharpUnion {
 }
 
 #80
@@ -1286,6 +1448,9 @@ class OrientedPath_DNE extends OrientedPath {
     }
     function get_Case() {
         return 'OrientedPath_DNE';
+    }
+    function get_FSharpCase() {
+        return 'DNE';
     }
 }
 
@@ -1296,6 +1461,9 @@ class OrientedPath_DNW extends OrientedPath {
     function get_Case() {
         return 'OrientedPath_DNW';
     }
+    function get_FSharpCase() {
+        return 'DNW';
+    }
 }
 
 #80
@@ -1304,6 +1472,9 @@ class OrientedPath_DW extends OrientedPath {
     }
     function get_Case() {
         return 'OrientedPath_DW';
+    }
+    function get_FSharpCase() {
+        return 'DW';
     }
 }
 
@@ -1314,6 +1485,9 @@ class OrientedPath_DSW extends OrientedPath {
     function get_Case() {
         return 'OrientedPath_DSW';
     }
+    function get_FSharpCase() {
+        return 'DSW';
+    }
 }
 
 #80
@@ -1323,6 +1497,9 @@ class OrientedPath_DSE extends OrientedPath {
     function get_Case() {
         return 'OrientedPath_DSE';
     }
+    function get_FSharpCase() {
+        return 'DSE';
+    }
 }
 
 #80
@@ -1331,6 +1508,9 @@ class OrientedPath_DE extends OrientedPath {
     }
     function get_Case() {
         return 'OrientedPath_DE';
+    }
+    function get_FSharpCase() {
+        return 'DE';
     }
 }
 
@@ -1758,7 +1938,7 @@ function Shared_002EBarnsModule___annex($annexed, $barns__2) {
 }
 
 #117
-abstract class MoveBlocker implements Union {
+abstract class MoveBlocker implements Union, FSharpUnion {
 }
 
 #117
@@ -1767,6 +1947,9 @@ class MoveBlocker_Tractor extends MoveBlocker {
     }
     function get_Case() {
         return 'MoveBlocker_Tractor';
+    }
+    function get_FSharpCase() {
+        return 'Tractor';
     }
 }
 
@@ -1777,6 +1960,9 @@ class MoveBlocker_Protection extends MoveBlocker {
     function get_Case() {
         return 'MoveBlocker_Protection';
     }
+    function get_FSharpCase() {
+        return 'Protection';
+    }
 }
 
 #117
@@ -1785,6 +1971,9 @@ class MoveBlocker_PhytosanitaryProducts extends MoveBlocker {
     }
     function get_Case() {
         return 'MoveBlocker_PhytosanitaryProducts';
+    }
+    function get_FSharpCase() {
+        return 'PhytosanitaryProducts';
     }
 }
 
@@ -1795,6 +1984,9 @@ class MoveBlocker_HayBaleOnPath extends MoveBlocker {
     function get_Case() {
         return 'MoveBlocker_HayBaleOnPath';
     }
+    function get_FSharpCase() {
+        return 'HayBaleOnPath';
+    }
 }
 
 #117
@@ -1804,10 +1996,13 @@ class MoveBlocker_HighVoltageProtection extends MoveBlocker {
     function get_Case() {
         return 'MoveBlocker_HighVoltageProtection';
     }
+    function get_FSharpCase() {
+        return 'HighVoltageProtection';
+    }
 }
 
 #118
-abstract class Move implements Union {
+abstract class Move implements Union, FSharpUnion {
 }
 
 #118
@@ -1820,6 +2015,9 @@ class Move_Move extends Move {
     }
     function get_Case() {
         return 'Move_Move';
+    }
+    function get_FSharpCase() {
+        return 'Move';
     }
 }
 
@@ -1836,6 +2034,9 @@ class Move_ImpossibleMove extends Move {
     function get_Case() {
         return 'Move_ImpossibleMove';
     }
+    function get_FSharpCase() {
+        return 'ImpossibleMove';
+    }
 }
 
 #118
@@ -1846,6 +2047,9 @@ class Move_SelectCrossroad extends Move {
     }
     function get_Case() {
         return 'Move_SelectCrossroad';
+    }
+    function get_FSharpCase() {
+        return 'SelectCrossroad';
     }
 }
 
@@ -1882,7 +2086,7 @@ function Shared_002EMovesModule___doMove($m__2) {
 }
 
 #124
-abstract class Command implements Union {
+abstract class Command implements Union, FSharpUnion {
 }
 
 #124
@@ -1893,6 +2097,9 @@ class Command_Start extends Command {
     }
     function get_Case() {
         return 'Command_Start';
+    }
+    function get_FSharpCase() {
+        return 'Start';
     }
 }
 
@@ -1905,6 +2112,9 @@ class Command_SelectFirstCrossroad extends Command {
     function get_Case() {
         return 'Command_SelectFirstCrossroad';
     }
+    function get_FSharpCase() {
+        return 'SelectFirstCrossroad';
+    }
 }
 
 #124
@@ -1915,6 +2125,9 @@ class Command_Move extends Command {
     }
     function get_Case() {
         return 'Command_Move';
+    }
+    function get_FSharpCase() {
+        return 'Move';
     }
 }
 
@@ -1927,6 +2140,9 @@ class Command_PlayCard extends Command {
     function get_Case() {
         return 'Command_PlayCard';
     }
+    function get_FSharpCase() {
+        return 'PlayCard';
+    }
 }
 
 #124
@@ -1935,6 +2151,9 @@ class Command_EndTurn extends Command {
     }
     function get_Case() {
         return 'Command_EndTurn';
+    }
+    function get_FSharpCase() {
+        return 'EndTurn';
     }
 }
 
@@ -1965,7 +2184,7 @@ class PlayerMove {
 }
 
 #128
-abstract class Event implements Union {
+abstract class Event implements Union, FSharpUnion {
 }
 
 #128
@@ -1976,6 +2195,9 @@ class Event_FirstCrossroadSelected extends Event {
     }
     function get_Case() {
         return 'Event_FirstCrossroadSelected';
+    }
+    function get_FSharpCase() {
+        return 'FirstCrossroadSelected';
     }
 }
 
@@ -1988,6 +2210,9 @@ class Event_FenceDrawn extends Event {
     function get_Case() {
         return 'Event_FenceDrawn';
     }
+    function get_FSharpCase() {
+        return 'FenceDrawn';
+    }
 }
 
 #128
@@ -1998,6 +2223,9 @@ class Event_FenceRemoved extends Event {
     }
     function get_Case() {
         return 'Event_FenceRemoved';
+    }
+    function get_FSharpCase() {
+        return 'FenceRemoved';
     }
 }
 
@@ -2010,6 +2238,9 @@ class Event_FenceLooped extends Event {
     function get_Case() {
         return 'Event_FenceLooped';
     }
+    function get_FSharpCase() {
+        return 'FenceLooped';
+    }
 }
 
 #128
@@ -2020,6 +2251,9 @@ class Event_MovedInField extends Event {
     }
     function get_Case() {
         return 'Event_MovedInField';
+    }
+    function get_FSharpCase() {
+        return 'MovedInField';
     }
 }
 
@@ -2032,6 +2266,9 @@ class Event_MovedPowerless extends Event {
     function get_Case() {
         return 'Event_MovedPowerless';
     }
+    function get_FSharpCase() {
+        return 'MovedPowerless';
+    }
 }
 
 #128
@@ -2042,6 +2279,9 @@ class Event_Annexed extends Event {
     }
     function get_Case() {
         return 'Event_Annexed';
+    }
+    function get_FSharpCase() {
+        return 'Annexed';
     }
 }
 
@@ -2054,6 +2294,9 @@ class Event_CutFence extends Event {
     function get_Case() {
         return 'Event_CutFence';
     }
+    function get_FSharpCase() {
+        return 'CutFence';
+    }
 }
 
 #128
@@ -2062,6 +2305,9 @@ class Event_PoweredUp extends Event {
     }
     function get_Case() {
         return 'Event_PoweredUp';
+    }
+    function get_FSharpCase() {
+        return 'PoweredUp';
     }
 }
 
@@ -2074,6 +2320,9 @@ class Event_CardPlayed extends Event {
     function get_Case() {
         return 'Event_CardPlayed';
     }
+    function get_FSharpCase() {
+        return 'CardPlayed';
+    }
 }
 
 #128
@@ -2085,6 +2334,9 @@ class Event_SpedUp extends Event {
     function get_Case() {
         return 'Event_SpedUp';
     }
+    function get_FSharpCase() {
+        return 'SpedUp';
+    }
 }
 
 #128
@@ -2094,6 +2346,9 @@ class Event_Rutted extends Event {
     function get_Case() {
         return 'Event_Rutted';
     }
+    function get_FSharpCase() {
+        return 'Rutted';
+    }
 }
 
 #128
@@ -2102,6 +2357,9 @@ class Event_HighVoltaged extends Event {
     }
     function get_Case() {
         return 'Event_HighVoltaged';
+    }
+    function get_FSharpCase() {
+        return 'HighVoltaged';
     }
 }
 
@@ -2114,6 +2372,9 @@ class Event_BonusDiscarded extends Event {
     function get_Case() {
         return 'Event_BonusDiscarded';
     }
+    function get_FSharpCase() {
+        return 'BonusDiscarded';
+    }
 }
 
 #128
@@ -2122,6 +2383,9 @@ class Event_Watched extends Event {
     }
     function get_Case() {
         return 'Event_Watched';
+    }
+    function get_FSharpCase() {
+        return 'Watched';
     }
 }
 
@@ -2134,6 +2398,9 @@ class Event_Heliported extends Event {
     function get_Case() {
         return 'Event_Heliported';
     }
+    function get_FSharpCase() {
+        return 'Heliported';
+    }
 }
 
 #128
@@ -2145,6 +2412,9 @@ class Event_Bribed extends Event {
     function get_Case() {
         return 'Event_Bribed';
     }
+    function get_FSharpCase() {
+        return 'Bribed';
+    }
 }
 
 #128
@@ -2153,6 +2423,9 @@ class Event_Eliminated extends Event {
     }
     function get_Case() {
         return 'Event_Eliminated';
+    }
+    function get_FSharpCase() {
+        return 'Eliminated';
     }
 }
 
@@ -2468,8 +2741,8 @@ function Shared_002EPlayer___decide($otherPlayers__1, $barns__3, $command, $play
  }));
  }));
                             default:
-                                $activePatternResult114793 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
-                                if (!is_null($activePatternResult114793)) {
+                                $activePatternResult11741 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
+                                if (!is_null($activePatternResult11741)) {
                                     return new Cons(new Event_FenceRemoved(new Moved($cmd__1->Direction, $nextPath__1, $nextPos__1)), FSharpList::get_Nil());
                                 } else {
                                     $matchValue__15 = Shared_002EFenceModule___findLoop($cmd__1->Direction, $player__17->Tractor, $player__17->Fence);
@@ -3002,7 +3275,7 @@ function Shared_002EDrawPile___take($count__2, $pile__1) {
 $GLOBALS['Shared_002EBoardModule___initialState'] = new Board_InitialState();
 
 #173
-abstract class BoardCommand implements Union {
+abstract class BoardCommand implements Union, FSharpUnion {
 }
 
 #173
@@ -3016,6 +3289,9 @@ class BoardCommand_Play extends BoardCommand {
     function get_Case() {
         return 'BoardCommand_Play';
     }
+    function get_FSharpCase() {
+        return 'Play';
+    }
 }
 
 #173
@@ -3026,6 +3302,9 @@ class BoardCommand_Start extends BoardCommand {
     }
     function get_Case() {
         return 'BoardCommand_Start';
+    }
+    function get_FSharpCase() {
+        return 'Start';
     }
 }
 
@@ -3040,7 +3319,7 @@ class BoardStart {
 }
 
 #175
-abstract class BoardEvent implements Union {
+abstract class BoardEvent implements Union, FSharpUnion {
 }
 
 #175
@@ -3054,6 +3333,9 @@ class BoardEvent_Played extends BoardEvent {
     function get_Case() {
         return 'BoardEvent_Played';
     }
+    function get_FSharpCase() {
+        return 'Played';
+    }
 }
 
 #175
@@ -3065,6 +3347,9 @@ class BoardEvent_Started extends BoardEvent {
     function get_Case() {
         return 'BoardEvent_Started';
     }
+    function get_FSharpCase() {
+        return 'Started';
+    }
 }
 
 #175
@@ -3073,6 +3358,9 @@ class BoardEvent_Next extends BoardEvent {
     }
     function get_Case() {
         return 'BoardEvent_Next';
+    }
+    function get_FSharpCase() {
+        return 'Next';
     }
 }
 
@@ -3085,6 +3373,9 @@ class BoardEvent_PlayerDrewCards extends BoardEvent {
     function get_Case() {
         return 'BoardEvent_PlayerDrewCards';
     }
+    function get_FSharpCase() {
+        return 'PlayerDrewCards';
+    }
 }
 
 #175
@@ -3095,6 +3386,9 @@ class BoardEvent_GameWon extends BoardEvent {
     }
     function get_Case() {
         return 'BoardEvent_GameWon';
+    }
+    function get_FSharpCase() {
+        return 'GameWon';
     }
 }
 
@@ -3107,6 +3401,9 @@ class BoardEvent_HayBalesPlaced extends BoardEvent {
     function get_Case() {
         return 'BoardEvent_HayBalesPlaced';
     }
+    function get_FSharpCase() {
+        return 'HayBalesPlaced';
+    }
 }
 
 #175
@@ -3118,6 +3415,9 @@ class BoardEvent_HayBaleDynamited extends BoardEvent {
     function get_Case() {
         return 'BoardEvent_HayBaleDynamited';
     }
+    function get_FSharpCase() {
+        return 'HayBaleDynamited';
+    }
 }
 
 #175
@@ -3128,6 +3428,9 @@ class BoardEvent_DiscardPileShuffled extends BoardEvent {
     }
     function get_Case() {
         return 'BoardEvent_DiscardPileShuffled';
+    }
+    function get_FSharpCase() {
+        return 'DiscardPileShuffled';
     }
 }
 
@@ -3239,7 +3542,7 @@ function Shared_002EBoardModule___next($state__4) {
 }
 
 #185
-abstract class BribeBocker implements Union {
+abstract class BribeBocker implements Union, FSharpUnion {
 }
 
 #185
@@ -3249,6 +3552,9 @@ class BribeBocker_InstantVictory extends BribeBocker {
     function get_Case() {
         return 'BribeBocker_InstantVictory';
     }
+    function get_FSharpCase() {
+        return 'InstantVictory';
+    }
 }
 
 #185
@@ -3257,6 +3563,9 @@ class BribeBocker_NoParcelsToBribe extends BribeBocker {
     }
     function get_Case() {
         return 'BribeBocker_NoParcelsToBribe';
+    }
+    function get_FSharpCase() {
+        return 'NoParcelsToBribe';
     }
 }
 
@@ -3610,14 +3919,14 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                             $nextBoard = Shared_002EBoardModule___annexed($playerid__11, $e__20, $board__19);
                                             $eliminated = 0;
                                             return Seq::append(Seq::collect(function ($matchValue__35) use ($eliminated) { 
-                                                $activePatternResult114994 = $matchValue__35;
-                                                if (Shared_002EPlayer___isKo($activePatternResult114994[1])) {
+                                                $activePatternResult11942 = $matchValue__35;
+                                                if (Shared_002EPlayer___isKo($activePatternResult11942[1])) {
                                                     $eliminated = $eliminated + 1;
                                                     return Seq::empty();
                                                 } else {
-                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult114994[1]))) {
+                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult11942[1]))) {
                                                         $eliminated = $eliminated + 1;
-                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult114994[0], new Event_Eliminated()));
+                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult11942[0], new Event_Eliminated()));
                                                     } else {
                                                         return Seq::empty();
                                                     }
@@ -3708,8 +4017,8 @@ function Shared_002EBoardModule___toState($board__20) {
  }, $source__9);
                 return FSharpArray::ofSeq($source__10);
             })(), new STable($board__20->Item2->Table->Players, $board__20->Item2->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__40) use ($board__20) {             return Seq::collect(function ($matchValue__38) { 
-                $activePatternResult115008 = $matchValue__38;
-                return Seq::singleton([ $activePatternResult115008[0], $activePatternResult115008[1]]);
+                $activePatternResult11956 = $matchValue__38;
+                return Seq::singleton([ $activePatternResult11956[0], $activePatternResult11956[1]]);
             }, $board__20->Item2->Table->Names);
  })), $board__20->Item2->Table->Current), FSharpArray::ofList($board__20->Item2->DiscardPile), (function () use ($board__20) { 
                 $list__24 = Shared_002EFieldModule___parcels($board__20->Item2->Barns->Free);
@@ -3725,8 +4034,8 @@ function Shared_002EBoardModule___toState($board__20) {
  }, $source__7);
                 return FSharpArray::ofSeq($source__8);
             })(), new STable($board__20->Item->Table->Players, $board__20->Item->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__39) use ($board__20) {             return Seq::collect(function ($matchValue__37) { 
-                $activePatternResult115004 = $matchValue__37;
-                return Seq::singleton([ $activePatternResult115004[0], $activePatternResult115004[1]]);
+                $activePatternResult11952 = $matchValue__37;
+                return Seq::singleton([ $activePatternResult11952[0], $activePatternResult11952[1]]);
             }, $board__20->Item->Table->Names);
  })), $board__20->Item->Table->Current), FSharpArray::ofList($board__20->Item->DiscardPile), (function () use ($board__20) { 
                 $list__22 = Shared_002EFieldModule___parcels($board__20->Item->Barns->Free);
@@ -3813,7 +4122,7 @@ function Shared_002EBoardModule___possibleMoves($playerid__14, $board__24) {
 }
 
 #193
-abstract class ServerMsg implements Union {
+abstract class ServerMsg implements Union, FSharpUnion {
 }
 
 #193
@@ -3824,6 +4133,9 @@ class ServerMsg_JoinGame extends ServerMsg {
     }
     function get_Case() {
         return 'ServerMsg_JoinGame';
+    }
+    function get_FSharpCase() {
+        return 'JoinGame';
     }
 }
 
@@ -3836,10 +4148,13 @@ class ServerMsg_Command extends ServerMsg {
     function get_Case() {
         return 'ServerMsg_Command';
     }
+    function get_FSharpCase() {
+        return 'Command';
+    }
 }
 
 #194
-abstract class ClientMsg implements Union {
+abstract class ClientMsg implements Union, FSharpUnion {
 }
 
 #194
@@ -3853,6 +4168,9 @@ class ClientMsg_Events extends ClientMsg {
     function get_Case() {
         return 'ClientMsg_Events';
     }
+    function get_FSharpCase() {
+        return 'Events';
+    }
 }
 
 #194
@@ -3863,6 +4181,9 @@ class ClientMsg_Message extends ClientMsg {
     }
     function get_Case() {
         return 'ClientMsg_Message';
+    }
+    function get_FSharpCase() {
+        return 'Message';
     }
 }
 
@@ -3877,6 +4198,9 @@ class ClientMsg_Sync extends ClientMsg {
     function get_Case() {
         return 'ClientMsg_Sync';
     }
+    function get_FSharpCase() {
+        return 'Sync';
+    }
 }
 
 #194
@@ -3887,6 +4211,9 @@ class ClientMsg_SyncPlayer extends ClientMsg {
     }
     function get_Case() {
         return 'ClientMsg_SyncPlayer';
+    }
+    function get_FSharpCase() {
+        return 'SyncPlayer';
     }
 }
 
