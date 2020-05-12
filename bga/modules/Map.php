@@ -315,7 +315,7 @@ class Map implements IteratorAggregate
 
     static function count($table)
     {
-        return MapTree::count($table->Tree);
+        return MapTree::size($table->Tree);
     }
 
     static function ofList($list)

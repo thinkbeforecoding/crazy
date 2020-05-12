@@ -46,12 +46,31 @@ class Util {
             if ($i == $yl)
                 return 1;
 
-            if ($x[$i] > $y[$i])
-                return 1;
-            if ($x[$i] < $y[$i])
-                return -1;
+            $c = Util::compare($x[$i],$y[$i]);
+            if ($c !== 0)
+                return $c;
             $i++;
         }
+    }
+
+    static function compare($x,$y)
+    {
+        if (is_array($x))
+        {
+            if (is_array($y))
+                return Util::compareArrays($x,$y);
+            else
+                return 1;
+        }
+        else
+        {
+            if (is_array($y))
+                return -1;
+            else
+                return Util::comparePrimitives($x,$y);
+        }
+
+        
     }
 }
 

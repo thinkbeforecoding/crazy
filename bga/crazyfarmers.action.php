@@ -112,6 +112,20 @@
         self::ajaxResponse();
     }
     
+
+    public function endTurn()
+    {
+        self::setAjaxMode();
+
+        // Retrieve arguments
+        // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
+
+
+        $this->game->endTurn();
+
+        self::ajaxResponse();
+    }
+    
   }
   
 

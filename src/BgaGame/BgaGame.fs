@@ -62,7 +62,7 @@ type gamegui =
     abstract onEnteringState: string ->  obj[] -> unit
     abstract onLeavingState: string -> obj[] -> unit
     abstract onUpdateActionButtons: string -> obj[] -> unit
-    abstract notifyEvents: obj[] * int -> unit
+    abstract notifyEvents: obj * int -> unit
 
 [<AllowNullLiteral>]
 type Bridge(dispatch: ClientMsg -> unit) =
@@ -128,7 +128,8 @@ type Bridge(dispatch: ClientMsg -> unit) =
 
         member _.notifyEvents(events, eventNumber) =
             console.log(events)
-            dispatch (Events([for e in events -> Serialization.ofObjectLiteral e], eventNumber))
+            let fsevents : Board.Event list = Serialization.ofObjectLiteral events
+            dispatch (Events(fsevents, eventNumber))
 
 
 let mutable bridge : Bridge = null

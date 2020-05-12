@@ -208,6 +208,7 @@ class CrazyFarmers extends Table
     {
         foreach($es as $e)
             self::saveEvent($e);
+        return self::DbGetLastId();
     }
 
     function loadEvents()
@@ -291,15 +292,17 @@ class CrazyFarmers extends Table
         $es = Shared_002EBoardModule___decide($cmd, $board);
 
 
-        self::saveEvents($es);
+        $newVersion = self::saveEvents($es);
         $board = self::fold($board, $es);
 
         if (!empty($es))
         {
             self::notifyAllPlayers( "events", "selectedFirstCrossroad", [
-                'events' => json_encode(convertToSimpleJson($es))]);
+                'events' => convertToSimpleJson($es),
+                'version' => $newVersion
+                ]);
         }
-        self::updateState($es);
+        self::updateState($es,$board);
     }
 
     
@@ -316,33 +319,65 @@ class CrazyFarmers extends Table
         $cmd = new BoardCommand_Play($player_id, new Command_Move(new PlayerMove($dir, $destination)));
         
         $es = Shared_002EBoardModule___decide($cmd, $board);
-
-        self::saveEvents($es);
+        
+        $newVersion = self::saveEvents($es);
         $board = self::fold($board, $es);
 
         if (!empty($es))
         {
             self::notifyAllPlayers( "events", "moved", [
-                'events' => json_encode(convertToSimpleJson($es))]);
+                'events' => convertToSimpleJson($es),
+                'version' => $newVersion ]);
         }
-        self::updateState($es);
+        self::updateState($es,$board);
+
 
     }
 
-    function updateState($es)
+    function endTurn()
     {
-        foreach($es as $e)
+        self::checkAction('move');
+
+        $player_id = self::getActivePlayerId();
+        $state = self::loadState();
+        $version = $state[0];
+        $board = $state[1];
+
+
+        $cmd = new BoardCommand_Play($player_id, Command_EndTurn());
+        
+        $es = Shared_002EBoardModule___decide($cmd, $board);
+        
+        $newVersion = self::saveEvents($es);
+        $board = self::fold($board, $es);
+
+        if (!empty($es))
         {
-            switch(get_class($e))
-            {
-             case 'BoardEvent_Next': 
-                    $this->gamestate->nextState('next');
-             case 'BoardEvent_GameWon': 
-                    $this->gamestate->nextState('endGame');
-            }
+            self::notifyAllPlayers( "events", "moved", [
+                'events' => convertToSimpleJson($es),
+                'version' => $newVersion ]);
         }
+        self::updateState($es,$board); 
+    }
+
+    function updateState($es,$board)
+    {
+        SharedServer___bgaUpdateState($es,$board, function($state) {$this->gamestate->nextState($state);});
     }
     
+    function stNextPlayer()
+    {
+        $player_id = self::activeNextPlayer();
+        $state = self::loadState();
+        $version = $state[0];
+        $board = $state[1];
+
+
+
+        $s = SharedServer___bgaNextPlayer($board);
+
+        $this->gamestate->nextState($s);
+    }
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////

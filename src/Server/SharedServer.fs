@@ -20,4 +20,35 @@ let privateBoard playerId board =
     | Won(p,b) -> Won(p, (privateGame playerId b))
     | InitialState -> InitialState
 
+let bgaUpdateState events board changeState =
+    for e in events do
+        match e with
+        | Board.Next -> changeState "next"
+        | Board.GameWon _ -> changeState "endGame"
+        | Board.Played(_,Player.FirstCrossroadSelected _) ->
+            changeState "selectFirstCrossroad"
+        | Board.Played(p, Player.MovedInField _)
+        | Board.Played(p, Player.MovedPowerless _)
+        | Board.Played(p, Player.FenceDrawn _) ->
+            match board with
+            | Board.Board b ->
+                match b.Players.[p] with
+                | Playing player ->
+                    if Moves.canMove player.Moves then
+                        changeState "move"
+                    elif Hand.canPlay player.Hand then
+                        changeState "endTurn"
+                | _ -> ()
+            | _ -> ()
+        | _ -> ()
+
+
+let bgaNextPlayer board =
+    match board with
+    | Board b ->
+        match Board.currentPlayer b with
+        | Starting _ -> "nextStarting"
+        | _ -> "nextPlayer"
+    | InitialState _ 
+    | Won _ -> ""
 

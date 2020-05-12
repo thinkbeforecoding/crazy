@@ -605,6 +605,10 @@ type PhpCompiler =
     member this.UseVarByRef(var) =
         if not (Set.contains var this.LocalVars) then
             this.CapturedVars <- Set.add (ByRef var) this.CapturedVars
+    member this.UseVar(var) =
+        let name = match var with ByValue n | ByRef n -> n
+        if not (Set.contains name this.LocalVars) then
+            this.CapturedVars <- Set.add var this.CapturedVars
 
     member this.MakeUniqueVar(name) =
         this.Id <- this.Id + 1
@@ -900,7 +904,7 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
             innerCtx.AddLocalVar(fixName id.Name)
         let body = convertExprToStatement innerCtx expr Return
         for capturedVar in innerCtx.CapturedVars do
-            ctx.UseVar(match capturedVar with ByValue v | ByRef v -> v)
+            ctx.UseVar(capturedVar)
         PhpCall(PhpAnonymousFunc([], Set.toList innerCtx.CapturedVars , body),[])
 
     | Fable.Expr.TypeCast(expr, t) ->
@@ -936,7 +940,7 @@ and convertFunction (ctx: PhpCompiler) kind body =
     let phpBody = convertExprToStatement scope body Return
 
     for capturedVar in scope.CapturedVars do
-        ctx.UseVar(match capturedVar with ByValue v | ByRef v -> v)
+        ctx.UseVar(capturedVar)
     PhpAnonymousFunc(args, Set.toList scope.CapturedVars , phpBody ) 
 
 and convertValue (ctx:PhpCompiler) (value: Fable.ValueKind) =
@@ -1078,10 +1082,13 @@ and convertExprToStatement ctx expr returnStrategy =
                 Switch(targetVar,
                     [ for i, (idents,expr) in  List.indexed ctx.DecisionTargets do
                         IntCase i, [
-                            for id, b in List.zip idents cases.[i] do
-                                ctx.AddLocalVar(fixName id.Name)
-                                Assign(PhpVar(fixName id.Name, None), convertExpr ctx b)
-                            yield! convertExprToStatement ctx expr returnStrategy
+                            match Map.tryFind i cases with
+                            | Some case ->
+                                for id, b in List.zip idents case do
+                                    ctx.AddLocalVar(fixName id.Name)
+                                    Assign(PhpVar(fixName id.Name, None), convertExpr ctx b)
+                                yield! convertExprToStatement ctx expr returnStrategy
+                            | None -> ()
                             match returnStrategy with
                             | Return _ -> ()
                             | _ -> Break;
@@ -1223,7 +1230,7 @@ let fs =
                 i,d
     ]
 
-convertDecl phpComp asts.[1].Declarations.[48]
+convertDecl phpComp asts.[2].Declarations.[2]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w

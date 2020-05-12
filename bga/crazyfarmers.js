@@ -278,8 +278,19 @@ function (dojo, declare,ui,c,v,crazy) {
             // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
             // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
             // 
+            dojo.subscribe( 'events', this, "notif_Events" );
         },  
-        
+
+        notif_Events: function( notif )
+        {
+            console.log( 'notif_Events' );
+            console.log( notif );
+            this.crazy.notifyEvents(notif.args.events, notif.args.version); 
+            
+            // Note: notif.args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
+            
+            // TODO: play the card in the user interface.
+        },     
         // TODO: from this point and below, you can write your game notifications handling methods
         
         /*

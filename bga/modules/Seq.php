@@ -127,4 +127,12 @@ class Seq {
         return $state;
     }
 
+    static function iterate($f, $seq)
+    {
+        foreach($seq as $item)
+        {
+            $f($item);
+        }
+    }
+
 }
