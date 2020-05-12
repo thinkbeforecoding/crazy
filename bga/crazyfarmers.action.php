@@ -63,6 +63,11 @@
     
     */
 
+    function newCrossroad($q,$r,$side)
+    {
+        return new Crossroad(new Axe($q,$r), $side == "CRight" ? new CrossroadSide_CRight() : new CrossroadSide_CLeft());
+    }
+
     public function selectFirstCrossroad()
     {
         self::setAjaxMode();
@@ -71,13 +76,42 @@
         // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
         $q = self::getArg( "q", AT_int, true );
         $r = self::getArg( "r", AT_int, true );
-        $side = self::getArg( "side", AT_bool, true );
+        $side = self::getArg( "side", AT_enum, true, "CLeft", ["CLeft", "CRight"] );
 
-        // Then, call the appropriate method in your game logic, like "playCard" or "myAction"
-        $this->game->selectFirstCrossroad(new Crossroad(new Axe($q,$r), $side ? new CrossroadSide_CRight() : new CrossroadSide_CLeft()) );
+        $this->game->selectFirstCrossroad(self::newCrossroad($q,$r,$side));
 
         self::ajaxResponse();
     }
+
+
+
+    public function move()
+    {
+        self::setAjaxMode();
+
+        // Retrieve arguments
+        // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
+        $dir = self::getArg( "direction", AT_enum, true, "Up", ["Up", "Down", "Horizontal"] );
+        $q = self::getArg( "q", AT_int, true );
+        $r = self::getArg( "r", AT_int, true );
+        $side = self::getArg( "side", AT_enum, true, "CLeft", ["CLeft", "CRight"] );
+
+        switch ($dir)
+        {
+            case "Up": 
+                $direction = new Direction_Up();
+            break;
+            case "Down" : 
+                $direction =  new Direction_Down();
+                break;
+            default: $direction = new Direction_Horizontal();
+        }
+
+        $this->game->move($direction, self::newCrossroad($q,$r,$side));
+
+        self::ajaxResponse();
+    }
+    
   }
   
 

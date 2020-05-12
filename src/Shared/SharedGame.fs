@@ -201,7 +201,7 @@ type GameTable =
 
     member this.Next =
         { this with
-            Current = (this.Current + 1) % this.Players.Length }
+            Current = (this.Current + 1) % Array.length this.Players }
 
 module Table =
     let start players =

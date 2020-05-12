@@ -86,7 +86,7 @@ class CrazyFarmers extends Table
         foreach( $players as $player_id => $player )
         {
             $color = array_shift( $default_colors );
-            $crazyPlayers[] = [ CrazyFarmers::get_Color($color), $player_id, $player['player_name']  ];
+            $crazyPlayers[] = [ CrazyFarmers::get_Color($color), strval($player_id), $player['player_name']  ];
             $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
         }
         $sql .= implode( $values, ',' );
@@ -155,7 +155,7 @@ class CrazyFarmers extends Table
         $board = $r[1];
         $pboard = SharedServer___privateBoard($current_player_id, $board);
 
-        // var_dump(convertToSimpleJson(Shared_002EBoardModule___toState($pboard)));
+
 
         $result['board'] = convertToSimpleJson(Shared_002EBoardModule___toState($pboard));
         $result['version'] = $r[0];
@@ -241,16 +241,6 @@ class CrazyFarmers extends Table
 
 
 
-    function getBoard()
-    {
-        return  convertFromJson(json_decode(self::getGameStateValue('board')));
-    }
-
-    function setBoard($board)
-    {
-        self::setGameStateValue('board', json_encode(convertToJson($board)));
-    }
-
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 //////////// 
@@ -288,18 +278,70 @@ class CrazyFarmers extends Table
 
     function selectFirstCrossroad($crossroad)
     {
-        self::checkAction('SelectFirstCrossroad');
+        self::checkAction('selectFirstCrossroad');
 
         $player_id = self::getActivePlayerId();
-        $board = self::getBoard();
-        $cmd = new Command_SelectFirstCrossroad(new SelectFirstCrossroad($crossroad));
+        $state = self::loadState();
+        $version = $state[0];
+        $board = $state[1];
 
+
+        $cmd = new BoardCommand_Play($player_id, new Command_SelectFirstCrossroad(new SelectFirstCrossroad($crossroad)));
+        
         $es = Shared_002EBoardModule___decide($cmd, $board);
+
+
         self::saveEvents($es);
-        $board = fold($board, $es);
-        self::setBoard($board);
+        $board = self::fold($board, $es);
+
+        if (!empty($es))
+        {
+            self::notifyAllPlayers( "events", "selectedFirstCrossroad", [
+                'events' => json_encode(convertToSimpleJson($es))]);
+        }
+        self::updateState($es);
     }
 
+    
+    function move($dir, $destination)
+    {
+        self::checkAction('move');
+
+        $player_id = self::getActivePlayerId();
+        $state = self::loadState();
+        $version = $state[0];
+        $board = $state[1];
+
+
+        $cmd = new BoardCommand_Play($player_id, new Command_Move(new PlayerMove($dir, $destination)));
+        
+        $es = Shared_002EBoardModule___decide($cmd, $board);
+
+        self::saveEvents($es);
+        $board = self::fold($board, $es);
+
+        if (!empty($es))
+        {
+            self::notifyAllPlayers( "events", "moved", [
+                'events' => json_encode(convertToSimpleJson($es))]);
+        }
+        self::updateState($es);
+
+    }
+
+    function updateState($es)
+    {
+        foreach($es as $e)
+        {
+            switch(get_class($e))
+            {
+             case 'BoardEvent_Next': 
+                    $this->gamestate->nextState('next');
+             case 'BoardEvent_GameWon': 
+                    $this->gamestate->nextState('endGame');
+            }
+        }
+    }
     
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments

@@ -102,6 +102,10 @@ type PhpField =
     { Name: string 
       Type: string }
 
+type Capture =
+    | ByValue of string
+    | ByRef of string
+
 type Prop =
     | Field of PhpField
     | StrField of string
@@ -120,7 +124,7 @@ and PhpExpr =
     | PhpMethod of this: PhpExpr * func:string * args: PhpExpr list
     | PhpTernary of gard: PhpExpr * thenExpr: PhpExpr * elseExpr: PhpExpr
     | PhpIsA of expr: PhpExpr * PhpType
-    | PhpAnonymousFunc of args: string list * uses: string list * body: PhpStatement list
+    | PhpAnonymousFunc of args: string list * uses: Capture list * body: PhpStatement list
    
 and PhpStatement =
     | Return of PhpExpr
@@ -204,7 +208,21 @@ module Output =
                 write ctx ", "
             write ctx "$"
             write ctx var
-
+    let writeUseList ctx vars =
+        let mutable first = true
+        for var in vars do
+            if first then
+                first <- false
+            else
+                write ctx ", "
+            match var with
+            | ByValue v ->
+                write ctx "$"
+                write ctx v
+            | ByRef v ->
+                write ctx "&$"
+                write ctx v
+                
     let opPrecedence =
         function
         | "+" -> 0
@@ -318,7 +336,7 @@ module Output =
             | [] -> ()
             | _ ->
                 write ctx " use ("
-                writeVarList ctx uses
+                writeUseList ctx uses
                 write ctx ")"
             
             write ctx " { "
@@ -396,7 +414,7 @@ module Output =
 
             writeiln ctx "}"
         | Break ->
-            writei ctx "break;"
+            writeiln ctx "break;"
         | If(guard, thenCase, elseCase) ->
             writei ctx "if ("
             writeExpr ctx guard
@@ -550,11 +568,13 @@ module PhpUnion =
     let union = { Name = "Union"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
     let fSharpUnion = { Name = "FSharpUnion"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
 
+
+
 type PhpCompiler =
     { mutable Types: Map<string,PhpType> 
-      DecisionTargets: (Fable.Ident list * Fable.Expr) list
+      mutable DecisionTargets: (Fable.Ident list * Fable.Expr) list
       mutable LocalVars: string Set
-      mutable CapturedVars: string Set
+      mutable CapturedVars: Capture Set
       mutable Id: int
     }
     static member empty =
@@ -580,7 +600,11 @@ type PhpCompiler =
 
     member this.UseVar(var) =
         if not (Set.contains var this.LocalVars) then
-            this.CapturedVars <- Set.add var this.CapturedVars
+            this.CapturedVars <- Set.add (ByValue var) this.CapturedVars
+
+    member this.UseVarByRef(var) =
+        if not (Set.contains var this.LocalVars) then
+            this.CapturedVars <- Set.add (ByRef var) this.CapturedVars
 
     member this.MakeUniqueVar(name) =
         this.Id <- this.Id + 1
@@ -766,7 +790,10 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
             | name, m -> fixName name + "::" + fixName m
         PhpCall(PhpConst(PhpConstString (f)), convertArgs ctx args)
     | Fable.Operation(Fable.Call(Fable.StaticCall(Fable.IdentExpr(i)),args),_,_) ->
-        PhpCall(PhpConst(PhpConstString (fixName i.Name)), convertArgs ctx args)
+        //PhpCall(PhpConst(PhpConstString (fixName i.Name)), convertArgs ctx args)
+        let name = fixName i.Name
+        ctx.UseVarByRef(name)
+        PhpCall(PhpVar(name, None), convertArgs ctx args)
 
 
         
@@ -801,7 +828,10 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
             PhpArrayAccess(phpExpr, PhpConst(PhpConstNumber (float id))) 
         | Fable.ExprGet(expr') ->
             let prop = convertExpr ctx expr'
-            PhpArrayAccess(phpExpr, prop)
+            match prop with
+            | PhpConst(PhpConstString "length") ->
+                PhpCall(PhpConst(PhpConstString "count"), [phpExpr])
+            | _ -> PhpArrayAccess(phpExpr, prop)
         | Fable.ListHead ->
             PhpProp(phpExpr, Field PhpList.value, getExprType phpExpr)
         | Fable.ListTail ->
@@ -832,7 +862,12 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
         | exp, _ -> exp
 
     | Fable.DecisionTree(expr,targets) ->
-        convertExpr { ctx with DecisionTargets = targets } expr
+        let upperTargets = ctx.DecisionTargets
+        ctx.DecisionTargets <- targets
+        let phpExpr = convertExpr ctx expr
+        ctx.DecisionTargets <- upperTargets
+        phpExpr
+
     | Fable.IfThenElse(guard, thenExpr, elseExpr,_) ->
         PhpTernary(convertExpr ctx guard,
                 convertExpr ctx thenExpr,
@@ -861,9 +896,11 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
         convertExpr ctx body
     | Fable.Let(bindings, body) ->
         let innerCtx = ctx.NewScope()
+        for id,_ in bindings do
+            innerCtx.AddLocalVar(fixName id.Name)
         let body = convertExprToStatement innerCtx expr Return
         for capturedVar in innerCtx.CapturedVars do
-            ctx.UseVar(capturedVar)
+            ctx.UseVar(match capturedVar with ByValue v | ByRef v -> v)
         PhpCall(PhpAnonymousFunc([], Set.toList innerCtx.CapturedVars , body),[])
 
     | Fable.Expr.TypeCast(expr, t) ->
@@ -899,7 +936,7 @@ and convertFunction (ctx: PhpCompiler) kind body =
     let phpBody = convertExprToStatement scope body Return
 
     for capturedVar in scope.CapturedVars do
-        ctx.UseVar(capturedVar)
+        ctx.UseVar(match capturedVar with ByValue v | ByRef v -> v)
     PhpAnonymousFunc(args, Set.toList scope.CapturedVars , phpBody ) 
 
 and convertValue (ctx:PhpCompiler) (value: Fable.ValueKind) =
@@ -1001,10 +1038,18 @@ and convertMatching ctx input guard thenExpr elseExpr expr returnStrategy =
 
                 phpCase, 
                     [ for ident, binding in List.zip idents bindings do
+                        ctx.AddLocalVar(fixName ident.Name)
                         Assign(PhpVar(fixName ident.Name, None), convertExpr ctx binding)
                       match returnStrategy with
-                      | Target t -> Assign(PhpVar(fixName t, None), PhpConst(PhpConstNumber(float i)))
-                      | _ -> yield! convertExprToStatement ctx target returnStrategy
+                      | Target t -> 
+                            ctx.AddLocalVar(fixName t)
+                            Assign(PhpVar(fixName t, None), PhpConst(PhpConstNumber(float i)))
+                            Break;
+                      | Return _ ->
+                            yield! convertExprToStatement ctx target returnStrategy
+                      | _ -> 
+                            yield! convertExprToStatement ctx target returnStrategy
+                            Break
                     ]] 
             )
         
@@ -1015,7 +1060,12 @@ and convertMatching ctx input guard thenExpr elseExpr expr returnStrategy =
 and convertExprToStatement ctx expr returnStrategy =
     match expr with
     | Fable.DecisionTree(input, targets) ->
-        convertExprToStatement { ctx with DecisionTargets = targets} input returnStrategy
+
+        let upperTargets = ctx.DecisionTargets 
+        ctx.DecisionTargets <- targets
+        let phpExpr = convertExprToStatement ctx input returnStrategy
+        ctx.DecisionTargets <- upperTargets
+        phpExpr
     | Fable.IfThenElse(Fable.Test(expr, Fable.TestKind.UnionCaseTest(case,entity), _) as guard, thenExpr , elseExpr, _) as input ->
         let groupCases = hasGroupedCases Set.empty input
         if groupCases then
@@ -1029,8 +1079,12 @@ and convertExprToStatement ctx expr returnStrategy =
                     [ for i, (idents,expr) in  List.indexed ctx.DecisionTargets do
                         IntCase i, [
                             for id, b in List.zip idents cases.[i] do
+                                ctx.AddLocalVar(fixName id.Name)
                                 Assign(PhpVar(fixName id.Name, None), convertExpr ctx b)
                             yield! convertExprToStatement ctx expr returnStrategy
+                            match returnStrategy with
+                            | Return _ -> ()
+                            | _ -> Break;
                         ]
                     
                     ]
@@ -1052,13 +1106,16 @@ and convertExprToStatement ctx expr returnStrategy =
         | _ ->
             let idents,target = ctx.DecisionTargets.[index]
             [ for ident, boundValue in List.zip idents boundValues do
+                ctx.AddLocalVar(fixName ident.Name)
                 Assign(PhpVar(fixName ident.Name, None), convertExpr ctx boundValue)
               yield! convertExprToStatement ctx target returnStrategy ]
 
     | Fable.Let(bindings,body) ->
         [ 
           for ident, expr in bindings do 
-              yield! convertExprToStatement ctx expr (Let(fixName ident.Name))
+              let name = fixName ident.Name
+              ctx.AddLocalVar(name)
+              yield! convertExprToStatement ctx expr (Let name)
           yield! convertExprToStatement ctx body returnStrategy ]
 
     | Fable.Sequential(exprs) ->
@@ -1166,7 +1223,7 @@ let fs =
                 i,d
     ]
 
-convertDecl phpComp asts.[1].Declarations.[49]
+convertDecl phpComp asts.[1].Declarations.[48]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w

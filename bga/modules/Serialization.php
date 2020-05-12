@@ -137,19 +137,16 @@ function convertToSimpleJson($obj) {
     }
     else if ($obj instanceof FSharpUnion)
     {
-        $props = [];
-        foreach(get_object_vars($obj) as $prop => $value)
+        $vars = get_object_vars($obj);
+        if (empty($vars))
+            return $obj->get_FSharpCase();
+
+        $props = [$obj->get_FSharpCase()];
+        foreach($vars as $prop => $value)
         {
             $props[] = convertToSimpleJson($value);
         }
-        if (empty($props))
-        {
-            return $obj->get_FSharpCase();
-        }
-        else
-        {
-            return [ $obj->get_FSharpCase() =>  $props ];
-        }
+        return $props;
     }
     else if (is_array($obj))
     {

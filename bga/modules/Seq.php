@@ -4,10 +4,9 @@ class Seq {
         return [$v];
     } 
 
-    static private $empty;
-
     static public function empty() {
-        if ($empty === null) {
+        static $empty = NULL;
+        if (is_null($empty)) {
             $empty = [];
         }
         return $empty;

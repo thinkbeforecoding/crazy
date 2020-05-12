@@ -51,7 +51,9 @@ function (dojo, declare,ui,c,v,crazy) {
         {
             
             console.log( "Starting game setup" );
-            this.crazy.setup(this.player_id, gamedatas.board,gamedatas.version);
+            self = this;
+
+            this.crazy.setup(this.player_id.toString(), gamedatas.board,gamedatas.version, function(command,args) { return self.onCommand(command[0], command[1]); });
             //this.cf.setup(gamedatas);
             // Setting up player boards
             for( var player_id in gamedatas.players )
@@ -182,6 +184,38 @@ function (dojo, declare,ui,c,v,crazy) {
         
         */
         
+        onCommand: function(cmd, args)
+        {
+            this.ajaxcall( "/crazyfarmers/crazyfarmers/"+cmd+".html", args, 
+            this, function( result ) {
+
+            // What to do after the server call if it succeeded
+            // (most of the time: nothing)
+
+            }, function( is_error) {
+
+            // What to do after the server call in anyway (success or failure)
+            // (most of the time: nothing)
+
+
+            } );      
+                // this.ajaxcall( "/crazyfarmers/crazyfarmers/sendCommand.html", { 
+                //                                             lock: true, 
+                //                                             cmd: "Hello", 
+                //                                             }, 
+                //     this, function( result ) {
+                    
+                //     // What to do after the server call if it succeeded
+                //     // (most of the time: nothing)
+                    
+                //     }, function( is_error) {
+
+                //     // What to do after the server call in anyway (success or failure)
+                //     // (most of the time: nothing)
+
+                //     } );      
+        },
+
         /* Example:
         
         onMyMethodToCall1: function( evt )
