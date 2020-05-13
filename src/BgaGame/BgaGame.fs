@@ -85,7 +85,7 @@ type Bridge(dispatch: ClientMsg -> unit) =
                                       "lock" ==> true ])
 
         | Player.EndTurn ->
-            send ("endTurn", createObj [ "lock" ==> true ])
+            send ("endTurn", createObj [ "value" ==> true; "lock" ==> true ])
 
         | Player.PlayCard _ -> ()
         | Player.Start _ -> ()

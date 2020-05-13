@@ -178,7 +178,7 @@ module Output =
 
     module Writer =
         let create w =
-            { Writer = w; Indent = 0; Precedence = 0 }
+            { Writer = w; Indent = 0; Precedence = Int32.MaxValue }
 
     let writeIndent  ctx =
         for _ in 1 .. ctx.Indent do
@@ -222,35 +222,67 @@ module Output =
             | ByRef v ->
                 write ctx "&$"
                 write ctx v
-                
-    let opPrecedence =
-        function
-        | "+" -> 0
-        | "-" -> 0
-        | "*" -> 1
-        | "/" -> 1
-        | "%" -> 1
-        | _   -> 2
+             
+    module Precedence =
+        let binary =
+            function
+            | "*" | "/" | "%"         -> 3
+            | "+" | "-" | "."         -> 4
+            | "<<" | ">>"             -> 5
+            | "<" | "<=" | ">=" | ">" -> 7
+            | "==" | "!=" | "===" 
+            | "!==" | "<>" | "<=>"    -> 7
+            | "&" -> 8
+            | "^" -> 9
+            | "|" -> 10
+            | "&&" -> 11
+            | "||" -> 12
+            | "??" -> 13
+            | op -> failwithf "Unknown binary operator %s" op
+
+
+        let unary =
+            function
+            | "!" -> 2
+            | "-" -> 4
+            | "&" -> 8
+            | op -> failwithf "Unknown unary operator %s" op
+
+        let _new = 0 
+        let instanceOf = 1
+        let ternary = 14 
+        let assign = 15
+            
+
+        let clear ctx = { ctx with Precedence = Int32.MaxValue} 
+
+    let withPrecedence ctx prec f =
+        let useParens = prec > ctx.Precedence
+        let subCtx = { ctx with Precedence = prec }
+        if useParens then
+            write subCtx "("
+
+        f subCtx
+
+        if useParens then
+            write subCtx ")"
 
     let rec writeExpr ctx expr =
         match expr with
         | PhpBinaryOp(op, left, right) ->
-            let opPrec = opPrecedence op
-            let subCtx = { ctx with Precedence = opPrec }
-            if opPrec < ctx.Precedence then
-                write subCtx "("
+            withPrecedence ctx (Precedence.binary op)
+                (fun subCtx ->
+                    writeExpr subCtx left
+                    write subCtx " "
+                    write subCtx op
+                    write subCtx " "
+                    writeExpr subCtx right)
 
-            writeExpr subCtx left
-            write subCtx " "
-            write subCtx op
-            write subCtx " "
-            writeExpr subCtx right
-
-            if opPrec < ctx.Precedence then
-                write subCtx ")"
         | PhpUnaryOp(op, expr) ->
-            write ctx op
-            writeExpr ctx expr
+            withPrecedence ctx (Precedence.unary op)
+                (fun subCtx ->
+                    write subCtx op
+                    writeExpr subCtx expr )
         | PhpConst cst -> 
             match cst with
             | PhpConstNumber n -> write ctx (string n)
@@ -276,11 +308,13 @@ module Output =
             | Field r -> write ctx r.Name
             | StrField r -> write ctx r
         | PhpNew(t,args) ->
-            write ctx "new "
-            write ctx t.Name
-            write ctx "("
-            writeArgs ctx args
-            write ctx ")"
+            withPrecedence ctx (Precedence._new)
+                (fun subCtx ->
+                    write subCtx "new "
+                    write subCtx t.Name
+                    write subCtx "("
+                    writeArgs subCtx args
+                    write subCtx ")")
         | PhpArray(args) ->
             write ctx "[ "
             let mutable first = true
@@ -319,15 +353,19 @@ module Output =
             writeArgs ctx args
             write ctx ")"
         | PhpTernary (guard, thenExpr, elseExpr) ->
-            writeExpr ctx guard
-            write ctx " ? "
-            writeExpr ctx thenExpr
-            write ctx " : "
-            writeExpr ctx elseExpr
+            withPrecedence ctx (Precedence.ternary)
+                (fun ctx ->
+                    writeExpr ctx guard
+                    write ctx " ? "
+                    writeExpr ctx thenExpr
+                    write ctx " : "
+                    writeExpr ctx elseExpr)
         | PhpIsA (expr, t) ->
-            writeExpr ctx expr
-            write ctx " instanceof "
-            write ctx t.Name
+            withPrecedence ctx (Precedence.instanceOf)
+                (fun ctx ->
+                    writeExpr ctx expr
+                    write ctx " instanceof "
+                    write ctx t.Name)
         | PhpAnonymousFunc(args, uses, body) ->
             write ctx "function ("
             writeVarList ctx args
@@ -378,21 +416,21 @@ module Output =
         match st with
         | PhpStatement.Return expr ->
             writei ctx "return "
-            writeExpr ctx expr
+            writeExpr (Precedence.clear ctx) expr
             writeln ctx ";"
         | Expr expr ->
             writei ctx ""
-            writeExpr ctx expr
+            writeExpr (Precedence.clear ctx) expr
             writeln ctx ";"
         | Assign(name, expr) ->
             writei ctx ""
-            writeExpr ctx name
+            writeExpr (Precedence.clear ctx)  name
             write ctx " = "
-            writeExpr ctx expr
+            writeExpr (Precedence.clear ctx)  expr
             writeln ctx ";"
         | Switch(expr, cases) ->
             writei ctx "switch ("
-            writeExpr ctx expr
+            writeExpr (Precedence.clear ctx)  expr
             writeln ctx ")"
             writeiln ctx "{"
             let casesCtx = indent ctx
@@ -417,7 +455,7 @@ module Output =
             writeiln ctx "break;"
         | If(guard, thenCase, elseCase) ->
             writei ctx "if ("
-            writeExpr ctx guard
+            writeExpr (Precedence.clear ctx) guard
             writeln ctx ") {"
             let body = indent ctx
             for st in thenCase do
@@ -430,10 +468,10 @@ module Output =
             writei ctx "throw new Exception('"
             write ctx s
             writeln ctx "');"
-        | Do (PhpConst PhpConstUnit)-> ()
-        | Do (expr) ->
+        | PhpStatement.Do (PhpConst PhpConstUnit)-> ()
+        | PhpStatement.Do (expr) ->
             writei ctx ""
-            writeExpr ctx expr
+            writeExpr (Precedence.clear ctx) expr
             writeln ctx ";"
 
 
@@ -1240,5 +1278,5 @@ w.ToString()
 
 IO.File.WriteAllText(@"C:\development\crazy\bga\modules\crazyfarmers.php", string w)
 IO.File.WriteAllText(@"C:\development\crazy\php\lib.php", string w)
-    
+        
 

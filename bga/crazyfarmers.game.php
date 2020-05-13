@@ -276,19 +276,14 @@ class CrazyFarmers extends Table
     }
     
     */
-
-    function selectFirstCrossroad($crossroad)
+    function playCommand($playerCmd)
     {
-        self::checkAction('selectFirstCrossroad');
-
         $player_id = self::getActivePlayerId();
         $state = self::loadState();
         $version = $state[0];
         $board = $state[1];
-
-
-        $cmd = new BoardCommand_Play($player_id, new Command_SelectFirstCrossroad(new SelectFirstCrossroad($crossroad)));
-        
+     
+        $cmd = new BoardCommand_Play($player_id, $playerCmd);
         $es = Shared_002EBoardModule___decide($cmd, $board);
 
 
@@ -297,67 +292,58 @@ class CrazyFarmers extends Table
 
         if (!empty($es))
         {
-            self::notifyAllPlayers( "events", "selectedFirstCrossroad", [
-                'events' => convertToSimpleJson($es),
+            foreach(self::loadPlayersBasicInfos() as $id => $p)
+            {
+                $privateEs = SharedServer___privateEvents((string)$id, $es);
+                self::notifyPlayer($id, "events", get_class($playerCmd),
+                    [
+                    'events' => convertToSimpleJson($privateEs),
+                    'version' => $newVersion
+                    ]
+                    );
+
+               
+            }
+
+            $privateEs = SharedServer___privateEvents("", $es);
+            self::notifyAllPlayers( "specatorEvents", "", [
+                'events' => convertToSimpleJson($privateEs),
                 'version' => $newVersion
                 ]);
+
+                
+
         }
         self::updateState($es,$board);
+    }
+
+    function selectFirstCrossroad($crossroad)
+    {
+        self::checkAction('selectFirstCrossroad');
+        $player_id = self::getActivePlayerId();
+        $cmd =  new Command_SelectFirstCrossroad(new SelectFirstCrossroad($crossroad));
+
+        self::playCommand($cmd);
     }
 
     
     function move($dir, $destination)
     {
         self::checkAction('move');
-
         $player_id = self::getActivePlayerId();
-        $state = self::loadState();
-        $version = $state[0];
-        $board = $state[1];
+        $cmd = new Command_Move(new PlayerMove($dir, $destination));
 
-
-        $cmd = new BoardCommand_Play($player_id, new Command_Move(new PlayerMove($dir, $destination)));
-        
-        $es = Shared_002EBoardModule___decide($cmd, $board);
-        
-        $newVersion = self::saveEvents($es);
-        $board = self::fold($board, $es);
-
-        if (!empty($es))
-        {
-            self::notifyAllPlayers( "events", "moved", [
-                'events' => convertToSimpleJson($es),
-                'version' => $newVersion ]);
-        }
-        self::updateState($es,$board);
-
+        self::playCommand($cmd);
 
     }
 
     function endTurn()
     {
-        self::checkAction('move');
-
+        self::checkAction('next');
         $player_id = self::getActivePlayerId();
-        $state = self::loadState();
-        $version = $state[0];
-        $board = $state[1];
+        $cmd = new Command_EndTurn();
 
-
-        $cmd = new BoardCommand_Play($player_id, Command_EndTurn());
-        
-        $es = Shared_002EBoardModule___decide($cmd, $board);
-        
-        $newVersion = self::saveEvents($es);
-        $board = self::fold($board, $es);
-
-        if (!empty($es))
-        {
-            self::notifyAllPlayers( "events", "moved", [
-                'events' => convertToSimpleJson($es),
-                'version' => $newVersion ]);
-        }
-        self::updateState($es,$board); 
+        self::playCommand($cmd);
     }
 
     function updateState($es,$board)

@@ -227,7 +227,7 @@ class SetTree {
 
     static function spliceOutSuccessor($t)
     { 
-        switch(get_classe($t))
+        switch(get_class($t))
         {
             case 'SetEmpty':
                 throw new Exception("internal error: Set.spliceOutSuccessor");

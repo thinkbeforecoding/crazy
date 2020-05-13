@@ -20,6 +20,19 @@ let privateBoard playerId board =
     | Won(p,b) -> Won(p, (privateGame playerId b))
     | InitialState -> InitialState
 
+
+let privateEvents playerId events =
+    events
+    |> List.map (function
+    | Board.PlayerDrewCards p as e -> 
+        if playerId = p.Player then
+            e
+        else
+            Board.PlayerDrewCards { Player = p.Player; Cards = Hand.toPrivate p.Cards }
+            
+    | Board.DiscardPileShuffled _ -> Board.DiscardPileShuffled []
+    | e -> e )
+
 let bgaUpdateState events board changeState =
     for e in events do
         match e with
@@ -51,4 +64,3 @@ let bgaNextPlayer board =
         | _ -> "nextPlayer"
     | InitialState _ 
     | Won _ -> ""
-

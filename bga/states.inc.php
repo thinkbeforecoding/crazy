@@ -87,7 +87,7 @@ $machinestates = array(
     	"description" => clienttranslate('${actplayer} must play a card or end turn'),
     	"descriptionmyturn" => clienttranslate('${you} must play a card or end turn'),
     	"type" => "activeplayer",
-    	"possibleactions" => [  ],
+    	"possibleactions" => [  "next" ],
     	"transitions" => [ "next" => 10, "endGame" => 99 ]
     ],
 

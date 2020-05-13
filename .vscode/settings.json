@@ -1,0 +1,11 @@
+{
+    "search.exclude": {
+        "**/.fable/": true,
+        "**/.fake/": true
+    },
+    "files.exclude": {
+        "**/.fable/": true,
+        "**/.fake/": true,
+        "**/node_modules/": true
+    }
+}

@@ -347,7 +347,7 @@ abstract class FSharpList implements IteratorAggregate {
         $sum = 0;
         while ($list instanceof Cons)
         {
-            $sum += $list->value;
+            $sum += $property($list->value);
             $list = $list->next;
         }
         return $sum;

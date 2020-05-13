@@ -278,7 +278,12 @@ function (dojo, declare,ui,c,v,crazy) {
             // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
             // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
             // 
+
             dojo.subscribe( 'events', this, "notif_Events" );
+            if (this.isSpectator) 
+            {
+                dojo.subscribe( 'specatorEvents', this, "notif_Events" );
+            }
         },  
 
         notif_Events: function( notif )
