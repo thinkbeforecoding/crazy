@@ -64,3 +64,24 @@ let bgaNextPlayer board =
         | _ -> "nextPlayer"
     | InitialState _ 
     | Won _ -> ""
+
+let bgaProgression board =
+    match board with
+    | InitialState _ -> 0.
+    | Won _ -> 100.
+    | Board b ->
+        match b.Goal with
+        | Common g ->
+            let totalSize = Board.totalSize b
+            float (min g totalSize) * 100. / float g
+        | Individual g ->
+            let maxSize = 
+                b.Players 
+                |> Map.toSeq
+                |> Seq.map(fun (_,p) -> Player.principalFieldSize p)
+                |> Seq.max
+            float (min g maxSize) * 100. / float g
+                
+
+
+

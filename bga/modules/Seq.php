@@ -118,6 +118,23 @@ class Seq {
         return $maxVal;
     }
 
+    static function max($seq, $comparerArray)
+    {
+        $max = NULL;
+        $comparer = $comparerArray['Compare'];
+        foreach($seq as $item)
+        {
+            if (is_null($max) || $comparer($item,$max) > 0)
+            {
+                $max = $item;
+            }
+        }
+
+        return $max;
+    }
+
+     
+
     static function fold($aggregator, $state, $seq)
     {
         foreach ($seq as $item)

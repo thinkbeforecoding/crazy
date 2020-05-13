@@ -800,6 +800,7 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
             | BinaryOperator.BinaryEqualStrict -> "==="
             | BinaryOperator.BinaryUnequalStrict -> "!=="
             | BinaryOperator.BinaryModulus -> "%"
+            | BinaryOperator.BinaryDivide -> "/"
         PhpBinaryOp(opstr, convertExpr ctx left, convertExpr ctx right)
     | Fable.Operation(Fable.UnaryOperation(op, expr),_,_) ->
         let opStr = 

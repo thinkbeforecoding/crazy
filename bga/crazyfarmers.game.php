@@ -177,9 +177,9 @@ class CrazyFarmers extends Table
     */
     function getGameProgression()
     {
-        // TODO: compute and return the game progression
+        $r = self::loadState();
 
-        return 0;
+        return SharedServer___bgaProgression($r[1]);
     }
 
 
