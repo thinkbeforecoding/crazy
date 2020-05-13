@@ -1,7 +1,7 @@
 <html>
     <body>
     <?php
-        include 'prelude.php';
+        include 'FSharp.Core.php';
         include 'lib.php';
 
         function echo_list ($name, $l)

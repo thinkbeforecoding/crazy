@@ -2547,8 +2547,13 @@ function Shared_002EPlayer___decideCut($otherPlayers, $tractor__4) {
 
 #139
 function Shared_002EPlayer___annexation($field__7, $fence__3, $tractor__5) {
+    // var_dump($field__7);
+    // var_dump($fence__3);
+    // var_dump($tractor__5);
     $border__1 = Shared_002EFieldModule___borderBetween(Shared_002EFenceModule___start($tractor__5, $fence__3), $tractor__5, $field__7);
+    // var_dump($border__1);
     $fullBorder = FSharpList::append($fence__3->paths, $border__1);
+    // var_dump($fullBorder);
     return Shared_002EField___op_Subtraction__Z24735800(Shared_002EFieldModule___fill($fullBorder), $field__7);
 }
 

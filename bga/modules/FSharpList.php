@@ -142,16 +142,18 @@ abstract class FSharpList implements IteratorAggregate {
 
     static function append($left,$right)
     {
-        $result = $right;
+        $result = NULL;
+        $p = &$result;
 
         while ($left instanceof Cons)
         {
-            $result = new Cons($left->value, $result);
+            $p = new Cons($left->value, NULL);
+            $p = &$p->next;
             $left = $left->next;
         }
+        $p = $right;
         return $result;
     }
-
 
     static function tail($list)
     {

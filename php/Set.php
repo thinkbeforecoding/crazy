@@ -227,7 +227,7 @@ class SetTree {
 
     static function spliceOutSuccessor($t)
     { 
-        switch(get_classe($t))
+        switch(get_class($t))
         {
             case 'SetEmpty':
                 throw new Exception("internal error: Set.spliceOutSuccessor");
@@ -237,7 +237,7 @@ class SetTree {
                 if ($t->left instanceof SetEmpty)
                     return [$t->value, $t->right];
                 [$k3, $ll] = SetTree::spliceOutSuccessor($t->left);
-                return [$k3, SetTree::mk($ll, $t->value, $t->left)];
+                return [$k3, SetTree::mk($ll, $t->value, $t->right)];
         }
     }
 
@@ -486,6 +486,11 @@ class Set implements IteratorAggregate {
     static function toList($set)
     {
         return FSharpList::ofSeq($set);
+    }
+
+    static function toArray($set)
+    {
+        return iterator_to_array($set);
     }
 
     public function getIterator() {

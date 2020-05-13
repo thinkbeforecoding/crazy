@@ -237,9 +237,10 @@ class SetTree {
                 if ($t->left instanceof SetEmpty)
                     return [$t->value, $t->right];
                 [$k3, $ll] = SetTree::spliceOutSuccessor($t->left);
-                return [$k3, SetTree::mk($ll, $t->value, $t->left)];
+                return [$k3, SetTree::mk($ll, $t->value, $t->right)];
         }
     }
+
 
     static function remove($comparer, $k, $t)
     { 

@@ -142,13 +142,16 @@ abstract class FSharpList implements IteratorAggregate {
 
     static function append($left,$right)
     {
-        $result = $right;
+        $result = NULL;
+        $p = &$result;
 
         while ($left instanceof Cons)
         {
-            $result = new Cons($left->value, $result);
+            $p = new Cons($left->value, NULL);
+            $p = &$p->next;
             $left = $left->next;
         }
+        $p = $right;
         return $result;
     }
 
@@ -164,7 +167,7 @@ abstract class FSharpList implements IteratorAggregate {
         $p = &$lst;
         while ($list instanceof Cons && $count-- > 0)
         {
-            $p = new Cons($list->value, $null);
+            $p = new Cons($list->value, NULL);
             $p = &$p->next;    
             $list = $list->next;
         }
@@ -177,7 +180,7 @@ abstract class FSharpList implements IteratorAggregate {
         $p = &$lst;
         while ($list instanceof Cons)
         {
-            $p = new Cons($projection($list->value), $null);
+            $p = new Cons($projection($list->value), NULL);
             $p = &$p->next;    
             $list = $list->next;
         }
@@ -193,7 +196,7 @@ abstract class FSharpList implements IteratorAggregate {
             $v = $projection($list->value);
             if (!is_null($v))
             {
-                $p = new Cons($v, $null);
+                $p = new Cons($v, NULL);
                 $p = &$p->next;
             }
             $list = $list->next;
@@ -210,7 +213,7 @@ abstract class FSharpList implements IteratorAggregate {
         {
             if ($predicate($list->value))
             {
-             $p = new Cons($list->value, $null);
+             $p = new Cons($list->value, NULL);
              $p = &$p->next;
             }
             $list = $list->next;
@@ -237,7 +240,7 @@ abstract class FSharpList implements IteratorAggregate {
         {
             $v = $aggregator($state,$list->value);
 
-            $p = new Cons($v[0], $null);
+            $p = new Cons($v[0], NULL);
             $p = &$p->next;
             $state = $v[1];
             $list = $list->next;
@@ -251,10 +254,21 @@ abstract class FSharpList implements IteratorAggregate {
         $array = [];
         while ($list instanceof Cons)
         {
-            $array[ $projection($list->value) ] = $list->value;
+            $array[] = [ $list->value, $projection($list->value) ];
             $list = $list->next;
         }
-        ksort($array);
+        usort($array, function($x,$y) { return Util::compare($x[1],$y[1]); } );
+
+        $list = NULL;
+        $p = &$list;
+        foreach ($array as $item) {
+            
+            $p = new Cons($item[0], $list);
+            $p = &$p->next;
+        }
+        $p = FSharpList::get_Nil();
+        return $list;
+
         return FSharpList::ofArray($array);
     }
 
@@ -336,7 +350,7 @@ abstract class FSharpList implements IteratorAggregate {
         $sum = 0;
         while ($list instanceof Cons)
         {
-            $sum += $list->value;
+            $sum += $property($list->value);
             $list = $list->next;
         }
         return $sum;

@@ -4,10 +4,9 @@ class Seq {
         return [$v];
     } 
 
-    static private $empty;
-
     static public function empty() {
-        if ($empty === null) {
+        static $empty = NULL;
+        if (is_null($empty)) {
             $empty = [];
         }
         return $empty;
@@ -126,6 +125,14 @@ class Seq {
             $state = $aggregator($state,$item);
         }
         return $state;
+    }
+
+    static function iterate($f, $seq)
+    {
+        foreach($seq as $item)
+        {
+            $f($item);
+        }
     }
 
 }

@@ -327,3 +327,35 @@ let ``Fill path``() =
 
          
 
+[<Fact>]
+let ``Annexation``() =
+    let fence = 
+        Fence [
+            Path(Axe(2,0),BNW),Down
+            Path(Axe(1,0),BNE),Down
+            Path(Axe(2,-1),BNW),Down
+            Path(Axe(1,-1),BNE),Down
+            Path(Axe(1,-1),BN),Horizontal
+            Path(Axe(1,-1),BNW),Up
+            Path(Axe(0,0),BN),Horizontal
+            Path(Axe(0,0),BNW),Up ]
+
+    let tractor = Crossroad(Axe(2,0),CLeft)
+
+    let field =
+        Field (set [
+                Parcel(Axe(-3,3))
+                Parcel(Axe(-2,2))
+                Parcel(Axe(-2,3))
+                Parcel(Axe(-1,1))
+                Parcel(Axe(-1,2))
+                Parcel(Axe(0,1))
+                Parcel(Axe(0,2))
+                Parcel(Axe(1,1))     
+        ])
+
+    let anx = annexation field fence tractor
+
+    test <@ anx = Field(set [Parcel(Axe(0,0))
+                             Parcel(Axe(1,-1))
+                             Parcel(Axe(1,0))]) @>
