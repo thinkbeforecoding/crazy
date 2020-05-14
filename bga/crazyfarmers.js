@@ -221,7 +221,7 @@ function (dojo, declare,ui,c,v,crazy) {
 
         onEndTurn: function()
         {
-            this.onCommand("endTurn", { value: true, lock = true });
+            this.onCommand("endTurn", { value: true, lock: true });
         },
 
         /* Example:
