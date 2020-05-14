@@ -336,6 +336,14 @@ class CrazyFarmers extends Table
         self::playCommand($cmd);
 
     }
+    function playCard($card)
+    {
+        self::checkAction('playCard');
+        $player_id = self::getActivePlayerId();
+        $cmd = new Command_PlayCard($card);
+
+        self::playCommand($cmd);
+    }
 
     function endTurn()
     {

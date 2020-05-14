@@ -318,6 +318,7 @@ i.fa-bars {
     .cards {
         padding-top: 1em;
         padding-bottom: 1em;
+        height:6em;
         background-color: color.change($crazy-hay, $alpha: 0.4);
         display: flex;
         flex-flow: row;

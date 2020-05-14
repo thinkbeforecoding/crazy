@@ -111,7 +111,148 @@
 
         self::ajaxResponse();
     }
+
+    public function playNitro()
+    {
+        self::setAjaxMode();
+
+        // Retrieve arguments
+        // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
+        $pow = self::getArg( "power", AT_enum, true, "One", ["One", "Two"] );
+        switch ($pow)
+        {
+            case "Two": 
+                $power = new CardPower_Two();
+            break;
+            default:
+                $power =  new CardPower_One();
+        }
+
+        $this->game->playCard(new PlayCard_PlayNitro($power));
+
+        self::ajaxResponse(); 
+    }
+
+    public function playRut()
+    {
+        self::setAjaxMode();
+
+        // Retrieve arguments
+        // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
+        $victim = self::getArg( "victim", AT_alphanum, true);
+
+        $this->game->playCard(new PlayCard_PlayRut($victim));
+
+        self::ajaxResponse(); 
+    }
+     
+    public function playOneHayBale()
+    {
+        self::setAjaxMode();
+
+        // Retrieve arguments
+        // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
+        $q = self::getArg( "q", AT_int, true );
+        $r = self::getArg( "r", AT_int, true );
+        $side = self::getArg( "side", AT_enum, true, "BN", ["BNW", "BN", "BNE"] );
+
+      
+
+        $this->game->playCard(new PlayCard_PlayHayBale(FSharpList::ofArray([ self::newPath($q,$r,$side)  ])));
+
+        self::ajaxResponse(); 
+    }
+
+    function newPath($q,$r,$side)
+    {
+        switch ($side)
+        {
+            case "BNW":
+                $side = new BorderSide_BNW();
+            break;
+            case "BN":
+                $side = new BorderSide_BN();
+            break;
+            default:
+                $side = new BorderSide_BNE();
+        }
+        return new Path(new Axe($q,$r), $side);
+    }
+
+    public function playTwoHayBale()
+    {
+        self::setAjaxMode();
+
+        $q1 = self::getArg( "q1", AT_int, true );
+        $r1 = self::getArg( "r1", AT_int, true );
+        $side1 = self::getArg( "side1", AT_enum, true, "BN", ["BNW", "BN", "BNE"] );
+        $q2 = self::getArg( "q2", AT_int, true );
+        $r2 = self::getArg( "r2", AT_int, true );
+        $side2 = self::getArg( "side2", AT_enum, true, "BN", ["BNW", "BN", "BNE"] );
+
+        $this->game->playCard(new PlayCard_PlayHayBale(FSharpList::ofArray([
+                self::newPath($q1,$r1,$side1), 
+                self::newPath($q2,$r2,$side2) ])));
+
+        self::ajaxResponse(); 
+    }
+
+    public function playDynamite()
+    {
+        self::setAjaxMode();
+
+        $q = self::getArg( "q", AT_int, true );
+        $r = self::getArg( "r", AT_int, true );
+        $side = self::getArg( "side", AT_enum, true, "BN", ["BNW", "BN", "BNE"] );
+
+        $this->game->playCard(new PlayCard_PlayDynamite(self::newPath($q,$r,$side)));
+
+        self::ajaxResponse(); 
+    }
+
+    public function playHighVoltage()
+    {
+        self::setAjaxMode();
+
+        $this->game->playCard(new PlayCard_PlayHighVoltage());
+
+        self::ajaxResponse(); 
+    }
+
     
+    public function playWatchdog()
+    {
+        self::setAjaxMode();
+
+
+        $this->game->playCard(new PlayCard_PlayWatchdog());
+
+        self::ajaxResponse(); 
+    }
+
+    public function playHelicopter()
+    {
+        self::setAjaxMode();
+
+        $q = self::getArg( "q", AT_int, true );
+        $r = self::getArg( "r", AT_int, true );
+        $side = self::getArg( "side", AT_enum, true, "CLeft", ["CLeft", "CRight"] );
+
+        $this->game->playCard(new PlayCard_PlayHelicopter(self::newCrossroad($q,$r,$side)));
+
+        self::ajaxResponse(); 
+    } 
+    public function playBribe()
+    {
+        self::setAjaxMode();
+
+        $q = self::getArg( "q", AT_int, true );
+        $r = self::getArg( "r", AT_int, true );
+
+        $this->game->playCard(new PlayCard_PlayBribe(new Parcel(new Axe($q,$r))));
+
+        self::ajaxResponse(); 
+    } 
 
     public function endTurn()
     {

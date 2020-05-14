@@ -87,7 +87,22 @@ type Bridge(dispatch: ClientMsg -> unit) =
         | Player.EndTurn ->
             send ("endTurn", createObj [ "value" ==> true; "lock" ==> true ])
 
-        | Player.PlayCard _ -> ()
+        | Player.PlayCard c ->
+            match c with
+            | PlayNitro One -> send ("playNitro", createObj ["power" ==>  "One"; "lock" ==> true ])
+            | PlayNitro Two -> send ("playNitro", createObj ["power" ==>  "Two"; "lock" ==> true ])
+            | PlayRut victim -> send ("playRut", createObj ["victim" ==> victim; "lock" ==> true ])
+            | PlayHayBale [Path(Axe(q,r), side)] -> send ("playOneHayBale", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ])
+            | PlayHayBale [Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)] -> 
+                            send ("playTwoHayBale", createObj ["q1" ==>  q1; "r1" ==> r1; "side1" ==> string side1
+                                                               "q2" ==> q2; "r2" ==> r2; "side2" ==> string side2
+                                                               "lock" ==> true ]) 
+            | PlayDynamite (Path(Axe(q,r),side)) -> send ("playDynamite", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ])
+            | PlayHighVoltage  -> send ("playHighVoltage", createObj ["value" ==> true; "lock" ==> true ])
+            | PlayWatchdog  -> send ("playWatchdog", createObj ["value" ==> true; "lock" ==> true])
+            | PlayHelicopter (Crossroad(Axe(q,r), side)) -> send ("playHelicopter", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ])
+            | PlayBribe (Parcel(Axe(q,r)))  ->  send ("playBribe", createObj ["q" ==>  q; "r" ==> r; "lock" ==> true ])
+            | PlayHayBale _ -> () 
         | Player.Start _ -> ()
         //send json
 

@@ -451,6 +451,12 @@ class Set implements IteratorAggregate {
         return new Set($a->Comparer, SetTree::intersection($a->Comparer, $a->Tree, $b->Tree));
     }
 
+    static function remove($item,$table)
+    {
+        return new Set($table->Comparer, SetTree::remove($table->Comparer,$item, $table->Tree));
+    }
+
+
     static function contains($value, $s)
     {
         return SetTree::mem($s->Comparer, $value, $s->Tree);

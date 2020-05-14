@@ -241,6 +241,7 @@ class SetTree {
         }
     }
 
+
     static function remove($comparer, $k, $t)
     { 
         switch(get_class($t))
@@ -448,6 +449,11 @@ class Set implements IteratorAggregate {
         if ($a->Tree instanceof SetEmpty) 
             return $a; // (* 0 INTER B = 0 *)
         return new Set($a->Comparer, SetTree::intersection($a->Comparer, $a->Tree, $b->Tree));
+    }
+
+    static function remove($item,$table)
+    {
+        return new Set($table->Comparer, SetTree::remove($table->Comparer,$item, $table->Tree));
     }
 
     static function contains($value, $s)
