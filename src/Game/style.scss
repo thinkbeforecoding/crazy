@@ -14,6 +14,9 @@
 
 // Bulma
 //@import "~bulma/bulma";
+
+@use "sass:color";
+
 @font-face {
     font-family: 'BigSlabHammer';
     /*src: url(webfont.eot');  IE9+ Compat Modes */
@@ -40,34 +43,41 @@ body {
     }
 }
 
+@mixin hover-count {
+    font-family: BigSlabHammer;
+    color: white;
+    text-shadow: 2px 0.2em 0.2em #333;
+    white-space: nowrap;
+}
+
 .board {
     background-image: url(~img/board.jpg);
     background-size: contain;
     position: relative;
-    width: 100vw;
-    height: 100vw;
+    width: 100%;
+    padding-top: 100%;
     margin-top: 2em;
 }
 .fence {
     background-size: contain;
     background-repeat: no-repeat;
-    width: 4.3vw;
-    height: 1.1vw;
+    width: 4.3%;
+    height: 1.1%;
     position: absolute;
 }
 .player {
     background-size: contain;
     background-repeat: no-repeat;
-    width: 2.5vw;
-    height: 2.5vw;
+    width: 2.5%;
+    height: 2.5%;
     position: absolute;
 }
 
 .tile {
     background-size: contain;
     background-repeat: no-repeat;
-    width: 9vw;
-    height: 9vw;
+    width: 9%;
+    height: 9%;
     position: absolute;
 }
 
@@ -77,8 +87,8 @@ body {
 
 .barn {
     background-size: contain;
-    width: 9vw;
-    height: 9vw;
+    width: 9%;
+    height: 9%;
     position: absolute;
     background-image: url(~img/barn.png);
     background-repeat: no-repeat;
@@ -97,8 +107,8 @@ i.fa-bars {
 
 
 .crossroad {
-    width: 2.5vw;
-    height: 2.5vw;
+    width: 2.5%;
+    height: 2.5%;
     position: absolute;
     z-index: 30;
 
@@ -132,13 +142,13 @@ i.fa-bars {
     background-size: contain;
     position: absolute;
 
-    width: 3vw;
-    height: 3vw;
+    width: 3%;
+    height: 3%;
 }
 .path {
     position: absolute;
-    width: 3vw;
-    height: 3vw;
+    width: 3%;
+    height: 3%;
 }
 
 .header {
@@ -194,7 +204,7 @@ i.fa-bars {
 }
 
 .player-dashboard {
-    flex: 1 1 25vw;
+    flex: 1 1 25%;
     padding-top: 0.2em;
     padding-bottom: 0.1em;
     display: flex;
@@ -249,9 +259,95 @@ i.fa-bars {
     }
 }
 
+.player-board {
+    display: flex;
+    flex-flow: column;
+    align-content: stretch;
+    justify-content: space-between;
+}
+
 .bga {
+    &.player-dashboard {
+        flex: 0 1 auto;
+        justify-self: end;
+    }
+
     .moves {
         margin-left: 3.5em;
+    }
+
+    .card-count {
+        position: relative;
+        overflow: hidden;
+        width: 3em;
+        justify-self: end;
+        margin-right: 0.5em;
+
+        &:before {
+            content: "";
+            display: block;
+            padding-top: 142%;
+        }
+
+        div {
+            @include hover-count;
+            font-size: large;
+            background-image: url(~img/card-back.jpg);
+            background-size: contain;
+            background-repeat: no-repeat;
+            border-radius: 10%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    }
+
+   
+}
+
+#game_play_area {
+    .board {
+        margin-top: 0;
+    }
+
+    .cards {
+        padding-top: 1em;
+        padding-bottom: 1em;
+        background-color: color.change($crazy-hay, $alpha: 0.4);
+        display: flex;
+        flex-flow: row;
+        align-content: center;
+        justify-content: center;
+
+        button {
+            width: auto;
+            padding: 0.2em;
+            border-radius: 0.3em;
+            border: 1px solid $crazy-tree;
+            background-color: $crazy-hay;
+        }
+    }
+
+    .action {
+        max-width: 50%;
+        top: 7em;
+    }
+
+    .card-container {
+        margin-left: 0.25em;
+        margin-right: 0.25em;
+    }
+
+    .card {
+        flex: 0 1 auto;
+        width: 4em;
+        height: 5.72em;
+        position: relative;
     }
 }
 
@@ -310,14 +406,12 @@ i.fa-bars {
     }
 
     .tile-count {
-        font-family: BigSlabHammer;
-        color: white;
-        text-shadow: 2px 0.2em 0.2em #333;
+        @include hover-count;
         vertical-align: top;
         margin-left: -2.2em;
         margin-top: 0.8em;
         display: inline-block;
-        white-space: nowrap;
+        
     }
 }
 
@@ -578,17 +672,17 @@ div.back {
 
 .victory {
     position: fixed;
-    width: 60vw;
-    height: 30vw;
-    top: 20vw;
-    left: 20vw;
+    width: 60%;
+    height: 30%;
+    top: 20%;
+    left: 20%;
     background-image: url(~img/victory.png);
     background-size: contain;
     background-repeat: no-repeat;
 
     font-family: BigSlabHammer;
     color: white;
-    font-size: 4vw;
+    font-size: 4%;
     text-align: center;
     padding-top: 0.5em;
 
@@ -612,7 +706,7 @@ div.back {
     }
 
     .back {
-        margin-top: 2.3vw;
+        margin-top: 2.3%;
         font-family: Arial, Helvetica, sans-serif;
         font-size: large;
 

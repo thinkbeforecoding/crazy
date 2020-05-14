@@ -114,16 +114,16 @@ let colorName color =
 let parcel (Parcel pos) attr = 
     let x,y = Pix.ofTile pos |> Pix.rotate
     div ([ ClassName "tile"
-           Style [ Left (sprintf "%fvw" x)
-                   Top (sprintf "%fvw" y)
+           Style [ Left (sprintf "%f%%" x)
+                   Top (sprintf "%f%%" y)
                    ]]  @ attr)
           
         []
 let tile (Parcel pos) f = 
     let x,y = Pix.ofTile pos |> Pix.rotate
     div ([ ClassName "tile"
-           Style [ Left (sprintf "%fvw" x)
-                   Top (sprintf "%fvw" y)
+           Style [ Left (sprintf "%f%%" x)
+                   Top (sprintf "%f%%" y)
                    ]
            OnClick f
                    ]   )
@@ -133,15 +133,15 @@ let tile (Parcel pos) f =
 let barn (Parcel pos) occupied = 
     let x,y = Pix.ofTile pos |> Pix.rotate
     div [ classBaseList "barn" [ "occupied", occupied ]
-          Style [ Left (sprintf "%fvw" x)
-                  Top (sprintf "%fvw" y)
+          Style [ Left (sprintf "%f%%" x)
+                  Top (sprintf "%f%%" y)
                    ]] 
         []
 
 let drawplayer selected (x,y) =
     div [ classBaseList "player" ["selected", selected]
-          Style [ Left (sprintf "%fvw" x)
-                  Top (sprintf "%fvw" y)
+          Style [ Left (sprintf "%f%%" x)
+                  Top (sprintf "%f%%" y)
                    ]] 
         []
 
@@ -156,8 +156,8 @@ let tooltip txt =
 let drawcrossroad pos f =
     let x,y = Pix.ofPlayer pos |> Pix.rotate
     div [ ClassName "crossroad"
-          Style [ Left (sprintf "%fvw" x)
-                  Top (sprintf "%fvw" y) ]
+          Style [ Left (sprintf "%f%%" x)
+                  Top (sprintf "%f%%" y) ]
           match f with
           | Ok f -> OnClick f
           | _ -> () ] 
@@ -187,23 +187,23 @@ let singleFence path =
     
     div [ ClassName "fence"
           Style [ Transform rot
-                  Left (sprintf "%fvw" x)
-                  Top (sprintf "%fvw" y) ]] 
+                  Left (sprintf "%f%%" x)
+                  Top (sprintf "%f%%" y) ]] 
         []
 
 let haybale p =
     let x,y = Pix.ofFence p |> Pix.translate (0.2,-0.8) |> Pix.rotate
     div [ ClassName "hay-bale"
-          Style [ Left (sprintf "%fvw" x)
-                  Top (sprintf "%fvw" y) ]
+          Style [ Left (sprintf "%f%%" x)
+                  Top (sprintf "%f%%" y) ]
           ]
         []
 
 let path p f =
     let x,y = Pix.ofFence p |> Pix.translate (0.2,-0.8) |> Pix.rotate
     div [ ClassName "path"
-          Style [ Left (sprintf "%fvw" x)
-                  Top (sprintf "%fvw" y) ]
+          Style [ Left (sprintf "%f%%" x)
+                  Top (sprintf "%f%%" y) ]
           OnClick f
 
           ]
@@ -592,7 +592,7 @@ type PlayerInfo =
       Goal: Goal
     }
 
-let playerInfo info dispatch =
+let playerInfo info (cards: ReactElement) dispatch =
     div [ ClassName "player-top"]
         [
             let color = Player.color info.Player
@@ -616,13 +616,11 @@ let playerInfo info dispatch =
                                 flash  (i <= p.Moves.Done)
                         | Ko _ -> ()
                     ]
-
                 ]
 
             
-                                  
-
             bonusMarkers (Player.bonus info.Player)
+            cards
             match info.Player, info.Goal with
             | Ko _, _ -> ()
             | _, Individual goal ->
@@ -633,7 +631,6 @@ let playerInfo info dispatch =
                          [ str (sprintf "x %d" (goal - Player.fieldTotalSize info.Player)) ] 
                    ]
             | _ -> ()
-
         ]
 
        
@@ -659,7 +656,7 @@ let playersDashboard model dispatch =
                             playerInfo { Name = Some(board.Table.Names.[playerid])
                                          Player = player 
                                          IsActive = currentPlayer = playerid
-                                         Goal = board.Goal } dispatch
+                                         Goal = board.Goal } null dispatch
 
                             if model.DashboardOpen then
                                 handView dispatch model.PlayerId board model.CardAction (Player.hand player)

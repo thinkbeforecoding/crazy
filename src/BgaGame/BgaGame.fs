@@ -285,11 +285,23 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
 
 
 let playerBoard board playerid (player: CrazyPlayer) dispatch =
-    playerInfo { Name = None
-                 Player = player
-                 IsActive = playerid = board.Table.Player
-                 Goal = board.Goal }
-               dispatch
+    div [] [
+        let hand = Player.hand player
+
+        let cards =
+            div [ ClassName "card-count " ]
+                [ div [] [span [][str (string (Hand.count hand))]] ]
+
+
+        playerInfo { Name = None
+                     Player = player
+                     IsActive = playerid = board.Table.Player
+                     Goal = board.Goal }
+                   cards
+                   dispatch
+
+    ]
+
 
 let playersboard model dispatch =
     match model.Board with
@@ -298,7 +310,7 @@ let playersboard model dispatch =
         for pid, player in Map.toSeq b.Players do
             let cp = document.getElementById ("crazy_player_board_" + pid)
             if cp = null then
-                let parent = document.getElementById("player_board_" + pid)
+                let parent = document.getElementById("overall_player_board_" + pid)
                 let pdiv = document.createElement "div" :?> Browser.Types.HTMLDivElement
                 pdiv.id <- "crazy_player_board_" + pid
                 pdiv.className <- "player-dashboard bga"
