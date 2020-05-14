@@ -140,7 +140,18 @@ module Program =
         |> Program.withSubscription(fun _ -> [ fun dispatch ->
             bridge <- Bridge(f >> dispatch )
             window?crazyfarmers <- bridge ])
+    let withExtraView view (program: Program<'arg,'model,'msg,'view>) =
+        let mutable lastRequest = None
+        let setState model dispatch =
+            match lastRequest with
+            | Some r -> window.cancelAnimationFrame r
+            | _ -> ()
 
+            lastRequest <- Some (window.requestAnimationFrame (fun _ -> view model dispatch ))
+            Program.setState program model dispatch
+
+        program
+        |> Program.withSetState setState
 module Cmd =
     let bridgeSend msg : Cmd<'msg> =
         [ fun _ -> bridge.Send(msg) ]
@@ -273,6 +284,84 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         }, Cmd.none
 
 
+let playerBoard board playerid (player: CrazyPlayer) dispatch =
+    playerInfo { Name = None
+                 Player = player
+                 IsActive = playerid = board.Table.Player
+                 Goal = board.Goal }
+               dispatch
+
+let playersboard model dispatch =
+    match model.Board with
+    | Board b
+    | Won(_,b) ->
+        for pid, player in Map.toSeq b.Players do
+            let cp = document.getElementById ("crazy_player_board_" + pid)
+            if cp = null then
+                let parent = document.getElementById("player_board_" + pid)
+                let pdiv = document.createElement "div" :?> Browser.Types.HTMLDivElement
+                pdiv.id <- "crazy_player_board_" + pid
+                pdiv.className <- "player-dashboard bga"
+                parent.appendChild(pdiv) |> ignore 
+            ReactDom.render( playerBoard b pid player dispatch,
+                        document.getElementById ("crazy_player_board_" + pid))
+    | _ -> ()
+
+
+let playersHand model dispatch =
+    match model.PlayerId with
+    | Some playerId ->
+        match model.Board with
+        | Board board 
+        | Won(_,board) ->
+            
+            handView dispatch model.PlayerId board model.CardAction (Player.hand board.Players.[playerId])
+        | _ -> null
+    | None -> null
+
+let view (model : Model) (dispatch : Msg -> unit) =
+    match model.Board with
+    | InitialState -> 
+        div [ClassName "board" ] [
+            div [] [ ]
+        
+        ]
+    | Board board ->
+        div [] 
+            [ 
+              playersHand model dispatch
+
+              div [ ClassName "board" ]
+                [ yield! boardView board
+
+                  for m in model.Moves do
+                    moveView dispatch m
+
+                  yield! endTurnView dispatch model.PlayerId board
+
+                  yield! boardCardActionView dispatch board model.CardAction 
+
+                ]
+              lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
+            ]
+    | Won(winner, board) ->
+        div []
+            [ 
+              div [ ClassName "board" ]
+                  [ yield! boardView board
+        
+                    let player = board.Players.[winner]
+
+                    div [ ClassName "victory" ]
+                        [ p [] [ str "And the winner is"]
+                          div [ ClassName ("winner " + colorName (Player.color player)) ]
+                              [ div [ ClassName "player"] [] ]
+                          p [] [ str board.Table.Names.[winner] ] 
+
+                          ] ] ]
+
+
+
 #if DEBUG
 open Elmish.Debug
 open Elmish.HMR
@@ -291,6 +380,7 @@ Program.mkProgram init update view
 |> Program.withConsoleTrace
 #endif
 |> Program.withReactBatched "elmish-app"
+|> Program.withExtraView playersboard
 #if DEBUG
 |> Program.withDebugger
 #endif

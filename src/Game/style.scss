@@ -156,113 +156,7 @@ i.fa-bars {
     display: flex;
     flex-flow: row wrap;
 
-    .player-dashboard {
-        flex: 1 1 25vw;
-        padding-top: 0.2em;
-        padding-bottom: 0.1em;
-        display: flex;
-        flex-flow: column;
-
-        .player-top {
-            flex: 0 0 3em;
-            display: flex;
-            flex-flow: row wrap;
-            align-content: stretch;
-        }
-
-        .description {
-            flex: 0 0 auto;
-
-            .player {
-                display: block;
-                /*margin-top: 1em;*/
-                margin-left: 0.5em;
-                width: 2em;
-                height: 2em;
-                z-index: 10;
-            }
-
-            .name {
-                margin-left: 3em;
-            }
-        }
-    }
-
-    .player-dashboard.local {
-        background-color: $crazy-hay;
-    }
-
-    .moves {
-        display: inline-block;
-        margin-left: 2.5em;
-        height: 1.5em;
-    }
-
-    .markers {
-        flex: 1 1 auto;
-        margin-left: 0.5em;
-
-        div {
-            width: 2.5em;
-            height: 2.5em;
-            background-size: contain;
-            background-repeat: no-repeat;
-            display: inline-block;
-        }
-
-        .rut-marker {
-            background-image: url(~img/rut-marker.png);
-        }
-
-        .nitro-1-marker {
-            background-image: url(~img/nitro-1-marker.png);
-        }
-
-        .nitro-2-marker {
-            background-image: url(~img/nitro-2-marker.png);
-        }
-
-        .watchdog-marker {
-            background-image: url(~img/watchdog-marker.png);
-        }
-
-        .highvoltage-marker {
-            background-image: url(~img/highvoltage-marker.png);
-        }
-
-        .helicopter-marker {
-            background-image: url(~img/helicopter-marker.png);
-        }
-    }
-
-    .individual-goal {
-        display: block;
-        margin-left: 1em;
-        float: right;
-
-        .stack {
-            display: inline-block;
-            margin-left: -2.3em;
-            margin-top: 0.5em;
-        }
-
-        .tile {
-            position: static;
-            width: 2em;
-            height: 2em;
-        }
-
-        .tile-count {
-            font-family: BigSlabHammer;
-            color: white;
-            text-shadow: 2px 0.2em 0.2em #333;
-            vertical-align: top;
-            margin-left: -2.2em;
-            margin-top: 0.8em;
-            display: inline-block;
-            white-space: nowrap;
-        }
-    }
+ 
 
     .common-goal {
         margin-left: auto;
@@ -297,6 +191,50 @@ i.fa-bars {
         }
     }
 
+}
+
+.player-dashboard {
+    flex: 1 1 25vw;
+    padding-top: 0.2em;
+    padding-bottom: 0.1em;
+    display: flex;
+    flex-flow: column;
+
+    .player-top {
+        flex: 0 0 3em;
+        display: flex;
+        flex-flow: row wrap;
+        align-content: stretch;
+    }
+
+    .description {
+        flex: 0 0 auto;
+
+        .player {
+            display: block;
+            /*margin-top: 1em;*/
+            margin-left: 0.5em;
+            width: 2em;
+            height: 2em;
+            z-index: 10;
+        }
+
+        .name {
+            margin-left: 3em;
+        }
+    }
+}
+
+.player-dashboard.local {
+    background-color: $crazy-hay;
+}
+
+.moves {
+    display: inline-block;
+    margin-left: 2.5em;
+    height: 1.5em;
+
+
     .flash {
         background-image: url(~img/flash.png);
         width: 1.5em;
@@ -308,6 +246,78 @@ i.fa-bars {
 
     .flash.inactive {
         background-image: url(~img/flash-inactive.png);
+    }
+}
+
+.bga {
+    .moves {
+        margin-left: 3.5em;
+    }
+}
+
+.markers {
+    flex: 1 1 auto;
+    margin-left: 0.5em;
+
+    div {
+        width: 2.5em;
+        height: 2.5em;
+        background-size: contain;
+        background-repeat: no-repeat;
+        display: inline-block;
+    }
+
+    .rut-marker {
+        background-image: url(~img/rut-marker.png);
+    }
+
+    .nitro-1-marker {
+        background-image: url(~img/nitro-1-marker.png);
+    }
+
+    .nitro-2-marker {
+        background-image: url(~img/nitro-2-marker.png);
+    }
+
+    .watchdog-marker {
+        background-image: url(~img/watchdog-marker.png);
+    }
+
+    .highvoltage-marker {
+        background-image: url(~img/highvoltage-marker.png);
+    }
+
+    .helicopter-marker {
+        background-image: url(~img/helicopter-marker.png);
+    }
+}
+
+.individual-goal {
+    display: block;
+    margin-left: 1em;
+    float: right;
+
+    .stack {
+        display: inline-block;
+        margin-left: -2.3em;
+        margin-top: 0.5em;
+    }
+
+    .tile {
+        position: static;
+        width: 2em;
+        height: 2em;
+    }
+
+    .tile-count {
+        font-family: BigSlabHammer;
+        color: white;
+        text-shadow: 2px 0.2em 0.2em #333;
+        vertical-align: top;
+        margin-left: -2.2em;
+        margin-top: 0.8em;
+        display: inline-block;
+        white-space: nowrap;
     }
 }
 
