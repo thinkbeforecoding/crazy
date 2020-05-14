@@ -353,6 +353,21 @@ let playersHand model dispatch =
         | _ -> null
     | None -> null
 
+let playedCard dispatch card =
+    match card with
+    | Some c ->
+      let boardDiv = document.getElementById("board") :?> Browser.Types.HTMLDivElement
+      let top = (max 0. (boardDiv.offsetTop - window.scrollY))
+      div [ClassName "played-card"
+           Style [Top (sprintf "calc (%fpx + 10em)" top)]
+           OnAnimationEnd (fun _ -> dispatch HidePlayedCard) ]
+          [ div [ClassName ("card " + cardName c)] [] ]
+    | None -> 
+      //div [ClassName "played-card"
+      //     Style [Top 40] ]
+      //    [ div [ClassName ("card " + cardName Watchdog)] [] ]
+      null
+
 let view (model : Model) (dispatch : Msg -> unit) =
     match model.Board with
     | InitialState -> 
@@ -365,7 +380,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
             [ 
               playersHand model dispatch
 
-              div [ ClassName "board" ]
+              div [ Id "board"; ClassName "board" ]
                 [ yield! boardView board
 
                   for m in model.Moves do

@@ -166,7 +166,7 @@ i.fa-bars {
     display: flex;
     flex-flow: row wrap;
 
- 
+
 
     .common-goal {
         margin-left: auto;
@@ -307,6 +307,14 @@ i.fa-bars {
         }
     }
 
+    .description {
+        position:absolute;
+    }
+
+    .markers {
+        margin-left: 3em;
+        align-self: flex-end;
+    }
    
 }
 
@@ -318,7 +326,7 @@ i.fa-bars {
     .cards {
         padding-top: 1em;
         padding-bottom: 1em;
-        height:6em;
+        height: 6em;
         background-color: color.change($crazy-hay, $alpha: 0.4);
         display: flex;
         flex-flow: row;
@@ -347,8 +355,54 @@ i.fa-bars {
     .card {
         flex: 0 1 auto;
         width: 4em;
-        height: 5.72em;
+        padding-top: 144%;
         position: relative;
+    }
+
+    .played-card {
+        min-width: 4em;
+        width: 10%;
+        .card {
+            width: 100%;
+            padding-top: 144%;
+            height: auto;
+        }
+    }
+
+
+
+
+    .action {
+
+        .player {
+            width: 3em;
+            height: 3em;
+            position: static;
+        }
+
+        .blue {
+            .player:hover {
+                background-image: url(~img/selected-player-blue.png);
+            }
+        }
+
+        .yellow {
+            .player:hover {
+                background-image: url(~img/selected-player-yellow.png);
+            }
+        }
+
+        .purple {
+            .player:hover {
+                background-image: url(~img/selected-player-purple.png);
+            }
+        }
+
+        .red {
+            .player:hover {
+                background-image: url(~img/selected-player-red.png);
+            }
+        }
     }
 }
 
@@ -523,14 +577,13 @@ $back-y: 0.15vw;
 div.card {
     /*margin-top: 3em;*/
     width: 5vw;
-    height: 7.25vw;
+    padding-top: 144%;
     background-size: contain;
     background-repeat: no-repeat;
     border-radius: 0.5vw;
     background-clip: padding-box;
     box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
     /*display: inline-block;*/
-    margin-right: 0.4vw;
 }
 
 
@@ -586,6 +639,7 @@ div.back {
 
     .card-container {
         display: inline-block;
+        margin-right: 0.4vw;
     }
 
     div.action {
@@ -658,8 +712,8 @@ div.back {
 
 .played-card {
     position: fixed;
-    right: 3em;
-    top: 7em;
+    left: 4em;
+    top: 12em;
     opacity: 0;
     z-index: 150;
     animation-name: fadeout;
@@ -667,7 +721,7 @@ div.back {
     transition-property: opacity;
     .card {
         width: 2*5vw;
-        height: 2*7.25vw;
+        padding-top: 144%;
     }
 }
 
@@ -683,7 +737,7 @@ div.back {
 
     font-family: BigSlabHammer;
     color: white;
-    font-size: 4%;
+    font-size: 200%;
     text-align: center;
     padding-top: 0.5em;
 
