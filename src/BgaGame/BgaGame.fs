@@ -318,6 +318,9 @@ let playerBoard board playerid (player: CrazyPlayer) dispatch =
     ]
 
 
+let score  player =
+    str (string (Player.principalFieldSize player))
+
 let playersboard model dispatch =
     match model.Board with
     | Board b
@@ -332,6 +335,10 @@ let playersboard model dispatch =
                 parent.appendChild(pdiv) |> ignore 
             ReactDom.render( playerBoard b pid player dispatch,
                         document.getElementById ("crazy_player_board_" + pid))
+
+
+            ReactDom.render( score player,  document.getElementById("player_score_" + pid))
+
     | _ -> ()
 
 

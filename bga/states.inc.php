@@ -86,11 +86,11 @@ $machinestates = array(
     4 => [
         "name" => "endTurn",
     	"description" => clienttranslate('${actplayer} must play a card or end turn'),
-    	"descriptionmyturn" => clienttranslate('${you} must play a card or end turn'),
+    	"descriptionmyturn" => clienttranslate('${you} must play a card or '),
     	"type" => "activeplayer",
-        "possibleactions" => [ "playCard", "next" ],
+        "possibleactions" => [ "playCard", "next", "moreMoves", "move" ],
         "updateGameProgression" => true,
-    	"transitions" => [ "playCard" => 4, "next" => 10, "endGame" => 99 ]
+    	"transitions" => [ "playCard" => 4, "move" => 4, "moreMoves" => 3, "next" => 10,  "endGame" => 99 ]
     ],
 
     10 => [
@@ -125,6 +125,7 @@ $machinestates = array(
 
 */    
    
+
     // Final state.
     // Please do not modify (and do not overload action/args methods).
     99 => array(

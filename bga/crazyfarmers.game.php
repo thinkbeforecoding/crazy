@@ -80,14 +80,14 @@ class CrazyFarmers extends Table
  
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
-        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
+        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar, player_score) VALUES ";
         $values = array();
         $crazyPlayers = array();
         foreach( $players as $player_id => $player )
         {
             $color = array_shift( $default_colors );
             $crazyPlayers[] = [ CrazyFarmers::get_Color($color), strval($player_id), $player['player_name']  ];
-            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
+            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."',1)";
         }
         $sql .= implode( $values, ',' );
         self::DbQuery( $sql );
@@ -290,6 +290,7 @@ class CrazyFarmers extends Table
         $newVersion = self::saveEvents($es);
         $board = self::fold($board, $es);
 
+        self::updateScore($es,$board);
         if (!empty($es))
         {
             foreach(self::loadPlayersBasicInfos() as $id => $p)
@@ -315,6 +316,17 @@ class CrazyFarmers extends Table
 
         }
         self::updateState($es,$board);
+    }
+
+    function updateScore($es, $board)
+
+    {
+        SharedServer___bgaScore($es, $board, function ($args) 
+        {
+            $pid = $args[0];
+            $score = $args[1];
+            self::DbQuery( "UPDATE player SET player_score=$score WHERE player_id='$pid'" );
+        });
     }
 
     function selectFirstCrossroad($crossroad)
@@ -356,7 +368,7 @@ class CrazyFarmers extends Table
 
     function updateState($es,$board)
     {
-        SharedServer___bgaUpdateState($es,$board, function($state) {$this->gamestate->nextState($state);});
+        SharedServer___bgaUpdateState($es,$board, $this->gamestate->state()['name'], function($state) {$this->gamestate->nextState($state);});
     }
     
     function stNextPlayer()
