@@ -143,7 +143,10 @@ function (dojo, declare,ui,c,v,crazy) {
             {            
                 switch( stateName )
                 {
-/*               
+                    case 'endTurn':
+                        this.addActionButton( 'endTurn', _('End Turn'), 'onEndTurn' ); 
+                        break;
+/*                      
                  Example:
  
                  case 'myGameState':
@@ -214,6 +217,11 @@ function (dojo, declare,ui,c,v,crazy) {
                 //     // (most of the time: nothing)
 
                 //     } );      
+        },
+
+        onEndTurn: function()
+        {
+            this.onCommand("endTurn", { value: true, lock = true });
         },
 
         /* Example:

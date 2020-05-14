@@ -65,7 +65,7 @@ $machinestates = array(
     2 => [
         "name" => "selectFirstCrossroad",
         "description" => clienttranslate('${actplayer} must select a crossroad around his field from where to start' ),
-        "descriptionmyturn" => clienttranslate('${you} must select a crossroad around his field from where to start' ),
+        "descriptionmyturn" => clienttranslate('${you} must select a crossroad around your field from where to start' ),
         "type" => "activeplayer",
         "possibleactions" => array("selectFirstCrossroad"),
         "transitions" => ["selectFirstCrossroad" => 3 ]

@@ -42,7 +42,8 @@ let bgaUpdateState events board changeState =
             changeState "selectFirstCrossroad"
         | Board.Played(p, Player.MovedInField _)
         | Board.Played(p, Player.MovedPowerless _)
-        | Board.Played(p, Player.FenceDrawn _) ->
+        | Board.Played(p, Player.FenceDrawn _)
+        | Board.Played(p, Player.CardPlayed _) ->
             match board with
             | Board.Board b ->
                 match b.Players.[p] with
