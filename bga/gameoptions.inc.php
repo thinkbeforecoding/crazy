@@ -50,6 +50,16 @@ $game_options = array(
 
     */
 
+    100 => array(
+        'name' => totranslate('Game mode'),    
+        'values' => array(
+                    2 => array( 'name' => totranslate('Regular'), 'description' => totranslate('25-50min')),
+
+                    1 => array( 'name' => totranslate('Fast'), 'description' => totranslate('15-30min'), 'tmdisplay' => totranslate('Fast') ),
+
+                    3 => array( 'name' => totranslate('Expert'), 'description' => totranslate('40-90min'), 'nobeginner' => true, 'tmdisplay' => totranslate('Expert') )
+                )
+    )
 );
 
 

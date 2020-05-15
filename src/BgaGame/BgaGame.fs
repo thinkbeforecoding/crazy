@@ -311,7 +311,8 @@ let playerBoard board playerid (player: CrazyPlayer) dispatch =
         playerInfo { Name = None
                      Player = player
                      IsActive = playerid = board.Table.Player
-                     Goal = board.Goal }
+                     Goal = Some board.Goal
+                     PlayingBoard = board}
                    cards
                    dispatch
 
@@ -349,7 +350,7 @@ let playersHand model dispatch =
         | Board board 
         | Won(_,board) ->
             
-            handView dispatch model.PlayerId board model.CardAction (Player.hand board.Players.[playerId])
+            handView dispatch true model.PlayerId board model.CardAction (Player.hand board.Players.[playerId])
         | _ -> null
     | None -> null
 

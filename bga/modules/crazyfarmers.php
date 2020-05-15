@@ -2756,8 +2756,8 @@ function Shared_002EPlayer___decide($otherPlayers__1, $barns__3, $command, $play
  }));
  }));
                             default:
-                                $activePatternResult58367 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
-                                if (!is_null($activePatternResult58367)) {
+                                $activePatternResult69845 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
+                                if (!is_null($activePatternResult69845)) {
                                     return new Cons(new Event_FenceRemoved(new Moved($cmd__1->Direction, $nextPath__1, $nextPos__1)), FSharpList::get_Nil());
                                 } else {
                                     $matchValue__15 = Shared_002EFenceModule___findLoop($cmd__1->Direction, $player__17->Tractor, $player__17->Fence);
@@ -3958,14 +3958,14 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                             $nextBoard = Shared_002EBoardModule___annexed($playerid__11, $e__20, $board__19);
                                             $eliminated = 0;
                                             return Seq::append(Seq::collect(function ($matchValue__35) use ($eliminated) { 
-                                                $activePatternResult58568 = $matchValue__35;
-                                                if (Shared_002EPlayer___isKo($activePatternResult58568[1])) {
+                                                $activePatternResult70046 = $matchValue__35;
+                                                if (Shared_002EPlayer___isKo($activePatternResult70046[1])) {
                                                     $eliminated = $eliminated + 1;
                                                     return Seq::empty();
                                                 } else {
-                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult58568[1]))) {
+                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult70046[1]))) {
                                                         $eliminated = $eliminated + 1;
-                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult58568[0], new Event_Eliminated()));
+                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult70046[0], new Event_Eliminated()));
                                                     } else {
                                                         return Seq::empty();
                                                     }
@@ -4056,8 +4056,8 @@ function Shared_002EBoardModule___toState($board__20) {
  }, $source__9);
                 return FSharpArray::ofSeq($source__10);
             })(), new STable($board__20->Item2->Table->Players, $board__20->Item2->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__40) use ($board__20) {             return Seq::collect(function ($matchValue__38) { 
-                $activePatternResult58582 = $matchValue__38;
-                return Seq::singleton([ $activePatternResult58582[0], $activePatternResult58582[1]]);
+                $activePatternResult70060 = $matchValue__38;
+                return Seq::singleton([ $activePatternResult70060[0], $activePatternResult70060[1]]);
             }, $board__20->Item2->Table->Names);
  })), $board__20->Item2->Table->Current), FSharpArray::ofList($board__20->Item2->DiscardPile), (function () use ($board__20) { 
                 $list__24 = Shared_002EFieldModule___parcels($board__20->Item2->Barns->Free);
@@ -4073,8 +4073,8 @@ function Shared_002EBoardModule___toState($board__20) {
  }, $source__7);
                 return FSharpArray::ofSeq($source__8);
             })(), new STable($board__20->Item->Table->Players, $board__20->Item->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__39) use ($board__20) {             return Seq::collect(function ($matchValue__37) { 
-                $activePatternResult58578 = $matchValue__37;
-                return Seq::singleton([ $activePatternResult58578[0], $activePatternResult58578[1]]);
+                $activePatternResult70056 = $matchValue__37;
+                return Seq::singleton([ $activePatternResult70056[0], $activePatternResult70056[1]]);
             }, $board__20->Item->Table->Names);
  })), $board__20->Item->Table->Current), FSharpArray::ofList($board__20->Item->DiscardPile), (function () use ($board__20) { 
                 $list__22 = Shared_002EFieldModule___parcels($board__20->Item->Barns->Free);
@@ -4456,7 +4456,8 @@ function SharedServer___bgaScore($events__2, $board__4, $updateScore) {
                 $inputSequence = Map::toSeq($board__4->Item->Players);
                 return Seq::iterate(function ($forLoopVar) use ($updateScore) { 
                     $score = Shared_002EPlayer___principalFieldSize($forLoopVar[1]);
-                    return $updateScore([ $forLoopVar[0], $score]);
+                    $scoreAux = Shared_002EPlayer___fieldTotalSize($forLoopVar[1]);
+                    return $updateScore([ $forLoopVar[0], $score, $scoreAux]);
                 }, $inputSequence);
             } else {
                 if ($e__3->Item2 instanceof Event_CardPlayed) {
@@ -4466,7 +4467,8 @@ function SharedServer___bgaScore($events__2, $board__4, $updateScore) {
                             $inputSequence = Map::toSeq($board__4->Item->Players);
                             return Seq::iterate(function ($forLoopVar) use ($updateScore) { 
                                 $score = Shared_002EPlayer___principalFieldSize($forLoopVar[1]);
-                                return $updateScore([ $forLoopVar[0], $score]);
+                                $scoreAux = Shared_002EPlayer___fieldTotalSize($forLoopVar[1]);
+                                return $updateScore([ $forLoopVar[0], $score, $scoreAux]);
                             }, $inputSequence);
                         default:
                             return NULL;

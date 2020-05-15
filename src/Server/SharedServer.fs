@@ -109,7 +109,8 @@ let bgaScore events board updateScore =
             | Board.Played(_, Player.CardPlayed(PlayBribe _)) ->
                 for pid,player in Map.toSeq b.Players do
                     let score = Player.principalFieldSize player
-                    updateScore(pid, score);
+                    let scoreAux = Player.fieldTotalSize player
+                    updateScore(pid, score, scoreAux);
             | _ -> ()
     | _ -> ()
 

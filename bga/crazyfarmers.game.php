@@ -36,6 +36,7 @@ class CrazyFarmers extends Table
         
         self::initGameStateLabels( array( 
             "board" => 10,
+            "game_mode" => 100
             //    "my_second_global_variable" => 11,
             //      ...
             //    "my_first_game_variant" => 100,
@@ -80,14 +81,14 @@ class CrazyFarmers extends Table
  
         // Create players
         // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
-        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar, player_score) VALUES ";
+        $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar, player_score, player_score_aux) VALUES ";
         $values = array();
         $crazyPlayers = array();
         foreach( $players as $player_id => $player )
         {
             $color = array_shift( $default_colors );
             $crazyPlayers[] = [ CrazyFarmers::get_Color($color), strval($player_id), $player['player_name']  ];
-            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."',1)";
+            $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."',1,1)";
         }
         $sql .= implode( $values, ',' );
         self::DbQuery( $sql );
@@ -105,7 +106,21 @@ class CrazyFarmers extends Table
         //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
         // TODO: setup the initial game situation here
-        $goalType = new GoalType_Regular();
+
+        switch ($this->gamestate->table_globals[100])
+        {
+            case 1:
+                $goalType = new GoalType_Fast();
+            break;
+            case 3:
+                $goalType = new GoalType_Expert();
+            break;
+            default:
+                $goalType = new GoalType_Regular();
+        }
+
+
+
 
         $goal = Shared_002EGoalModule___fromType(count($players), $goalType);
 
@@ -325,7 +340,8 @@ class CrazyFarmers extends Table
         {
             $pid = $args[0];
             $score = $args[1];
-            self::DbQuery( "UPDATE player SET player_score=$score WHERE player_id='$pid'" );
+            $scoreAux = $args[2];
+            self::DbQuery( "UPDATE player SET player_score=$score, player_score_aux=$scoreAux WHERE player_id='$pid'" );
         });
     }
 

@@ -168,41 +168,41 @@ i.fa-bars {
 
 
 
-    .common-goal {
-        margin-left: auto;
-        flex: 0 0 auto;
-        width: 0.2em;
-        padding-left: 3em;
-        text-wrap: none;
 
-        .stack {
-            display: inline-block;
-            margin-left: -2.3em;
-            margin-top: 0.5em;
-        }
-
-        .tile {
-            position: static;
-            width: 2em;
-            height: 2em;
-        }
-
-
-        .tile-count {
-            font-family: BigSlabHammer;
-            color: white;
-            text-shadow: 2px 0.2em 0.2em #333;
-            vertical-align: top;
-            margin-left: -1.9em;
-            margin-top: 0.8em;
-            display: inline-block;
-            white-space: nowrap;
-            text-align: center;
-        }
-    }
 
 }
+.common-goal {
+    margin-left: auto;
+    flex: 0 0 auto;
+    width: 0.2em;
+    padding-left: 3em;
+    text-wrap: none;
 
+    .stack {
+        display: inline-block;
+        margin-left: -2.3em;
+        margin-top: 0.5em;
+    }
+
+    .tile {
+        position: static;
+        width: 2em;
+        height: 2em;
+    }
+
+
+    .tile-count {
+        font-family: BigSlabHammer;
+        color: white;
+        text-shadow: 2px 0.2em 0.2em #333;
+        vertical-align: top;
+        margin-left: -1.9em;
+        margin-top: 0.8em;
+        display: inline-block;
+        white-space: nowrap;
+        text-align: center;
+    }
+}
 .player-dashboard {
     flex: 1 1 25%;
     padding-top: 0.2em;
@@ -308,14 +308,19 @@ i.fa-bars {
     }
 
     .description {
-        position:absolute;
+        position: absolute;
     }
 
     .markers {
         margin-left: 3em;
         align-self: flex-end;
     }
-   
+
+    .common-goal, .individual-goal {
+        font-size: 110%;
+        align-self: flex-end;
+    }
+
 }
 
 #game_play_area {
@@ -342,6 +347,23 @@ i.fa-bars {
         }
     }
 
+    .hand-title {
+        position:absolute;
+        top: 0.3em;
+        left: 0.3em;
+        font-family: 'BigSlabHammer';
+        color: white;
+        font-size: 120%;
+    }
+
+    .empty-hand {
+        text-align: center;
+        font-style: italic;
+        font-size: 80%;
+        color: white;
+        align-self: center;
+    }
+
     .action {
         max-width: 50%;
         top: 7em;
@@ -362,6 +384,7 @@ i.fa-bars {
     .played-card {
         min-width: 4em;
         width: 10%;
+
         .card {
             width: 100%;
             padding-top: 144%;
