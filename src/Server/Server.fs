@@ -21,6 +21,8 @@ open FSharp.Data.UnitSystems.SI.UnitSymbols
 
 let tryGetEnv = System.Environment.GetEnvironmentVariable >> function null | "" -> None | x -> Some x
 
+let containerName = "crazy"
+
 printfn "Starting instance: %s" Environment.MachineName
 
 type ServerConfig =
@@ -96,64 +98,322 @@ let (|JObj|_|) (o: obj) : 'e option =
     | _ -> None
 
 
+module Dto = 
+    let ofCard =
+        function
+        | Nitro One -> "Nitro1"
+        | Nitro Two -> "Nitro2"
+        | Rut -> "Rut"
+        | HayBale One -> "HayBale1"
+        | HayBale Two -> "HayBale2"
+        | Dynamite -> "Dynamite"
+        | HighVoltage -> "HighVoltage"
+        | Watchdog -> "Watchdog"
+        | Helicopter -> "Helicopter"
+        | Bribe -> "Bribe"
+
+    let toCard =
+        function
+        | "Nitro1" -> Nitro One
+        | "Nitro2" -> Nitro Two
+        | "Rut" -> Rut
+        | "HayBale1" -> HayBale One
+        | "HayBale2" -> HayBale Two
+        | "Dynamite" -> Dynamite
+        | "HighVoltage" -> HighVoltage
+        | "Watchdog" -> Watchdog
+        | "Helicopter" -> Helicopter
+        | "Bribe" -> Bribe
+        | _ -> failwith "Unknown card"
+        
+    type ParcelDto = { q: int; r: int }
+
+    let ofParcel (Parcel(Axe(q,r)))= { q = q; r = r}
+    let toParcel p = Parcel(Axe(p.q, p.r))
+
+    let ofParcels = Seq.map ofParcel >> Seq.toArray
+    let toParcels = Seq.map toParcel >> Seq.toList
+
+    type CrossroadDto = {q: int; r: int; side: string}
+
+    let ofCrossroad (Crossroad(Axe(q,r), side)) =
+        { q = q; r = r; side = match side with CLeft -> "Left" | CRight -> "Right" }
+
+    let toCrossroad c =
+        Crossroad(Axe(c.q,c.r), match c.side with "Left" -> CLeft | "Right" -> CRight | _ -> failwithf "Unknwon side" )
+
+    type PathDto = {q: int; r: int; border: string}
+
+    let ofPath (Path(Axe(q,r), border)) =
+        { q = q; r = r; border = match border with BNW -> "NW" | BN -> "N" | BNE -> "NE" }
+
+    let toPath c =
+        Path(Axe(c.q,c.r), match c.border with "NW" -> BNW | "N" -> BN  | "NE" -> BNE | _ -> failwithf "Unknwon border" )
+
+
+
+    let ofColor =
+        function
+        | Blue -> "Blue"
+        | Yellow -> "Yellow"
+        | Purple -> "Purple"
+        | Red -> "Red"
+
+    let toColor =
+        function
+        | "Blue" -> Blue
+        | "Yellow" -> Yellow
+        | "Purple" -> Purple
+        | "Red" -> Red
+        | _ -> failwith "Unknown color"
+
+    type PlayerDto =
+        { Color: string 
+          Id: string
+          Name: string
+          Parcel: ParcelDto}
+
+    let ofPlayer (color, id, name, p) = { Color = ofColor color; Id = id; Name = name; Parcel = ofParcel p}
+    let toPlayer p = toColor p.Color, p.Id, p.Name, toParcel p.Parcel
+
+    type StartedDto =
+        { Players: PlayerDto[]
+          Barns: Parcel[]
+          DrawPile: string[];
+          CommonGoal: bool
+          Goal: int
+         }
+
+    let ofDirection =
+        function
+        | Up -> "Up"
+        | Down -> "Down"
+        | Horizontal -> "Horizontal"
+
+    let toDirection =
+        function
+        | "Up" -> Up
+        | "Down" -> Down
+        | "Horizontal" -> Horizontal
+        | _ -> failwith "Unknown direction"
+
+    type MovedDto =
+        { Move: string
+          Crossroad: CrossroadDto
+          Path: PathDto }
+
+    let ofMoved (e: Player.Moved) =
+       { Move = ofDirection e.Move
+         Crossroad = ofCrossroad e.Crossroad
+         Path = ofPath e.Path } 
+
+    let toMoved (e: MovedDto) =
+       { Player.Moved.Move = toDirection e.Move
+         Player.Moved.Crossroad = toCrossroad e.Crossroad
+         Player.Moved.Path = toPath e.Path } 
+
+    type FirstCrossroadSelectedDto =
+        { Crossroad: CrossroadDto }
+
+
+    type AnnexedDto =
+        { NewField: ParcelDto[]
+          LostFields: LostFieldDto[]
+          FreeBarns: ParcelDto[]
+          OccupiedBarns: ParcelDto[] }
+    and LostFieldDto = 
+        { Player: string 
+          Field: ParcelDto[]
+          }
+
+    let ofLostField (p, field) =
+        { Player = p
+          Field = ofParcels field }
+    let toLostField f =
+        f.Player, toParcels f.Field
+
+
+    type CutFenceDto =
+        { Player: string }
+
+    type FencePathDto = {
+        Path: PathDto
+        Direction: string
+    }
+    type FenceLoopedDto =
+        { Move: string 
+          Loop: FencePathDto[]
+          Crossroad: CrossroadDto }
+
+    let ofFence (Fence(paths)) =
+        paths |> Seq.map(fun (p,d) -> { Path = ofPath p; Direction = ofDirection d }) |> Seq.toArray
+
+    let toFence (paths: FencePathDto[]) =
+        paths |> Seq.map (fun p -> toPath p.Path, toDirection p.Direction) |> Seq.toList |> Fence
+
+    type PlayCardDto =
+        { Card: string 
+          Effect: obj }
+
+    let ofPlayCard (cp: PlayCard) =
+        { Card = Card.ofPlayCard cp |> ofCard
+          Effect = 
+            match cp with
+            | PlayNitro _ -> null
+            | PlayRut v -> v |> box
+            | PlayHayBale ps -> ps |> Seq.map ofPath |> Seq.toArray |> box
+            | PlayDynamite p -> ofPath p |> box
+            | PlayHighVoltage -> null
+            | PlayWatchdog -> null
+            | PlayHelicopter c -> ofCrossroad c |> box
+            | PlayBribe p -> ofParcel p |> box
+        }
+
+    let toPlayCard (cp: PlayCardDto) =
+        match toCard cp.Card with
+        | Nitro p -> PlayNitro p
+        | Rut -> PlayRut (unbox<string> cp.Effect)
+        | HayBale _ -> PlayHayBale (((cp.Effect :?> JArray).ToObject<_[]>())|> Seq.map toPath |> Seq.toList )
+        | Dynamite -> PlayDynamite(toPath ((cp.Effect :?> JObject).ToObject()))
+        | HighVoltage -> PlayHighVoltage
+        | Watchdog -> PlayWatchdog
+        | Helicopter -> PlayHelicopter(toCrossroad ((cp.Effect :?> JObject).ToObject()))
+        | Bribe -> PlayBribe(toParcel ((cp.Effect :?> JObject).ToObject()))
+        
+    type SpedUpDto = { Speed: int }
+
+    type HeliportedDto = { Destination:  CrossroadDto }
+
+    type BribedDto = { Parcel: ParcelDto; Victim: string }
+
+    type PlayerDrewCardsDto =
+        { Player: string
+          Cards: obj }
+
+    type HandDto =
+        { Public: string[]
+          Private: int }
+
+    let ofHand hand =
+        match hand with
+        | PublicHand cards -> cards |> Seq.map ofCard |> Seq.toArray |> box
+        | PrivateHand n -> box n
+
+    let toHand (v: obj) =
+        match v with
+        | :? int as n -> PrivateHand n
+        | :? JArray as cards -> cards.ToObject<string[]>() |> Seq.map toCard |> Seq.toList |> PublicHand
+        | _ -> failwithf "Unknown hand"
+
+
+
+
 type PlayerEvent = 
     { Player: string
       Event: obj }
+
 let serialize =
     function
-    | Board.Event.Started e -> "Started", box e
-    | Board.Event.Played (playerid, Player.Event.MovedInField e ) -> "MovedInField", box { Player = playerid; Event = e }
-    | Board.Event.Played (playerid, Player.Event.FirstCrossroadSelected e ) -> "FirstCrossroadSelected" , box { Player = playerid; Event = e }
-    | Board.Event.Played (playerid, Player.Event.Annexed e ) -> "Annexed" , box { Player = playerid; Event = e }
-    | Board.Event.Played (playerid, Player.Event.CutFence e ) -> "CutFence" , box { Player = playerid; Event = e }
-    | Board.Event.Played (playerid, Player.Event.FenceDrawn e ) -> "FenceDrawn" , box { Player = playerid; Event = e }
-    | Board.Event.Played (playerid, Player.Event.FenceLooped e ) -> "FenceLooped" , box { Player = playerid; Event = e }
-    | Board.Event.Played (playerid, Player.Event.FenceRemoved e ) -> "FenceRemoved" , box { Player = playerid; Event = e }
-    | Board.Event.Played (playerid, Player.Event.MovedPowerless e ) -> "MovedPowerless" , box { Player = playerid; Event = e }
+    | Board.Event.Started e -> 
+        "Started", box { Dto.Players = e.Players |> Seq.map Dto.ofPlayer |> Seq.toArray
+                         Dto.Barns = List.toArray e.Barns
+                         Dto.DrawPile = e.DrawPile |> Seq.map Dto.ofCard |> Seq.toArray
+                         Dto.CommonGoal = match e.Goal with | Common _ -> true | Individual _ -> false
+                         Dto.Goal = match e.Goal with | Common n -> n |Individual n -> n }
+    | Board.Event.Played (playerid, Player.Event.MovedInField e ) -> 
+        "MovedInField", box { Player = playerid
+                              Event = Dto.ofMoved e }
+    | Board.Event.Played (playerid, Player.Event.FirstCrossroadSelected e ) -> 
+        "FirstCrossroadSelected" , box { Player = playerid
+                                         Event = { Dto.FirstCrossroadSelectedDto.Crossroad = Dto.ofCrossroad e.Crossroad } }
+    | Board.Event.Played (playerid, Player.Event.Annexed e ) ->
+        "Annexed" , box { Player = playerid
+                          Event =  { Dto.NewField = Dto.ofParcels e.NewField
+                                     Dto.LostFields = e.LostFields |> Seq.map Dto.ofLostField |> Seq.toArray
+                                     Dto.FreeBarns = Dto.ofParcels e.FreeBarns
+                                     Dto.OccupiedBarns = Dto.ofParcels e.OccupiedBarns
+                                     } }
+    | Board.Event.Played (playerid, Player.Event.CutFence e) -> 
+        "CutFence" , box { Player = playerid; Event =  { Dto.CutFenceDto.Player = e.Player }  }
+    | Board.Event.Played (playerid, Player.Event.FenceDrawn e ) -> 
+        "FenceDrawn" , box { Player = playerid; Event = Dto.ofMoved e }
+    | Board.Event.Played (playerid, Player.Event.FenceLooped e ) -> 
+        "FenceLooped" , box { Player = playerid
+                              Event = { Dto.FenceLoopedDto.Move = Dto.ofDirection e.Move
+                                        Dto.FenceLoopedDto.Loop = Dto.ofFence e.Loop
+                                        Dto.FenceLoopedDto.Crossroad = Dto.ofCrossroad e.Crossroad } }
+    | Board.Event.Played (playerid, Player.Event.FenceRemoved e ) -> 
+        "FenceRemoved" , box { Player = playerid; Event = Dto.ofMoved e }
+    | Board.Event.Played (playerid, Player.Event.MovedPowerless e ) -> 
+        "MovedPowerless" , box { Player = playerid; Event = Dto.ofMoved e }
     | Board.Event.Played (playerid, Player.Event.PoweredUp  ) -> "PoweredUp" , box { Player = playerid; Event = null }
-    | Board.Event.Played (playerid, Player.Event.CardPlayed e  ) -> "CardPlayed" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.CardPlayed e  ) -> "CardPlayed" , box { Player = playerid; Event = (Dto.ofPlayCard e) }
     | Board.Event.Played (playerid, Player.Event.HighVoltaged  ) -> "HighVoltaged" , box { Player = playerid; Event = null }
     | Board.Event.Played (playerid, Player.Event.Watched  ) -> "Watched" , box { Player = playerid; Event = null }
     | Board.Event.Played (playerid, Player.Event.Rutted  ) -> "Rutted" , box { Player = playerid; Event = null }
-    | Board.Event.Played (playerid, Player.Event.SpedUp e  ) -> "SpedUp" , box { Player = playerid; Event = e }
-    | Board.Event.Played (playerid, Player.Event.Heliported e  ) -> "Heliported" , box { Player = playerid; Event = e }
-    | Board.Event.Played (playerid, Player.Event.Bribed e  ) -> "Bribed" , box { Player = playerid; Event = e }
-    | Board.Event.Played (playerid, Player.Event.BonusDiscarded e  ) -> "BonusDiscarded" , box { Player = playerid; Event = e }
+    | Board.Event.Played (playerid, Player.Event.SpedUp e  ) -> "SpedUp" , box { Player = playerid; Event = { Dto.SpedUpDto.Speed = e.Speed } }
+    | Board.Event.Played (playerid, Player.Event.Heliported e  ) -> "Heliported" , box { Player = playerid; Event = { Dto.HeliportedDto.Destination = Dto.ofCrossroad e } }
+    | Board.Event.Played (playerid, Player.Event.Bribed e  ) -> "Bribed" , box { Player = playerid; Event = { Dto.BribedDto.Parcel = Dto.ofParcel e.Parcel; Dto.BribedDto.Victim = e.Victim} }
+    | Board.Event.Played (playerid, Player.Event.BonusDiscarded e  ) -> "BonusDiscarded" , box { Player = playerid; Event = Dto.ofCard e }
     | Board.Event.Played (playerid, Player.Event.Eliminated  ) -> "Eliminated" , box { Player = playerid; Event = null }
     | Board.Event.Next  -> "Next" , null
-    | Board.Event.PlayerDrewCards e  -> "PlayerDrewCards" , box e
-    | Board.Event.HayBalesPlaced e  -> "HayBalesPlaced" , box e
-    | Board.Event.HayBaleDynamited e  -> "HayBaleDynamited" , box e
-    | Board.Event.DiscardPileShuffled e  -> "DiscardPileShuffled" , box e
+    | Board.Event.PlayerDrewCards e  -> 
+        "PlayerDrewCards" , box { Dto.PlayerDrewCardsDto.Player = e.Player
+                                  Dto.PlayerDrewCardsDto.Cards = Dto.ofHand e.Cards }
+    | Board.Event.HayBalesPlaced e  -> "HayBalesPlaced" , box (e |> Seq.map Dto.ofPath |> Seq.toArray)
+    | Board.Event.HayBaleDynamited e  -> "HayBaleDynamited" , box (Dto.ofPath e)
+    | Board.Event.DiscardPileShuffled e  -> "DiscardPileShuffled" , box (e |> Seq.map Dto.ofCard |> Seq.toArray) 
     | Board.Event.GameWon e  -> "GameWon" , box e
 
-let deserialize =
-    function
-    | "Started", JObj e -> [Board.Started e]
-    | "MovedInField", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.MovedInField e)]
-    | "FirstCrossroadSelected", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.FirstCrossroadSelected e)]
-    | "Annexed", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.Annexed e)]
-    | "CutFence", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.CutFence e)]
-    | "FenceDrawn", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.FenceDrawn e)]
-    | "FenceLooped", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.FenceLooped e)]
-    | "FenceRemoved", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.FenceRemoved e)]
-    | "MovedPowerless", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.MovedPowerless e)]
-    | "PoweredUp", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.PoweredUp )]
-    | "CardPlayed", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.CardPlayed e)]
-    | "HighVoltaged", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.HighVoltaged )]
-    | "Watched", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Watched )]
-    | "Rutted", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Rutted )]
-    | "SpedUp", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.SpedUp e)]
-    | "Heliported", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.Heliported e)]
-    | "Bribed", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.Bribed e)]
-    | "BonusDiscarded", JObj { Player = p; Event = JObj e } -> [Board.Played(p, Player.BonusDiscarded e)]
-    | "Eliminated", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Eliminated )]
-    | "Next", _ -> [ Board.Next]
-    | "PlayerDrewCards", JObj e -> [ Board.PlayerDrewCards e ]
-    | "HayBalesPlaced", JObj e -> [ Board.HayBalesPlaced e ]
-    | "HayBaleDynamited", JObj e -> [ Board.HayBaleDynamited e ]
-    | "DiscardPileShuffled", JObj e -> [ Board.DiscardPileShuffled e ]
-    | "GameWon", JObj e -> [ Board.GameWon e ]
+
+let deserialize data =
+    try
+        match data with
+        | "Started", JObj (e: Dto.StartedDto) -> 
+            [Board.Started { Players = e.Players |> Seq.map Dto.toPlayer |> Seq.toList
+                             Barns = List.ofArray e.Barns
+                             DrawPile = e.DrawPile |> Seq.map Dto.toCard |> Seq.toList
+                             Goal = if e.CommonGoal then Common e.Goal else Individual e.Goal } ]
+        | "MovedInField", JObj { Player = p; Event = JObj(e: Dto.MovedDto) } -> 
+            [Board.Played(p, Player.MovedInField (Dto.toMoved e))]
+        | "FirstCrossroadSelected", JObj { Player = p; Event = JObj (e: Dto.FirstCrossroadSelectedDto) } -> 
+            [Board.Played(p, Player.FirstCrossroadSelected { Crossroad = Dto.toCrossroad e.Crossroad })]
+        | "Annexed", JObj { Player = p; Event = JObj (e: Dto.AnnexedDto) } -> 
+            [Board.Played(p, Player.Annexed { NewField = Dto.toParcels e.NewField
+                                              LostFields = e.LostFields |> Seq.map Dto.toLostField |> Seq.toList 
+                                              FreeBarns = Dto.toParcels e.FreeBarns
+                                              OccupiedBarns = Dto.toParcels e.OccupiedBarns
+                                              })]
+        | "CutFence", JObj { Player = p; Event = JObj (e: Dto.CutFenceDto) } -> 
+            [Board.Played(p, Player.CutFence { Player = e.Player })]
+        | "FenceDrawn", JObj { Player = p; Event = JObj (e: Dto.MovedDto) } -> 
+            [Board.Played(p, Player.FenceDrawn (Dto.toMoved e))]
+        | "FenceLooped", JObj { Player = p; Event = JObj (e: Dto.FenceLoopedDto) } -> 
+            [Board.Played(p, Player.FenceLooped { Move = Dto.toDirection e.Move
+                                                  Crossroad = Dto.toCrossroad e.Crossroad
+                                                  Loop = Dto.toFence e.Loop })]
+        | "FenceRemoved", JObj { Player = p; Event = JObj (e: Dto.MovedDto) } ->
+            [Board.Played(p, Player.FenceRemoved (Dto.toMoved e))]
+        | "MovedPowerless", JObj { Player = p; Event = JObj (e: Dto.MovedDto) } -> 
+            [Board.Played(p, Player.MovedPowerless (Dto.toMoved e))]
+        | "PoweredUp", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.PoweredUp )]
+        | "CardPlayed", JObj { Player = p; Event = JObj (e: Dto.PlayCardDto) } -> [Board.Played(p, Player.CardPlayed (Dto.toPlayCard e) )]
+        | "HighVoltaged", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.HighVoltaged )]
+        | "Watched", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Watched )]
+        | "Rutted", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Rutted )]
+        | "SpedUp", JObj { Player = p; Event = JObj (e: Dto.SpedUpDto) } -> [Board.Played(p, Player.SpedUp { Speed = e.Speed })]
+        | "Heliported", JObj { Player = p; Event = JObj (e: Dto.HeliportedDto) } -> [Board.Played(p, Player.Heliported (Dto.toCrossroad e.Destination))]
+        | "Bribed", JObj { Player = p; Event = JObj (e: Dto.BribedDto) } -> [Board.Played(p, Player.Bribed { Parcel = Dto.toParcel e.Parcel; Victim = e.Victim })]
+        | "BonusDiscarded", JObj { Player = p; Event = JObj (e: string) } -> [Board.Played(p, Player.BonusDiscarded (Dto.toCard e) )]
+        | "Eliminated", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Eliminated )]
+        | "Next", _ -> [ Board.Next]
+        | "PlayerDrewCards", JObj (e: Dto.PlayerDrewCardsDto) -> [ Board.PlayerDrewCards { Player = e.Player; Cards = Dto.toHand e.Cards } ]
+        | "HayBalesPlaced", JObj (e: Dto.PathDto[]) -> [ Board.HayBalesPlaced (e |> Seq.map Dto.toPath |> Seq.toList) ]
+        | "HayBaleDynamited", JObj (e: Dto.PathDto) -> [ Board.HayBaleDynamited (Dto.toPath e) ]
+        | "DiscardPileShuffled", JObj (e: string[]) -> [ Board.DiscardPileShuffled (e |> Seq.map Dto.toCard |> Seq.toList) ]
+        | "GameWon", JObj e -> [ Board.GameWon e ]
+        | _ -> []
+    with
     | _ -> []
 
 type PlayerCommand =
@@ -238,7 +498,7 @@ let gameRunner container gameid =
      
 let runner =
     let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
-    let container = client.GetContainer("crazyfarmers","crazyfarmers")
+    let container = client.GetContainer("crazyfarmers",containerName)
     MailboxProcessor.Start(fun mailbox ->
         let rec loop games =
             async {
@@ -742,7 +1002,7 @@ module Join =
 
     let setupRunner =
         let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
-        let container = client.GetContainer("crazyfarmers","crazyfarmers")
+        let container = client.GetContainer("crazyfarmers",containerName)
 
         MailboxProcessor.Start(fun mailbox ->
             let rec loop games =
@@ -861,7 +1121,7 @@ module Join =
         
 let subs = 
     let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
-    let container = client.GetContainer("crazyfarmers", "crazyfarmers")
+    let container = client.GetContainer("crazyfarmers", containerName)
 
     EventStore.subscription client container ("game-"+Environment.MachineName)
         [ EventStore.handler @"^game-(?<id>[\w\d]+)$" deserialize handleGame
