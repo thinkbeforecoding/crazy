@@ -1,3 +1,6 @@
+### 0.3.7  - 2020-05-16
+* Online help
+
 ### 0.3.6  - 2020-04-23
 * Help for power down
 * Fix #27: Watchdog should protect from Bribe

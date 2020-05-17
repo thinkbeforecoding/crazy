@@ -389,10 +389,20 @@ let view (model : Model) (dispatch : Msg -> unit) =
                              catch mexicain et foire agricole, qui a rapidement fait le Buzz sur les écrans.
                              À bord de votre tracteur trafiqué, entrez à votre tour dans l’arène pour affronter
                              vos adversaires sans fois ni loi pour  devenir le meilleur poseur de Clôtures
-                             Électriques du monde !"
+                             Électriques du monde\u00a0!"
                       ]
                       button [ OnClick (fun _ -> dispatch CreateNewGame) ] [ str "Open new Arena" ]
                       button [ OnClick (fun _ -> dispatch SelectJoin)] [ str "Join an Arena"]
+
+                      div [ ] [
+                      
+                          h2 [] [ str "Aide" ]
+                          ul [] [
+                              li [] [a [ Href "/rules/cf-jeu-en-ligne.pdf"] [ str "Création de votre compte" ]]
+                              li [] [a [ Href "/rules/cf-jeu-en-ligne-2.pdf"] [ str "Le jeu"]]
+                              li [] [a [ Href "/rules/cf-jeu-en-ligne-bonus.pdf"] [ str "Les bonus"]]
+                          ]
+                      ]
                     ]
                 footer
             ]
