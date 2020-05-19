@@ -1,3 +1,16 @@
+### 0.4.0   - 2020-05-29
+* Play with strangers
+
+### 0.3.10  - 2020-05-18
+* Add kickstarter link
+
+### 0.3.9  - 2020-05-18
+* Add social media links
+
+### 0.3.8  - 2020-05-18
+* Rules link
+* Video link
+
 ### 0.3.7  - 2020-05-16
 * Online help
 

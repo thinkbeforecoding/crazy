@@ -1,11 +1,11 @@
 ﻿@charset "utf-8";
 
 // FontAwesome
-//$fa_font_path: "~@fortawesome/fontawesome-free/webfonts";
-//@import '~@fortawesome/fontawesome-free/scss/fontawesome.scss';
-//@import '~@fortawesome/fontawesome-free/scss/regular.scss';
-//@import '~@fortawesome/fontawesome-free/scss/solid.scss';
-//@import '~@fortawesome/fontawesome-free/scss/brands.scss';
+$fa_font_path: "~@fortawesome/fontawesome-free/webfonts";
+@import '~@fortawesome/fontawesome-free/scss/fontawesome.scss';
+@import '~@fortawesome/fontawesome-free/scss/regular.scss';
+@import '~@fortawesome/fontawesome-free/scss/solid.scss';
+@import '~@fortawesome/fontawesome-free/scss/brands.scss';
 
 // OpenSans
 //$FontPathOpenSans: "~open-sans-fonts/open-sans";
@@ -59,13 +59,19 @@ h1, h2 {
 *, *::before, *::after {
     box-sizing: inherit;
 }
-.text {
+.intro {
     margin-top: 6vw;
     width: 58vw;
 }
+.text {
+    margin-top: 6vw;
+    width: 76vw;
+}
+
 
 .players {
     display: flex;
+    margin-top: 2em;
     margin-right: 0em;
     flex-flow: row wrap;
 }
@@ -230,4 +236,16 @@ h2 {
 
 li {
     list-style-type: '⚡';
+}
+
+.public-private {
+    border-left: 1px solid #888;
+    /*background-color: $crazy-blue;*/
+    padding: 0.7em;
+    border-radius: 1em;
+
+}
+
+.public-arenas {
+    margin-top: 3em;
 }

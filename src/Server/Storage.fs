@@ -67,6 +67,79 @@ let getUserById cnxstring (userid: string) =
     }
 
 
+
+let createGame cnxString (gameId: string)  =
+     task {
+    let client = new CosmosClient(cnxString)
+    let container = client.GetContainer("crazyfarmers", "publicgames")
+    try
+        let! response = container.CreateItemAsync({ Model.Game.id = gameId 
+                                                    Model.Game.players = [||]
+                                                    Model.Game.p = "games"
+                                                    Model.Game.isPublic = false
+                                                    Model.Game.goal = "Regular"
+                                                    Model.Game.created = DateTime.UtcNow
+                                                    Model.Game.ttl = 3600<FSharp.Data.UnitSystems.SI.UnitSymbols.s> })
+        return ()
+    with
+    | :? CosmosException as ex ->
+        printfn "%O" ex
+        return failwith "Cannot save challenge"
+    }
+
+let loadGame cnxstring (gameId: string) =
+    task {
+     let client = new CosmosClient(cnxstring)
+     let container = client.GetContainer("crazyfarmers", "publicgames")
+     let! response = container.ReadItemAsync<Model.Game>(gameId, PartitionKey "games")
+     return response.Resource
+     }
+
+let updateGame cnxstring (game: Model.Game) =
+    task {
+    let client = new CosmosClient(cnxstring)
+    let container = client.GetContainer("crazyfarmers", "publicgames")
+    try
+        let! response = container.ReplaceItemAsync(game, game.id)
+
+        return ()
+    with
+    | :? CosmosException as ex ->
+        printfn "%O" ex
+        return failwith "Cannot save game"
+
+    }
+
+let deleteGame cnxstring gameid =
+    task {
+    let client = new CosmosClient(cnxstring)
+    let container = client.GetContainer("crazyfarmers", "publicgames")
+    try
+        let! response = container.DeleteItemAsync(gameid, PartitionKey "games")
+
+        return ()
+    with
+    | :? CosmosException as ex ->
+        printfn "%O" ex
+        return failwith "Cannot save game"
+
+    }
+
+let loadPublicGames cnxstring =
+   task {
+   let client = new CosmosClient(cnxstring)
+   let container = client.GetContainer("crazyfarmers", "publicgames")
+   let iter = container.GetItemQueryIterator<Model.Game>(QueryDefinition("SELECT * FROM g where g.isPublic = true" ))
+   let mutable games = []
+   while iter.HasMoreResults do
+       let! response = iter.ReadNextAsync()
+       games <- List.ofSeq response.Resource @ games
+
+   return  games
+   }
+ 
+
+
 let initialize cnxstring =
 
     let client = new CosmosClient(cnxstring)
@@ -78,4 +151,6 @@ let initialize cnxstring =
     db.Database.CreateContainerIfNotExistsAsync(
         ContainerProperties( "login", "/userid", DefaultTimeToLive = Nullable -1) )
     |> Async.AwaitTask |> Async.RunSynchronously |> ignore
+
+
 

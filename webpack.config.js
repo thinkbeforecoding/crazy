@@ -203,8 +203,13 @@ module.exports = [{
                 use: [isProduction ? 'file-loader?name=/img/[name].[ext]' : 'file-loader?name=/img/[name].[ext]']
             },
             {
+                test: /fa-.*\.(woff|woff2|ttf|eot)(\?.*)?$/,
+                use: ['file-loader']
+            },
+            {
                 test: /\.(woff|woff2|ttf|eot)(\?.*)?$/,
-                use: [isProduction ? 'file-loader?name=/font/[name].[ext]' : 'file-loader?name=/font/[name].[ext]'] 
+                exclude: /fa-.*\.(woff|woff2|ttf|eot)(\?.*)?$/,
+                use:  [isProduction ? 'file-loader?name=/font/[name].[ext]' : 'file-loader?name=/font/[name].[ext]'] 
             }
         ]
     }

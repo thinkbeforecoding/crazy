@@ -30,7 +30,7 @@ and Player =
 and PageModel = 
     | Home
     | NewGame of NewGame
-    | SelectGame
+    | SelectGame of PublicGame[]
     | JoinGame of NewGame
     | Started of string
     | LoginPage
@@ -42,6 +42,7 @@ and NewGame =
     { GameId: string
       Players: Map<Color, string* string>
       Goal: GoalType
+      Public: bool 
       }
     with
     member this.CanStart = Map.count this.Players >= 2
@@ -54,6 +55,7 @@ and NewGame =
 type Msg = 
     | CreateNewGame
     | SelectJoin
+    | SelectJoinPublic
     | Join of string
     | Cancel
     | Start 
@@ -63,6 +65,8 @@ type Msg =
     | ConnectionLost
     | OpenLogin
     | OpenRegister
+    | MakePublic
+    | MakePrivate
     | Login of string
     | Register of string * string
 
@@ -99,6 +103,7 @@ let localEvolve state event =
         NewGame { GameId = e.GameId
                   Players = Map.empty
                   Goal = Regular
+                  Public = false
                   }
     | NewGame g, PlayerSet p ->
         NewGame { g with 
@@ -106,16 +111,38 @@ let localEvolve state event =
                         g.Players 
                         |> Map.filter (fun _ (pid,_) -> pid <> p.PlayerId)
                         |> Map.add p.Color (p.PlayerId,p.Name) }
+    | NewGame g, Leaved p ->
+        NewGame { g with 
+                    Players = 
+                        g.Players 
+                        |> Map.filter (fun _ (pid,_) -> pid <> p) }
     | JoinGame g, PlayerSet p ->
         JoinGame { g with 
                     Players = 
                         g.Players 
                         |> Map.filter (fun _ (pid,_) -> pid <> p.PlayerId)
                         |> Map.add p.Color (p.PlayerId,p.Name) }
+    | JoinGame g, Leaved p ->
+        JoinGame { g with 
+                    Players = 
+                        g.Players 
+                        |> Map.filter (fun _ (pid,_) -> pid <> p) }
+    | JoinGame _, Event.Cancelled ->
+        Home
+
     | NewGame g , GoalSet goal ->
         NewGame {g with Goal = goal }
     | JoinGame g , GoalSet goal ->
         JoinGame {g with Goal = goal }
+    | NewGame g, MadePublic ->
+        NewGame { g with Public = true}
+    | NewGame g, MadePrivate ->
+        NewGame { g with Public = false}
+    | JoinGame g, MadePublic ->
+        JoinGame { g with Public = true}
+    | JoinGame g, MadePrivate ->
+        JoinGame { g with Public = false}
+
     | NewGame g,  Event.Started _ 
     | JoinGame g, Event.Started _ ->
         Started g.GameId
@@ -156,7 +183,12 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | CreateNewGame ->
         currentModel, Cmd.bridgeSend(CreateGame)
     | SelectJoin ->
-        { currentModel with Game = SelectGame}, Cmd.none
+        { currentModel with Game = SelectGame [||]}, Cmd.bridgeSend(ServerMsg.Select)
+    | Remote (UpdatePublicGames games) ->
+        match currentModel.Game with
+        | SelectGame _ -> { currentModel with Game = SelectGame games }, Cmd.none
+        | _ -> currentModel, Cmd.none
+
     | Join gameid ->
         Browser.Dom.document.location.hash <- gameid
         currentModel, Cmd.bridgeSend(ServerMsg.JoinGame gameid)
@@ -171,7 +203,14 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         |> handleCommand currentModel
 
     | Cancel ->
-        { currentModel with Game = Home}, Cmd.none
+        
+
+        { currentModel with Game = Home}, 
+            match currentModel.Game with
+            | JoinGame _
+            | NewGame _ ->
+                Cmd.bridgeSend(ServerMsg.Leave)
+            | _ -> Cmd.none
     | Start ->
         (Command.Start,ServerMsg.Start)
         |> handleCommand currentModel
@@ -183,6 +222,18 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         currentModel, Cmd.bridgeSend(ServerMsg.Login email)
     | Register (email,name) ->
         currentModel, Cmd.bridgeSend(ServerMsg.Register (email,name))
+    | MakePublic ->
+        { currentModel with Game = 
+                            match currentModel.Game with
+                            | PageModel.NewGame g -> NewGame { g with Public = true}
+                            | g -> g
+        }, Cmd.bridgeSend(ServerMsg.MakePublic)
+    | MakePrivate ->
+        { currentModel with Game = 
+                                match currentModel.Game with
+                                | PageModel.NewGame g -> NewGame { g with Public = false}
+                                | g -> g
+        }, Cmd.bridgeSend(ServerMsg.MakePrivate)
 
     | Remote(LoggedIn(playerid,name)) ->
         let cmd = 
@@ -240,7 +291,11 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                     LocalVersion = max currentModel.LocalVersion version
                     Synched = newModel
                     Version = version
-                    }, Cmd.none
+                    }, 
+                    if List.exists (function Event.Cancelled -> true | _ -> false) events && currentModel.Game <> Home then
+                        Cmd.bridgeSend Leave
+                    else
+                        Cmd.none
         else
             currentModel, Cmd.none
     | Remote (SyncJoin(gameid, game, version)) ->
@@ -251,6 +306,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                 JoinGame { GameId = gameid
                            Players = s.Players
                            Goal = s.Goal
+                           Public = s.Public
                            }
             { currentModel with
                 Game = newGame
@@ -267,7 +323,9 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
             let newGame = 
                 NewGame { GameId = gameid
                           Players = s.Players
-                          Goal = s.Goal }
+                          Goal = s.Goal
+                          Public = s.Public
+                          }
             { currentModel with
                 Game = newGame
                 LocalVersion = version
@@ -316,7 +374,17 @@ module Colors =
 
 let header dispatch player =
     div [ ClassName "header"]
-        [ match player with
+        [ 
+          span []
+                [ a [ Href "https://www.facebook.com/TheFreaky42/"] [ i [ ClassName "fab fa-facebook-square"] [] ]]
+          span []
+                [ a [ Href "https://twitter.com/crazy_farmers"] [ i [ ClassName "fab fa-twitter"] [] ]]
+          span []
+                [ a [ Href "https://www.instagram.com/crazyfarmers.lejeu/"] [ i [ ClassName "fab fa-instagram"] [] ]]
+          span []
+                [ a [ Href "https://www.kickstarter.com/projects/1486112993/crazy-farmers-and-the-clotures-electriques"] [ i [ ClassName "fab fa-kickstarter"] [] ]]
+
+          match player with
           | Some player -> 
                 span [] [ str player.Name ]
                 span [] [ a [ Href "/auth/logout" ] [str "Logout"] ]
@@ -371,6 +439,17 @@ let goalView dispatch goal players newGame =
           item Expert
         ]
 
+let duration (d: System.DateTime) =
+    let span = System.DateTime.UtcNow - d
+    if span.TotalHours > 1. then
+        sprintf "more than %dh" (int span.TotalHours)
+    elif span.TotalMinutes > 1. then
+        sprintf "%dm" (int span.TotalMinutes)
+    else
+        "a few seconds"
+
+
+    
 
 let view (model : Model) (dispatch : Msg -> unit) =
     div [  ]
@@ -383,7 +462,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                 div [ ClassName "content" ]
                     [ mainTitle "Play Online"
 
-                      div [ ClassName "text" ] [
+                      div [ ClassName "intro" ] [
                         str "2042... L'agriculture a périclité, les fermiers ont dû se reconvertir et développer
                              l’Ultimate Farming Championship (UFC pour les intimes) mélange improbable de Monster Truck,
                              catch mexicain et foire agricole, qui a rapidement fait le Buzz sur les écrans.
@@ -401,6 +480,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
                               li [] [a [ Href "/rules/cf-jeu-en-ligne.pdf"] [ str "Création de votre compte" ]]
                               li [] [a [ Href "/rules/cf-jeu-en-ligne-2.pdf"] [ str "Le jeu"]]
                               li [] [a [ Href "/rules/cf-jeu-en-ligne-bonus.pdf"] [ str "Les bonus"]]
+                              li [] [a [ Href "/rules/CrazyFarmers-fr.pdf"] [ str "Les règles complètes" ]]
+                              li [] [a [ Href "https://www.youtube.com/watch?v=ol4c1J6vW1c&t=1610s"] [str "Présentation Vidéo chez So Many Backers "; i [ClassName "fab fa-youtube"] []]]
                           ]
                       ]
                     ]
@@ -414,8 +495,23 @@ let view (model : Model) (dispatch : Msg -> unit) =
                       div [ ClassName "text"]
                           [ p [] [ str ("Arena id: " + game.GameId) ]
 
-                            p [ ClassName "info"] [ str "Send this game id to your friends, and tell them to join the game using this code."]
-                            p [ ClassName "info"] [ str "You can also send them "; a [ Href (Browser.Dom.document.location.ToString())  ] [ str "the arena join link."] ]
+                            div [ ClassName "public-private"] [
+                                input [ Type "Radio"; Name "Public"; Id "Private"; Value "Private"; Checked (not game.Public); OnClick (fun _ -> dispatch MakePrivate) ] 
+                                label [ HtmlFor "Private" ] [ str "Play with friends" ]
+                                div [] [
+                                    if not game.Public then
+                                            p [ ClassName "info"] [ str "Send this game id to your friends, and tell them to join the game using this code."]
+                                            p [ ClassName "info"] [ str "You can also send them "; a [ Href (Browser.Dom.document.location.ToString())  ] [ str "the arena join link."] ]
+                                ]
+                                input [ Type "Radio"; Name "Public"; Id "Public"; Value "Public"; Checked game.Public; OnClick(fun _ -> dispatch MakePublic)]
+                                label [ HtmlFor "Public"] [ str "Play with strangers" ]
+                                div [] [
+                                    if game.Public then
+                                        p [ ClassName "info"] [ str "This game will appear publicly on the website so that other players joining an arena."]
+                                        p [ ClassName "info" ] [ str "Players you don't know may join." ]
+                                ]
+                            ]
+
                             p [ ClassName "info"] [ str "Select your team, and start the game once your friends joined."]
                           ]
 
@@ -430,7 +526,9 @@ let view (model : Model) (dispatch : Msg -> unit) =
                       div [ Style [ Clear ClearOptions.Both ]]
                           [ button [ OnClick (fun _ -> dispatch Start) 
                                      Disabled (not game.CanStart)
-                                   ] [ str "Start"] 
+                                   ] [ str "Start" 
+                                       if not game.CanStart then
+                                        str " (not enough players)"] 
                     
                             cancel dispatch
                            ]
@@ -455,11 +553,11 @@ let view (model : Model) (dispatch : Msg -> unit) =
                       goalView dispatch game.Goal game.Players.Count false
 
                       div [ Style [ Clear ClearOptions.Both ]]
-                          [ cancel dispatch]
+                          [ cancel dispatch ]
                     ]
                 ]
 
-        | SelectGame ->
+        | SelectGame games ->
             div [ ClassName "title" ] [
                 header dispatch model.Player
 
@@ -479,6 +577,31 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
                             cancel dispatch
                       ]
+
+                      div [ ClassName "info public-arenas" ]
+                          [ str "Or join a game with strangers in a public arena:" 
+
+                            ul [] [
+                                for game in games do
+                                    li [] [ a [ OnClick (fun _ -> dispatch (Join game.Id))] [ 
+                                        match game.Goal with
+                                        | Fast -> str "Fast game "
+                                        | Regular -> str "Regular game"
+                                        | Expert -> str "Expert game"
+                                        str " with "
+                                        str (String.concat " / " (Array.map snd game.Players))
+                                        str " started "
+                                        str (duration game.Created)
+                                        str " ago ("
+
+                                        str game.Id
+                                        str ")"
+                                        ] ]
+                                ]
+
+                      ]
+
+
                     ]
                 footer
             ]

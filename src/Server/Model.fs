@@ -18,4 +18,14 @@ type Challenge =
       challenge: string 
       ttl: int<s> }
 
+[<CLIMutable>]
+type Game =
+    { id: string 
+      p: string 
+      isPublic: bool
+      players: (string*string)[]
+      goal: string
+      created: DateTime
+      ttl: int<s> }    
+
 

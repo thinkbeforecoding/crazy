@@ -21,7 +21,6 @@ open FSharp.Data.UnitSystems.SI.UnitSymbols
 
 let tryGetEnv = System.Environment.GetEnvironmentVariable >> function null | "" -> None | x -> Some x
 
-let containerName = "crazy"
 
 printfn "Starting instance: %s" Environment.MachineName
 
@@ -37,13 +36,14 @@ type ServerConfig =
 type JwtClaim = { sub: string
                   nickname: string }
 
+let config =
+    ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("local.settings.json",true)
+        .AddEnvironmentVariables()
+        .Build();
+    
 let serverConfig =
-    let config =
-        ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("local.settings.json",true)
-            .AddEnvironmentVariables()
-            .Build();
     let server = config.GetSection("server")
     let domain = server.["domain"]
     let secure = Boolean.Parse server.["secure"]
@@ -59,6 +59,12 @@ let serverConfig =
       Cosmos = config.GetConnectionString("COSMOS")
       JWTSecret = server.["JWTSecret"]
       }
+
+let dev = config.["dev"] |> Boolean.TryParse |> function true, v -> v | _ -> false
+    
+   
+let containerName = 
+    if dev then "crazydev" else "crazy"
 
 let publicPath =
     "SERVER_ROOT"
@@ -581,6 +587,7 @@ let update claim clientDispatch msg (model: PlayerState) =
     }
 
 let handleGame gameId i events =
+    task {
     match events with
     | [Board.Started e] ->
         Events ([ Board.Started { e with DrawPile = [] } ], i)
@@ -619,6 +626,7 @@ let handleGame gameId i events =
 
         connections.SendClientIf (function | Connected c when c.GameId = gameId && not (Set.contains c.Player drawingPlayers ) -> true  | _ -> false)
             (Events (privateEvents, i ))
+    }
 
 
 module Template =
@@ -906,6 +914,7 @@ module Join =
     open SharedJoin
     type Model =
         | NoGame
+        | SelectingGame
         | SetupGame of string 
         | JoiningGame of string
         | Started of string 
@@ -919,14 +928,22 @@ module Join =
         | Created e -> "Created", box e
         | PlayerSet e -> "PlayerSet", box e
         | GoalSet e -> "GoalSet", box e
+        | MadePrivate -> "MadePrivate", null
+        | MadePublic -> "MadePublic", null
+        | Leaved e -> "Leaved", box e
         | Event.Started e -> "Started", box e
+        | Event.Cancelled -> "Cancelled", null
 
     let deserialize =
         function
         | "Created", JObj e -> [Created e]
         | "PlayerSet", JObj e -> [PlayerSet e]
         | "GoalSet", JObj e -> [GoalSet e]
+        | "MadePublic", _ -> [ MadePublic ]
+        | "MadePrivate", _ -> [ MadePrivate ]
+        | ("Leaved"| "PlayerUnset"), JObj e -> [ Leaved e]
         | "Started", JObj e -> [Event.Started e]
+        | "Cancelled", _ -> [ Event.Cancelled ]
         | _ -> []
 
     
@@ -934,8 +951,24 @@ module Join =
         function
         | Create e -> "Create", box e
         | SetPlayer (c,p,n) -> "SetPlayer", box {| Color = c; Player = p; Name = n |}
-        | SetGoal e -> "SetGoal", box e
+        | Command.SetGoal e -> "SetGoal", box e
+        | Command.MakePublic -> "MakePublic", null
+        | Command.MakePrivate -> "MakePrivate", null
+        | Command.Leave e -> "Leave", box e
         | Command.Start -> "Start", null
+
+
+    let serializeGoal =
+        function
+        | Fast -> "Fast"
+        | Regular -> "Regular"
+        | Expert -> "Expert"
+
+    let deserializeGoal =
+        function
+        | "Fast" -> Fast
+        | "Expert" -> Expert
+        | _  -> Regular
 
     let gameRunner container gameid =
         let stream = "join-"+gameid
@@ -1032,7 +1065,19 @@ module Join =
         | None -> ()
         NoGame, Cmd.none
 
-    let update claim clientDispatch msg (model: Model) =
+
+    let notifyPublicGames cnxString =
+        async {
+        let! games = Storage.loadPublicGames cnxString |> Async.AwaitTask
+        let g = [| for game in games -> 
+                        { PublicGame.Id = game.id
+                          Goal = deserializeGoal game.goal
+                          Players = game.players
+                          Created = game.created } |]
+        connections.SendClientIf (fun s -> s = SelectingGame)  (UpdatePublicGames g)
+        }
+
+    let update cnxString claim clientDispatch msg (model: Model) =
         async {
         match model, msg with
         | _ , Login email ->
@@ -1093,12 +1138,38 @@ module Join =
             | Some claim ->
                 do! setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(SetPlayer(color, claim.sub, claim.nickname), c.Reply))
                     |> Async.Ignore
-                //function | Connected c when c.GameId = gameId -> true  | _ -> falsefunction | Connected c when c.GameId = gameId -> true  | _ -> falsefunction | Connected c when c.GameId = gameId -> true  | _ -> false) (Events events)
             | None -> ()
 
             return model, Cmd.none
+        | JoiningGame gameid, Leave ->
+            match claim with
+            | Some claim ->
+                do! setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(Command.Leave claim.sub, c.Reply))
+                    |> Async.Ignore
+            | None -> ()
+
+            return NoGame, Cmd.none
+        | SetupGame gameid, Leave ->
+            match claim with
+            | Some claim ->
+                do! setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(Command.Leave claim.sub, c.Reply))
+                    |> Async.Ignore
+            | None -> ()
+
+            return NoGame, Cmd.none
+
         | SetupGame gameid, SelectGoal goal ->
             do! setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(SetGoal goal, c.Reply))
+                    |> Async.Ignore
+
+            return  model, Cmd.none
+        | SetupGame gameid, MakePublic ->
+            do! setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(Command.MakePublic, c.Reply))
+                    |> Async.Ignore
+
+            return  model, Cmd.none
+        | SetupGame gameid, MakePrivate ->
+            do! setupRunner.PostAndAsyncReply(fun c -> gameid, Exec(Command.MakePrivate, c.Reply))
                     |> Async.Ignore
 
             return  model, Cmd.none
@@ -1112,12 +1183,65 @@ module Join =
                 | _ -> ()
             //connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events(events, version))
             return Started gameid, Cmd.none
+        | _, Select ->
+            let! games = Storage.loadPublicGames cnxString |> Async.AwaitTask
+            let g = [| for game in games -> 
+                            { Id = game.id
+                              Goal = deserializeGoal game.goal
+                              Players = game.players
+                              Created = game.created} |]
+            clientDispatch(UpdatePublicGames g)
+            return  SelectingGame, Cmd.none
 
         | _ -> return model, Cmd.none
     }
 
-    let handleJoin gameid i events =
-        connections.SendClientIf (function SetupGame id | JoiningGame id | Started id when id = gameid -> true | _ -> false ) (Events (events, i))
+    let handleJoin cnxString gameid i events =
+        task {
+            connections.SendClientIf (function SetupGame id | JoiningGame id | Started id when id = gameid -> true | _ -> false ) (Events (events, i))
+            for event in events do
+                match event with
+                | Created _ ->
+                    do! Storage.createGame cnxString gameid
+                | MadePublic ->
+                    let! game = Storage.loadGame cnxString gameid
+                    do! Storage.updateGame cnxString { game with isPublic = true}
+                    do! notifyPublicGames cnxString
+                | MadePrivate ->
+                    let! game = Storage.loadGame cnxString gameid
+                    do! Storage.updateGame cnxString { game with isPublic = false}
+                    do! notifyPublicGames cnxString
+                    
+                | Event.PlayerSet e ->
+                    let! game = Storage.loadGame cnxString gameid
+                    let players = Map.ofArray game.players |> Map.add e.PlayerId e.Name
+                    do! Storage.updateGame cnxString { game with players = Map.toArray players }
+                    do! notifyPublicGames cnxString
+                   
+                | Event.Leaved e ->
+                    let! game = Storage.loadGame cnxString gameid
+                    let players = Map.ofArray game.players |> Map.remove e
+                    do! Storage.updateGame cnxString { game with players = Map.toArray players }
+                    do! notifyPublicGames cnxString
+                | Event.GoalSet e ->
+                    let! game = Storage.loadGame cnxString gameid
+                    do! Storage.updateGame cnxString { game with goal = serializeGoal e}
+                    do! notifyPublicGames cnxString
+                 
+                | Event.Started _ ->
+                    do! Storage.deleteGame cnxString gameid 
+                    do! notifyPublicGames cnxString
+                | Event.Cancelled _ ->
+                    do! Storage.deleteGame cnxString gameid 
+                    do! notifyPublicGames cnxString
+                        
+                | _ -> ()
+                    
+        }
+
+            
+
+
         
 let subs = 
     let client = new Microsoft.Azure.Cosmos.CosmosClient(serverConfig.Cosmos)
@@ -1125,14 +1249,14 @@ let subs =
 
     EventStore.subscription client container ("game-"+Environment.MachineName)
         [ EventStore.handler @"^game-(?<id>[\w\d]+)$" deserialize handleGame
-          EventStore.handler @"^join-(?<id>[\w\d]+)$" Join.deserialize Join.handleJoin ]
+          EventStore.handler @"^join-(?<id>[\w\d]+)$" Join.deserialize (Join.handleJoin serverConfig.Cosmos) ]
         
 
 
         
 
 let joinGame claim  =
-    Bridge.mkServer "/socket/join" (Join.init claim) (Join.update claim)
+    Bridge.mkServer "/socket/join" (Join.init claim) (Join.update serverConfig.Cosmos claim)
     |> Bridge.withServerHub Join.connections
     |> Bridge.run Giraffe.server
 

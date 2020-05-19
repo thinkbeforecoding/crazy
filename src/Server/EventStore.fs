@@ -108,10 +108,11 @@ let fold deserialize (container: Container) f stream state start =
     fold (state,start-1)
 
 
-let handler (streamRegex: string) deserialize f =
+let handler (streamRegex: string) deserialize (f: _ -> _ -> _ -> _ Task) =
     let regex = Regex(streamRegex, RegexOptions.Compiled)
 
     fun (c: BatchData) ->
+        task {
         let m = regex.Match c.p
         if m.Success then
             let id = m.Groups.["id"].Value
@@ -119,10 +120,11 @@ let handler (streamRegex: string) deserialize f =
                 [ for ed in c.e do
                     yield! deserialize (ed.c, ed.d) ]
 
-            f id c.i events
+            do! f id c.i events
+        }
 
 
-let subscription (client: CosmosClient) (container: Container) name (handlers: _ list)  =
+let subscription (client: CosmosClient) (container: Container) name (handlers: (_ -> _ Task) list)  =
 
     let feed =
        container.GetChangeFeedProcessorBuilder<BatchData>(name,
@@ -130,7 +132,7 @@ let subscription (client: CosmosClient) (container: Container) name (handlers: _
                 task {
                     for c in changes do
                         for handler in handlers do
-                            handler c
+                            do! handler c
                 } :> Task
         )
         .WithLeaseContainer(client.GetContainer("crazyfarmers", "subscriptions"))
