@@ -1225,7 +1225,8 @@ module Join =
                     do! notifyPublicGames cnxString
                 | Event.GoalSet e ->
                     let! game = Storage.loadGame cnxString gameid
-                    do! Storage.updateGame cnxString { game with goal = serializeGoal e}
+                    if deserializeGoal game.goal <> e then
+                        do! Storage.updateGame cnxString { game with goal = serializeGoal e}
                     do! notifyPublicGames cnxString
                  
                 | Event.Started _ ->
@@ -1234,9 +1235,6 @@ module Join =
                 | Event.Cancelled _ ->
                     do! Storage.deleteGame cnxString gameid 
                     do! notifyPublicGames cnxString
-                        
-                | _ -> ()
-                    
         }
 
             

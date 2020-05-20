@@ -30,7 +30,7 @@ and Player =
 and PageModel = 
     | Home
     | NewGame of NewGame
-    | SelectGame of PublicGame[]
+    | SelectGame of PublicGame[] option
     | JoinGame of NewGame
     | Started of string
     | LoginPage
@@ -95,9 +95,17 @@ let localDecide command state =
             | None -> []
         else 
             []
+    | NewGame _ , Command.Leave _ ->
+        [ Cancelled ]
+    | JoinGame _, Command.Leave p ->
+        [ Leaved p]
+    | NewGame _, Command.MakePublic ->
+        [ MadePublic ]
+    | NewGame _, Command.MakePrivate ->
+        [ MadePrivate ]
     |_ -> []
 
-let localEvolve state event =
+let localEvolve playerId state event =
     match state, event with
     | _, Created e ->
         NewGame { GameId = e.GameId
@@ -112,10 +120,21 @@ let localEvolve state event =
                         |> Map.filter (fun _ (pid,_) -> pid <> p.PlayerId)
                         |> Map.add p.Color (p.PlayerId,p.Name) }
     | NewGame g, Leaved p ->
-        NewGame { g with 
-                    Players = 
-                        g.Players 
-                        |> Map.filter (fun _ (pid,_) -> pid <> p) }
+        if p = playerId then
+            Home
+        else
+            NewGame { g with 
+                        Players = 
+                            g.Players 
+                            |> Map.filter (fun _ (pid,_) -> pid <> p) }
+    | NewGame _,  Cancelled ->
+        Home
+    | NewGame g , GoalSet goal ->
+        NewGame {g with Goal = goal }
+    | NewGame g, MadePublic ->
+        NewGame { g with Public = true}
+    | NewGame g, MadePrivate ->
+        NewGame { g with Public = false}
     | JoinGame g, PlayerSet p ->
         JoinGame { g with 
                     Players = 
@@ -123,21 +142,18 @@ let localEvolve state event =
                         |> Map.filter (fun _ (pid,_) -> pid <> p.PlayerId)
                         |> Map.add p.Color (p.PlayerId,p.Name) }
     | JoinGame g, Leaved p ->
-        JoinGame { g with 
-                    Players = 
-                        g.Players 
-                        |> Map.filter (fun _ (pid,_) -> pid <> p) }
+        if p = playerId then
+            Home
+        else
+            JoinGame { g with 
+                        Players = 
+                            g.Players 
+                            |> Map.filter (fun _ (pid,_) -> pid <> p) }
     | JoinGame _, Event.Cancelled ->
         Home
 
-    | NewGame g , GoalSet goal ->
-        NewGame {g with Goal = goal }
     | JoinGame g , GoalSet goal ->
         JoinGame {g with Goal = goal }
-    | NewGame g, MadePublic ->
-        NewGame { g with Public = true}
-    | NewGame g, MadePrivate ->
-        NewGame { g with Public = false}
     | JoinGame g, MadePublic ->
         JoinGame { g with Public = true}
     | JoinGame g, MadePrivate ->
@@ -167,7 +183,11 @@ let handleCommand state (command, serverCmd : ServerMsg) =
     if List.isEmpty events then
         state, Cmd.none
     else
-        let newState = List.fold localEvolve state.Game events
+        let playerId = 
+            match state.Player with
+            | Some p -> p.PlayerId
+            | None -> ""
+        let newState = List.fold (localEvolve playerId) state.Game events
         Browser.Dom.console.log (sprintf "Events %A" events)
         { state
             with
@@ -183,10 +203,10 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | CreateNewGame ->
         currentModel, Cmd.bridgeSend(CreateGame)
     | SelectJoin ->
-        { currentModel with Game = SelectGame [||]}, Cmd.bridgeSend(ServerMsg.Select)
+        { currentModel with Game = SelectGame None }, Cmd.bridgeSend(ServerMsg.Select)
     | Remote (UpdatePublicGames games) ->
         match currentModel.Game with
-        | SelectGame _ -> { currentModel with Game = SelectGame games }, Cmd.none
+        | SelectGame _ -> { currentModel with Game = SelectGame (Some games) }, Cmd.none
         | _ -> currentModel, Cmd.none
 
     | Join gameid ->
@@ -203,7 +223,8 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         |> handleCommand currentModel
 
     | Cancel ->
-        
+        Browser.Dom.document.location.hash <- ""
+ 
 
         { currentModel with Game = Home}, 
             match currentModel.Game with
@@ -268,13 +289,18 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                     Browser.Dom.console.log(sprintf "Started but other state: %A" currentModel.Game)
             | Event.Created e ->
                 Browser.Dom.document.location.hash <- e.GameId
-
+            | Event.Cancelled ->
+                Browser.Dom.document.location.hash <- ""
             | _ -> ()
 
         if version >= currentModel.Version then
+            let playerId =
+                match currentModel.Player with
+                | Some p -> p.PlayerId
+                | None -> ""
             let newModel =
                 events
-                |> List.fold localEvolve currentModel.Synched
+                |> List.fold (localEvolve playerId) currentModel.Synched
 
             match newModel with
             | Started gameid ->
@@ -512,7 +538,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                 ]
                             ]
 
-                            p [ ClassName "info"] [ str "Select your team, and start the game once your friends joined."]
+                            p [ ClassName "info"] [ str "Select your team, and start the game once other players joined."]
                           ]
 
                       div [ ClassName "players" ]
@@ -579,25 +605,35 @@ let view (model : Model) (dispatch : Msg -> unit) =
                       ]
 
                       div [ ClassName "info public-arenas" ]
-                          [ str "Or join a game with strangers in a public arena:" 
+                          [ 
+                            match games with
+                            | None -> ()
+                            | Some [||] ->
+                                p [] [ str "There is currently no public arena to play with strangers" ]
+                                p [] [ str "But you can still "
+                                       a [ Href "#"; OnClick (fun _ -> dispatch CreateNewGame) ] [ str "open new Arena" ] 
+                                       str " yourself"
+                                        ]
+                            | Some games ->
+                                str "Or join a game with strangers in a public arena:" 
 
-                            ul [] [
-                                for game in games do
-                                    li [] [ a [ OnClick (fun _ -> dispatch (Join game.Id))] [ 
-                                        match game.Goal with
-                                        | Fast -> str "Fast game "
-                                        | Regular -> str "Regular game"
-                                        | Expert -> str "Expert game"
-                                        str " with "
-                                        str (String.concat " / " (Array.map snd game.Players))
-                                        str " started "
-                                        str (duration game.Created)
-                                        str " ago ("
+                                ul [] [
+                                    for game in games do
+                                        li [] [ a [ OnClick (fun _ -> dispatch (Join game.Id))] [ 
+                                            match game.Goal with
+                                            | Fast -> str "Fast game "
+                                            | Regular -> str "Regular game"
+                                            | Expert -> str "Expert game"
+                                            str " with "
+                                            str (String.concat " / " (Array.map snd game.Players))
+                                            str " created "
+                                            str (duration game.Created)
+                                            str " ago ("
 
-                                        str game.Id
-                                        str ")"
-                                        ] ]
-                                ]
+                                            str game.Id
+                                            str ")"
+                                            ] ]
+                                    ]
 
                       ]
 

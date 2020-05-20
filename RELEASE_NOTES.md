@@ -1,3 +1,15 @@
+### 0.4.4   - 2020-05-29
+* Fix hash bug
+
+### 0.4.3   - 2020-05-29
+* Fix hash bug
+
+### 0.4.2   - 2020-05-29
+* Facebook and twitter meta
+
+### 0.4.1   - 2020-05-29
+* Show open arena option when no public game
+
 ### 0.4.0   - 2020-05-29
 * Play with strangers
 

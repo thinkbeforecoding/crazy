@@ -73,18 +73,21 @@ let createGame cnxString (gameId: string)  =
     let client = new CosmosClient(cnxString)
     let container = client.GetContainer("crazyfarmers", "publicgames")
     try
-        let! response = container.CreateItemAsync({ Model.Game.id = gameId 
-                                                    Model.Game.players = [||]
-                                                    Model.Game.p = "games"
-                                                    Model.Game.isPublic = false
-                                                    Model.Game.goal = "Regular"
-                                                    Model.Game.created = DateTime.UtcNow
-                                                    Model.Game.ttl = 3600<FSharp.Data.UnitSystems.SI.UnitSymbols.s> })
+        let! response =
+            container.CreateTransactionalBatch(PartitionKey "games")
+                .CreateItem({ Model.Game.id = gameId 
+                              Model.Game.players = [||]
+                              Model.Game.p = "games"
+                              Model.Game.isPublic = false
+                              Model.Game.goal = "Regular"
+                              Model.Game.created = DateTime.UtcNow
+                              Model.Game.ttl = 3600<FSharp.Data.UnitSystems.SI.UnitSymbols.s> })
+                .ExecuteAsync()
         return ()
     with
     | :? CosmosException as ex ->
         printfn "%O" ex
-        return failwith "Cannot save challenge"
+        return ()
     }
 
 let loadGame cnxstring (gameId: string) =
@@ -106,7 +109,7 @@ let updateGame cnxstring (game: Model.Game) =
     with
     | :? CosmosException as ex ->
         printfn "%O" ex
-        return failwith "Cannot save game"
+        return ()
 
     }
 
@@ -115,13 +118,14 @@ let deleteGame cnxstring gameid =
     let client = new CosmosClient(cnxstring)
     let container = client.GetContainer("crazyfarmers", "publicgames")
     try
+        
         let! response = container.DeleteItemAsync(gameid, PartitionKey "games")
 
         return ()
     with
     | :? CosmosException as ex ->
         printfn "%O" ex
-        return failwith "Cannot save game"
+        return ()
 
     }
 
