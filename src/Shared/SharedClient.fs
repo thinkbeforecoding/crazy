@@ -16,6 +16,11 @@ type CardAction =
       Ext: CardExt }
 
 
+type Chat =
+    { Entries: ChatEntry list 
+      Show: bool
+      Pop: bool }
+
 // The model holds data that you want to keep track of while the application is running
 // in this case, we are keeping track of a counter
 // we mark it as optional, because initially it will not be available from the client
@@ -32,6 +37,7 @@ type Model =
     Error : string
     DashboardOpen: bool
     PlayedCard: Card option
+    Chat: Chat
     }
 
 
@@ -50,6 +56,9 @@ type Msg =
     | ConnectionLost
     | Go
     | HidePlayedCard
+    | SendMessage of string
+    | ToggleChat
+    | HidePop
 
 
 
@@ -745,48 +754,4 @@ let playedCard dispatch card =
            OnAnimationEnd (fun _ -> dispatch HidePlayedCard) ]
           [ div [ClassName ("card " + cardName c)] [] ]
     | None -> null
-
-
-let view (model : Model) (dispatch : Msg -> unit) =
-    match model.Board with
-    | InitialState -> 
-        div [ClassName "board" ] [
-            div [] [ str model.Message ]
-        
-        ]
-    | Board board ->
-        div [] 
-            [ playersDashboard model dispatch
-              div [ ClassName "board" ]
-                [ yield! boardView board
-
-                  for m in model.Moves do
-                    moveView dispatch m
-
-                  yield! endTurnView dispatch model.PlayerId board
-
-
-                  yield! boardCardActionView dispatch board model.CardAction 
-
-                ]
-              lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
-            ]
-    | Won(winner, board) ->
-        div []
-            [ playersDashboard model dispatch
-              div [ ClassName "board" ]
-                  [ yield! boardView board
-        
-                    let player = board.Players.[winner]
-
-                    div [ ClassName "victory" ]
-                        [ p [] [ str "And the winner is"]
-                          div [ ClassName ("winner " + colorName (Player.color player)) ]
-                              [ div [ ClassName "player"] [] ]
-                          p [] [ str board.Table.Names.[winner] ] 
-
-                          p [ ClassName "back"] [ a [ Href "/" ] [ str "back to home" ]]
-
-                          ] ] ]
-
 

@@ -132,7 +132,7 @@ type Bridge(dispatch: ClientMsg -> unit) =
 
             send <- sendCallback
             dispatch (SyncPlayer playerId)
-            dispatch (Sync (fsBoard, version))
+            dispatch (Sync (fsBoard, version, []))
         member _.onEnteringState stateName args =
             console.log("Entering state: " + stateName)
             dispatch (Message ("Entering state" + stateName))
@@ -188,6 +188,7 @@ let init () : Model * Cmd<Msg> =
       Error = ""
       DashboardOpen = true
       PlayedCard = None
+      Chat = { Show = false; Entries = []; Pop = false}
     }, Cmd.none
 
 
@@ -255,7 +256,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | Remote (SyncPlayer playerid) ->
         { currentModel with PlayerId = Some playerid }, Cmd.none
         
-    | Remote (Sync (s, v)) ->
+    | Remote (Sync (s, v, _)) ->
         let state = Board.ofState s
         let newState =
             { currentModel with
@@ -298,6 +299,11 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
               Message = m
         }, Cmd.none
 
+    | SendMessage _
+    | HidePop
+    | ToggleChat 
+    | Remote(ReceiveMessage _) ->
+        currentModel, Cmd.none
 
 let playerBoard board playerid (player: CrazyPlayer) dispatch =
     div [] [

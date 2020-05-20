@@ -4,6 +4,7 @@ open FSharp.Control.Tasks
 open System.Threading.Tasks
 open System
 open System.Text.RegularExpressions
+open FSharp.Data.UnitSystems.SI.UnitSymbols
 
 [<CLIMutable>]
 type BatchData =
@@ -113,14 +114,19 @@ let handler (streamRegex: string) deserialize (f: _ -> _ -> _ -> _ Task) =
 
     fun (c: BatchData) ->
         task {
-        let m = regex.Match c.p
-        if m.Success then
-            let id = m.Groups.["id"].Value
-            let events = 
-                [ for ed in c.e do
-                    yield! deserialize (ed.c, ed.d) ]
+            try
+                let m = regex.Match c.p
+                if m.Success then
+                    let id = m.Groups.["id"].Value
+                    let events = 
+                        [ for ed in c.e do
+                            yield! deserialize (ed.c, ed.d) ]
 
-            do! f id c.i events
+                    do! f id c.i events
+            with
+            | ex ->
+                printfn "%O" ex
+
         }
 
 
@@ -142,4 +148,70 @@ let subscription (client: CosmosClient) (container: Container) name (handlers: (
         .Build()
     feed.StartAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
+
+
+
+[<CLIMutable>]
+type ChatEntry =
+    { id: string
+      p: string
+      m: string
+      pl: string
+      d: System.DateTime
+      ttl: int<s>}
+
+
+let appendChat (container: Container) (stream: string) (message, player, date) =
+    task {
+            let data =
+                { id = Guid.NewGuid().ToString("n")
+                  p = stream
+                  m = message
+                  pl = player
+                  d = date
+                  ttl = 3 * 3600<s> }
+            let! result =
+                container
+                    .CreateTransactionalBatch(PartitionKey stream)
+                    .CreateItem(data)
+                    .ExecuteAsync()
+
+            return ()
+         }
+
+let chatSubscription (client: CosmosClient) (container: Container) name (handler: _ -> _ Task)  =
+
+    let feed =
+       container.GetChangeFeedProcessorBuilder<ChatEntry>(name,
+            fun changes ct ->
+                task {
+                    for c in changes do
+                        do! handler c
+                } :> Task
+        )
+        .WithLeaseContainer(client.GetContainer("crazyfarmers", "subscriptions"))
+        .WithInstanceName(System.Environment.MachineName)
+        .WithPollInterval(TimeSpan.FromMilliseconds 500.)
+        .WithStartTime(DateTime.UtcNow.AddMinutes(-2.))
+        .Build()
+    feed.StartAsync() |> Async.AwaitTask |> Async.RunSynchronously
+
+
+let loadChat (container: Container) stream =
+    let iter = container.GetItemQueryIterator<ChatEntry>(QueryDefinition("SELECT * FROM c WHERE c.p = @stream").WithParameter("@stream",stream))
+    let rec fold entries =
+        task {
+            if iter.HasMoreResults then
+                let! batchResult = iter.ReadNextAsync()
+                let newEntries =
+                    
+                    (batchResult.Resource |> Seq.map(fun r ->
+                        { Shared.Text = r.m; Shared.Player = r.pl; Shared.Date = r.d }
+                    ) |> Seq.toList) @ entries
+
+                return! fold newEntries
+            else
+                return entries
+        }
+    fold []
 

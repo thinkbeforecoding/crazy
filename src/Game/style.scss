@@ -804,3 +804,179 @@ div.back {
 
 }
 
+.chat {
+    position: fixed;
+    width: 20em;
+    bottom: 0;
+    right: 3em;
+    z-index: 100;
+    border-top-left-radius: 1em;
+    border-top-right-radius: 1em;
+    display: flex;
+    flex-flow: column;
+    align-items: stretch;
+    border: 1px solid $crazy-tree;
+    background-color: $crazy-lightgreen;
+
+    &.show {
+        height: 20em;
+    }
+
+
+    @keyframes highlight {
+        0% {
+            color: red;
+        }
+
+
+        90% {
+            color: red;
+        }
+
+        100% {
+            color: $crazy-green;
+        }
+    }
+
+    .chat-header {
+        flex: 0 0 auto;
+        background-color: $crazy-green;
+        border-top-left-radius: 1em;
+        border-top-right-radius: 1em;
+        padding: 0.3em 1em 0.3em 1em;
+        line-height: 100%;
+        display: flex;
+        flex-flow: row;
+        align-items: center;
+    }
+
+    .highlight {
+        animation-name: highlight;
+        animation-duration: 6s;
+        transition-property: color;
+    }
+
+    .chat-content {
+        flex: 1 0 auto;
+        overflow-y: scroll;
+        height: 0;
+    }
+
+    .chat-lines {
+        background-color: $crazy-lightgreen;
+        padding: 1em;
+        display: flex;
+        flex-flow: column;
+        align-items: flex-end;
+
+
+        .entry {
+            background-color: $crazy-hay;
+            padding: 0.3em 1em 0.3em 1em;
+            border-radius: 1em;
+            margin-bottom: 0.5em;
+
+            p {
+                margin: 0;
+                padding: 0;
+            }
+
+            &.you {
+                border-bottom-right-radius: 0;
+                align-self: flex-end;
+            }
+
+            &.other {
+                border-bottom-left-radius: 0;
+                align-self: flex-start;
+            }
+
+            .author {
+                display: flex;
+                flex-flow: row;
+
+                .player {
+                    flex: 0 0 1em;
+                    width: 1em;
+                    height: 1em;
+                    position: static;
+                }
+
+                .name {
+                    margin-left: 0.3em;
+                    color: #888;
+                }
+            }
+        }
+
+        .time {
+            font-size: xx-small;
+            text-align: right;
+        }
+    }
+
+
+    @keyframes pop {
+        0% {
+            opacity: 1;
+        }
+
+
+        90% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: 0;
+        }
+    }
+
+    .chat-pop {
+        position: absolute;
+        display: flex;
+        flex-flow: row;
+        background-color: $crazy-hay;
+        width: 100%;
+        height: 100%;
+        overflow-y: hidden;
+        overflow-x: hidden;
+        border-top-left-radius: 1em;
+        border-top-right-radius: 1em;
+        align-items: center;
+        animation-name: pop;
+        animation-duration: 6s;
+        transition-property: opacity;
+        opacity: 0;
+
+        .author {
+            display: flex;
+            flex-flow: row;
+
+            .player {
+                flex: 0 0 1em;
+                margin-left: 0.3em;
+                width: 1em;
+                height: 1em;
+                position: static;
+            }
+
+            .name {
+                margin-left: 0.3em;
+                color: #888;
+                margin-right: 0.5em;
+            }
+        }
+
+        p {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    input {
+        flex: 0 0 auto;
+        margin: 0;
+        margin-top: 1px;
+    }
+}

@@ -1,16 +1,29 @@
-### 0.4.4   - 2020-05-29
+### 0.4.8   - 2020-05-20
+* Fix chat sync
+
+* Persist table chat
+### 0.4.7   - 2020-05-20
+* Persist table chat
+
+### 0.4.6   - 2020-05-20
+* Table chat !
+
+### 0.4.5   - 2020-05-20
+* Reset version to -1 on cancel / start new
+
+### 0.4.4   - 2020-05-19
 * Fix hash bug
 
-### 0.4.3   - 2020-05-29
+### 0.4.3   - 2020-05-19
 * Fix hash bug
 
-### 0.4.2   - 2020-05-29
+### 0.4.2   - 2020-05-19
 * Facebook and twitter meta
 
-### 0.4.1   - 2020-05-29
+### 0.4.1   - 2020-05-19
 * Show open arena option when no public game
 
-### 0.4.0   - 2020-05-29
+### 0.4.0   - 2020-05-19
 * Play with strangers
 
 ### 0.3.10  - 2020-05-18

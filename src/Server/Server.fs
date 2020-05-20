@@ -92,8 +92,9 @@ let connections =
 
 
 type GameRunnerCmd =
-    | GetState of ((Board * int) option -> unit)
+    | GetState of ((Board * int * ChatEntry list) option -> unit)
     | Exec of Board.Command * (Board.Event list -> unit)
+    | WriteChat of string*string*(unit->unit)
 
 open Newtonsoft.Json.Linq
 let (|JObj|_|) (o: obj) : 'e option =
@@ -439,6 +440,7 @@ let serializeCmd =
 let gameRunner container gameid =
     let stream = "game-"+gameid
     let cmdStream = "game-cmd-" + gameid
+    let chatStream = "chat-" + gameid
     MailboxProcessor.Start(fun mailbox ->
         let rec loop state expectedVersion =
             async {
@@ -450,7 +452,11 @@ let gameRunner container gameid =
                     let! newState, nextExpectedVersion =
                        EventStore.fold deserialize container Board.evolve stream state expectedVersion
                        |> Async.AwaitTask
-                    reply (Some (newState, nextExpectedVersion))
+                    let! chat =
+                        EventStore.loadChat container chatStream
+                        |> Async.AwaitTask
+
+                    reply (Some (newState, nextExpectedVersion, chat))
                     return! loop newState nextExpectedVersion
                 | Exec (cmd, reply) ->
                     let correlationId = Guid.NewGuid().ToString("n")
@@ -483,6 +489,11 @@ let gameRunner container gameid =
 
                     let! newBoard, nextExpectedVersion =  exec state expectedVersion
                     return! loop newBoard nextExpectedVersion
+                | WriteChat(message, player, reply) ->
+                    do! EventStore.appendChat container chatStream (message, player, DateTime.UtcNow)
+                        |> Async.AwaitTask
+                    reply()
+                    return! loop state expectedVersion
             }
 
 
@@ -538,6 +549,13 @@ let runner =
                                 reply []
                                 games
                     return! loop newGames
+                | WriteChat (_,_, reply) ->
+                    match Map.tryFind gameid games with
+                    | Some (game: MailboxProcessor<GameRunnerCmd>) ->
+                        game.Post(msg)
+                    | None -> reply()
+                    return! loop games
+
                     
 
             }
@@ -561,15 +579,15 @@ let update claim clientDispatch msg (model: PlayerState) =
         
         let! state = runner.PostAndAsyncReply(fun c -> gameid, GetState c.Reply)
         match state with 
-        | Some (Board game as s, version)
-        | Some (Won(_, game) as s, version) ->
+        | Some (Board game as s, version, chat)
+        | Some (Won(_, game) as s, version, chat) ->
             let color = 
                 Map.tryFind claim.sub game.Players
                 |> Option.map Player.color
 
             let pboard = privateBoard claim.sub s
 
-            clientDispatch (Sync (Board.toState pboard, version))
+            clientDispatch (Sync (Board.toState pboard, version, chat))
             return  Connected {GameId = gameid; Color = color; Player = claim.sub } ,  Cmd.none
         | _ ->
             return model, Cmd.none
@@ -583,6 +601,15 @@ let update claim clientDispatch msg (model: PlayerState) =
 
 
             return model, Cmd.none
+        | NotConnected -> return model, Cmd.none
+    | SendMessage msg ->
+        match model with
+        | Connected g ->
+            do! runner.PostAndAsyncReply(fun c -> g.GameId, WriteChat(msg, claim.sub, c.Reply))
+                |> Async.Ignore
+
+            return model, Cmd.none
+                
         | NotConnected -> return model, Cmd.none
     }
 
@@ -1249,6 +1276,17 @@ let subs =
         [ EventStore.handler @"^game-(?<id>[\w\d]+)$" deserialize handleGame
           EventStore.handler @"^join-(?<id>[\w\d]+)$" Join.deserialize (Join.handleJoin serverConfig.Cosmos) ]
         
+
+    EventStore.chatSubscription client container ("chat-"+Environment.MachineName)
+        (fun e ->
+            task {
+            if e.p.StartsWith "chat-" then
+                let gameid = e.p.Substring(5)
+                connections.SendClientIf
+                    (function Connected c when c.GameId = gameid -> true | _ -> false)
+                    { Text = e.m; Player = e.pl; Date = e.d } 
+            } )
+
 
 
         

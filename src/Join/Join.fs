@@ -201,7 +201,11 @@ let handleCommand state (command, serverCmd : ServerMsg) =
 let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     match msg with
     | CreateNewGame ->
-        currentModel, Cmd.bridgeSend(CreateGame)
+        { currentModel with
+            Synched = Home
+            Version = -1
+            LocalVersion = -1 }
+        , Cmd.bridgeSend(CreateGame)
     | SelectJoin ->
         { currentModel with Game = SelectGame None }, Cmd.bridgeSend(ServerMsg.Select)
     | Remote (UpdatePublicGames games) ->
@@ -211,7 +215,11 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
 
     | Join gameid ->
         Browser.Dom.document.location.hash <- gameid
-        currentModel, Cmd.bridgeSend(ServerMsg.JoinGame gameid)
+        { currentModel with
+            Synched = Home
+            Version = -1
+            LocalVersion = -1 }
+        , Cmd.bridgeSend(ServerMsg.JoinGame gameid)
     | SelectColor color ->
         match currentModel.Player with
         | Some p ->
@@ -226,7 +234,11 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         Browser.Dom.document.location.hash <- ""
  
 
-        { currentModel with Game = Home}, 
+        { currentModel with 
+            Game = Home
+            Version = -1
+            LocalVersion = -1
+            Synched = Home }, 
             match currentModel.Game with
             | JoinGame _
             | NewGame _ ->

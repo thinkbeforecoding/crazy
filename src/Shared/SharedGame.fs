@@ -1815,10 +1815,17 @@ type ServerMsg =
     //| SyncState 
     | JoinGame of string
     | Command of Player.Command
+    | SendMessage of  string
 
+type ChatEntry =
+    { Text: string
+      Player: string
+      Date: System.DateTime
+    }
 /// A type that specifies the messages sent to the client from the server on Elmish.Bridge
 type ClientMsg =
     | Events of Board.Event list * int
     | Message of string
-    | Sync of BoardState * int
+    | Sync of BoardState * int * ChatEntry list
     | SyncPlayer of  string
+    | ReceiveMessage of ChatEntry

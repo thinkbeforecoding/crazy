@@ -34,6 +34,7 @@ let init () : Model * Cmd<Msg> =
       Error = ""
       DashboardOpen = true
       PlayedCard = None
+      Chat = { Entries = []; Show = false; Pop = false  }
     }, Cmd.none
 
 // The update function computes the next state of the application based on the current state and the incoming events/messages
@@ -103,7 +104,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         let loc = Browser.Dom.document.location
         { currentModel with PlayerId = Some playerid }, Cmd.bridgeSend (JoinGame (parseGame loc.pathname ))
         
-    | Remote (Sync (s, v)) ->
+    | Remote (Sync (s, v, chat)) ->
         let state = Board.ofState s
         let newState =
             { currentModel with
@@ -112,6 +113,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                   Synched = state
                   Version = v
                   Moves =  Board.possibleMoves currentModel.PlayerId state
+                  Chat = { Entries = chat; Show = false; Pop = not (List.isEmpty chat) }
                   }
         newState, Cmd.none// cmd
 
@@ -145,28 +147,129 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         { currentModel with
               Message = m
         }, Cmd.none
+    | Remote (ReceiveMessage entry) ->
+        { currentModel with
+            Chat = { currentModel.Chat with Entries = currentModel.Chat.Entries @ [ entry ]
+                                            Pop = not currentModel.Chat.Show }
+        }, Cmd.none
         
+    | SendMessage msg ->
+        currentModel ,Cmd.bridgeSend(ServerMsg.SendMessage msg)
+    | ToggleChat ->
+        { currentModel with
+            Chat = { currentModel.Chat with Show = not currentModel.Chat.Show; Pop = false }}, Cmd.none
+    | HidePop ->
+        { currentModel with
+            Chat = { currentModel.Chat with Pop = false }}, Cmd.none
+        
+        
+let chatView dispatch playerId (board: PlayingBoard) chat =
+    div [ classBaseList "chat" ["show", chat.Show]  ]
+       [ div [ Id "chat-header"; ClassName "chat-header" ] [ div[ OnClick(fun _ -> dispatch ToggleChat)] [ bars]; div []  [ str "table chat" ] ]
+         if chat.Show then 
+             div [ ClassName "chat-content"; Ref(fun e ->
+                if not (isNull e) then
+                    e.scrollTop <- e.scrollHeight ) ]
+               [ div [ ClassName "chat-lines"] [
+                 
+                   for entry in chat.Entries do
+                       if entry.Player = playerId then
+                           div [ ClassName "entry you"] [ p [] [str entry.Text] ; div [ ClassName "time" ] [ str (entry.Date.ToShortTimeString())] ]
+                       else
+                           let name = board.Table.Names.[playerId]
+                           let color = board.Players.[playerId] |> Player.color
+                           div [ ClassName "entry other"] [ 
+                                   div [ ClassName "author"] [
+                                       div [ ClassName (colorName color)] [ div [ ClassName "player" ] []] 
+                                       div [ ClassName "name"] [ str name ]
+                                   ]
+                                   p [] [str entry.Text] ; div [ ClassName "time" ] [ str (entry.Date.ToShortTimeString())] ]
+                    ]
+               ]
+             input [ Type "text"; Id "chat-input"; OnKeyUp (fun e -> 
+                           let p = Browser.Dom.document.getElementById("chat-input") :?> Browser.Types.HTMLInputElement
+                           if e.keyCode = 13. then
+                               dispatch (SendMessage p.value)
+                               p.value <- ""
+                               ) 
+                               ]
+         else 
+            match chat.Entries with
+            | [] -> ()
+            | _ -> 
+                let entry = List.last chat.Entries
+                if entry.Player <> playerId && chat.Pop then 
+                    div [ ClassName "chat-pop"; OnClick(fun _ -> dispatch ToggleChat); OnAnimationEnd( fun e -> dispatch HidePop) ] [
+                           let name = board.Table.Names.[playerId]
+                           let color = board.Players.[playerId] |> Player.color
+                           div [ ClassName "author"] [
+                               div [ ClassName (colorName color)] [ div [ ClassName "player" ] []] 
+                               div [ ClassName "name"] [ str name ]
+                           ]
+                           p [] [str entry.Text]  
+                 
+                        
+                    
+                    ] 
+        
+       ]
 
 
-    //div [ Style [ Position PositionOptions.Fixed
-    //              Top 0
-    //              Left 0
-    //              BackgroundColor "white"
-    //              ]
-    //]  [   p [] [str (sprintf "%d %s" model.Version model.Message)]
-    //       p [] [str model.Error ] ]
 
-    //for q in -4..4 do
-    // for r in -4..4 do
-    //    let px,py = Pix.ofTile (Axe(q,r))
-    //    let x,y,z = Axe.cube (Axe(q,r))
-    //    div [ Style [ Position PositionOptions.Absolute
-    //                  Left (sprintf "%fvw" (px+2.5))
-    //                  Top (sprintf "%fvw" (py+2.5))
-    //                  BackgroundColor "white"
-    //                   ]] 
-    //        [ //str (sprintf "%d,%d,%d" x y z)
-    //          str (sprintf "%d, %d" q r) ]
+let view (model : Model) (dispatch : Msg -> unit) =
+    match model.Board with
+    | InitialState -> 
+        div [ClassName "board" ] [
+            div [] [ str model.Message ]
+        
+        ]
+    | Board board ->
+        div [] 
+            [ playersDashboard model dispatch
+              div [ ClassName "board" ]
+                [ yield! boardView board
+
+                  for m in model.Moves do
+                    moveView dispatch m
+
+                  yield! endTurnView dispatch model.PlayerId board
+
+
+                  yield! boardCardActionView dispatch board model.CardAction 
+
+                ]
+              lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
+
+              match model.PlayerId with
+              | Some playerId ->
+                  chatView dispatch playerId board model.Chat
+              | None -> () 
+
+                         ]
+    | Won(winner, board) ->
+        div []
+            [ playersDashboard model dispatch
+              div [ ClassName "board" ]
+                  [ yield! boardView board
+        
+                    let player = board.Players.[winner]
+
+                    div [ ClassName "victory" ]
+                        [ p [] [ str "And the winner is"]
+                          div [ ClassName ("winner " + colorName (Player.color player)) ]
+                              [ div [ ClassName "player"] [] ]
+                          p [] [ str board.Table.Names.[winner] ] 
+
+                          p [ ClassName "back"] [ a [ Href "/" ] [ str "back to home" ]]
+
+                          ]  
+                    match model.PlayerId with
+                    | Some playerId ->
+                        chatView dispatch playerId board model.Chat
+                    | None -> () 
+
+                  ]
+            ]
 
 
 
