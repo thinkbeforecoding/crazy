@@ -30,7 +30,8 @@ and Player =
 and PageModel = 
     | Home
     | NewGame of NewGame
-    | SelectGame of PublicGame[] option
+    | SelectGame
+    | PlayWithStrangers of PublicGame[] option
     | JoinGame of NewGame
     | Started of string
     | LoginPage
@@ -55,7 +56,7 @@ and NewGame =
 type Msg = 
     | CreateNewGame
     | SelectJoin
-    | SelectJoinPublic
+    | SelectPlayWithStrangers
     | Join of string
     | Cancel
     | Start 
@@ -207,10 +208,13 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
             LocalVersion = -1 }
         , Cmd.bridgeSend(CreateGame)
     | SelectJoin ->
-        { currentModel with Game = SelectGame None }, Cmd.bridgeSend(ServerMsg.Select)
+        { currentModel with Game = SelectGame }, Cmd.none
+    | SelectPlayWithStrangers ->
+        { currentModel with Game = PlayWithStrangers  None }, Cmd.bridgeSend(ServerMsg.Select)
+
     | Remote (UpdatePublicGames games) ->
         match currentModel.Game with
-        | SelectGame _ -> { currentModel with Game = SelectGame (Some games) }, Cmd.none
+        | PlayWithStrangers _ -> { currentModel with Game = PlayWithStrangers (Some games) }, Cmd.none
         | _ -> currentModel, Cmd.none
 
     | Join gameid ->
@@ -510,6 +514,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                       ]
                       button [ OnClick (fun _ -> dispatch CreateNewGame) ] [ str "Open new Arena" ]
                       button [ OnClick (fun _ -> dispatch SelectJoin)] [ str "Join an Arena"]
+                      button [ OnClick (fun _ -> dispatch SelectPlayWithStrangers)] [ str "Play with Strangers"]
 
                       div [ ] [
                       
@@ -545,7 +550,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                 label [ HtmlFor "Public"] [ str "Play with strangers" ]
                                 div [] [
                                     if game.Public then
-                                        p [ ClassName "info"] [ str "This game will appear publicly on the website so that other players joining an arena."]
+                                        p [ ClassName "info"] [ str "This game will appear publicly on the website so that other players can join it from the Play with Strangers section."]
                                         p [ ClassName "info" ] [ str "Players you don't know may join." ]
                                 ]
                             ]
@@ -595,7 +600,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                     ]
                 ]
 
-        | SelectGame games ->
+        | SelectGame ->
             div [ ClassName "title" ] [
                 header dispatch model.Player
 
@@ -616,6 +621,18 @@ let view (model : Model) (dispatch : Msg -> unit) =
                             cancel dispatch
                       ]
 
+
+                    ]
+                footer
+            ]
+
+        | PlayWithStrangers games ->
+            div [ ClassName "title" ] [
+                header dispatch model.Player
+
+                div [ ClassName "content" ]
+                    [ mainTitle "Play with Strangers"
+
                       div [ ClassName "info public-arenas" ]
                           [ 
                             match games with
@@ -627,7 +644,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                        str " yourself"
                                         ]
                             | Some games ->
-                                str "Or join a game with strangers in a public arena:" 
+                                p [] [ str "Join a game with strangers in a public arena !" ]
+                                p [] [ str "Select an arena below:" ]
 
                                 ul [] [
                                     for game in games do
@@ -646,13 +664,15 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                             str ")"
                                             ] ]
                                     ]
-
                       ]
+                      div [ Style [ Clear ClearOptions.Both ]]
+                          [ cancel dispatch ]
 
 
                     ]
                 footer
             ]
+
         | LoginPage ->
             div [ ClassName "title" ] [
                 div [ ClassName "content" ] [

@@ -1,3 +1,6 @@
+### 0.4.9   - 2020-05-20
+* Split the Play with strangers part
+
 ### 0.4.8   - 2020-05-20
 * Fix chat sync
 
