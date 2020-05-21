@@ -1,3 +1,6 @@
+### 0.4.10  - 2020-05-20
+* Fix player name in chat
+
 ### 0.4.9   - 2020-05-20
 * Split the Play with strangers part
 

@@ -10,6 +10,7 @@
     <None Include="paket.references" />
     <None Include="style.scss" />
     <Compile Include="Version.fs" />
+    <Compile Include="Globalization.fs" />
     <Compile Include="..\Shared\Shared.fs" />
     <Compile Include="..\Shared\SharedGame.fs" />
     <Compile Include="..\Shared\SharedClient.fs" Link="SharedClient.fs" />

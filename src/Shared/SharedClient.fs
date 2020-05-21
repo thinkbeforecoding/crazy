@@ -4,6 +4,7 @@ open Shared
 open Fable.React
 open Fable.React.Props
 open Elmish.React
+open Globalization
 
 type CardExt =
 | NoExt
@@ -172,11 +173,11 @@ let drawcrossroad pos f =
           | _ -> () ] 
         [ match f with
           | Ok _ -> ()
-          | Error Tractor -> tooltip "The crossroad is occupied by another tractor"
-          | Error HayBaleOnPath -> tooltip "The path is blocked by a hay bale"
-          | Error PhytosanitaryProducts -> tooltip "You cannot cut a fence just after using an Helicopter. With phytosanitary products, it could explode"
-          | Error Protection -> tooltip "You cannot cut on the two fences behind a tractor. Too close, you'd be shotgunned !"
-          | Error HighVoltageProtection -> tooltip "The fence is under High Voltage. You'd be reduced to ashes !"
+          | Error Tractor -> tooltip (translate "The crossroad is occupied by another tractor")
+          | Error HayBaleOnPath -> tooltip (translate "The path is blocked by a hay bale")
+          | Error PhytosanitaryProducts -> tooltip (translate "You cannot cut a fence just after using an Helicopter. With phytosanitary products, it could explode")
+          | Error Protection -> tooltip (translate "You cannot cut on the two fences behind a tractor. Too close, you'd be shotgunned !")
+          | Error HighVoltageProtection -> tooltip (translate "The fence is under High Voltage. You'd be reduced to ashes !")
           
                 
         ]

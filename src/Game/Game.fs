@@ -176,8 +176,8 @@ let chatView dispatch playerId (board: PlayingBoard) chat =
                        if entry.Player = playerId then
                            div [ ClassName "entry you"] [ p [] [str entry.Text] ; div [ ClassName "time" ] [ str (entry.Date.ToShortTimeString())] ]
                        else
-                           let name = board.Table.Names.[playerId]
-                           let color = board.Players.[playerId] |> Player.color
+                           let name = board.Table.Names.[entry.Player]
+                           let color = board.Players.[entry.Player] |> Player.color
                            div [ ClassName "entry other"] [ 
                                    div [ ClassName "author"] [
                                        div [ ClassName (colorName color)] [ div [ ClassName "player" ] []] 
