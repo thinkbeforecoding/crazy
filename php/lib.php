@@ -2756,8 +2756,8 @@ function Shared_002EPlayer___decide($otherPlayers__1, $barns__3, $command, $play
  }));
  }));
                             default:
-                                $activePatternResult69845 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
-                                if (!is_null($activePatternResult69845)) {
+                                $activePatternResult105805 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
+                                if (!is_null($activePatternResult105805)) {
                                     return new Cons(new Event_FenceRemoved(new Moved($cmd__1->Direction, $nextPath__1, $nextPos__1)), FSharpList::get_Nil());
                                 } else {
                                     $matchValue__15 = Shared_002EFenceModule___findLoop($cmd__1->Direction, $player__17->Tractor, $player__17->Fence);
@@ -3958,14 +3958,14 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                             $nextBoard = Shared_002EBoardModule___annexed($playerid__11, $e__20, $board__19);
                                             $eliminated = 0;
                                             return Seq::append(Seq::collect(function ($matchValue__35) use ($eliminated) { 
-                                                $activePatternResult70046 = $matchValue__35;
-                                                if (Shared_002EPlayer___isKo($activePatternResult70046[1])) {
+                                                $activePatternResult106006 = $matchValue__35;
+                                                if (Shared_002EPlayer___isKo($activePatternResult106006[1])) {
                                                     $eliminated = $eliminated + 1;
                                                     return Seq::empty();
                                                 } else {
-                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult70046[1]))) {
+                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult106006[1]))) {
                                                         $eliminated = $eliminated + 1;
-                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult70046[0], new Event_Eliminated()));
+                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult106006[0], new Event_Eliminated()));
                                                     } else {
                                                         return Seq::empty();
                                                     }
@@ -4056,8 +4056,8 @@ function Shared_002EBoardModule___toState($board__20) {
  }, $source__9);
                 return FSharpArray::ofSeq($source__10);
             })(), new STable($board__20->Item2->Table->Players, $board__20->Item2->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__40) use ($board__20) {             return Seq::collect(function ($matchValue__38) { 
-                $activePatternResult70060 = $matchValue__38;
-                return Seq::singleton([ $activePatternResult70060[0], $activePatternResult70060[1]]);
+                $activePatternResult106020 = $matchValue__38;
+                return Seq::singleton([ $activePatternResult106020[0], $activePatternResult106020[1]]);
             }, $board__20->Item2->Table->Names);
  })), $board__20->Item2->Table->Current), FSharpArray::ofList($board__20->Item2->DiscardPile), (function () use ($board__20) { 
                 $list__24 = Shared_002EFieldModule___parcels($board__20->Item2->Barns->Free);
@@ -4073,8 +4073,8 @@ function Shared_002EBoardModule___toState($board__20) {
  }, $source__7);
                 return FSharpArray::ofSeq($source__8);
             })(), new STable($board__20->Item->Table->Players, $board__20->Item->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__39) use ($board__20) {             return Seq::collect(function ($matchValue__37) { 
-                $activePatternResult70056 = $matchValue__37;
-                return Seq::singleton([ $activePatternResult70056[0], $activePatternResult70056[1]]);
+                $activePatternResult106016 = $matchValue__37;
+                return Seq::singleton([ $activePatternResult106016[0], $activePatternResult106016[1]]);
             }, $board__20->Item->Table->Names);
  })), $board__20->Item->Table->Current), FSharpArray::ofList($board__20->Item->DiscardPile), (function () use ($board__20) { 
                 $list__22 = Shared_002EFieldModule___parcels($board__20->Item->Barns->Free);
@@ -4192,11 +4192,37 @@ class ServerMsg_Command extends ServerMsg {
     }
 }
 
-#194
-abstract class ClientMsg implements Union, FSharpUnion {
+#193
+class ServerMsg_SendMessage extends ServerMsg {
+    public $Item;
+    function __construct($Item) {
+        $this->Item = $Item;
+    }
+    function get_Case() {
+        return 'ServerMsg_SendMessage';
+    }
+    function get_FSharpCase() {
+        return 'SendMessage';
+    }
 }
 
 #194
+class ChatEntry {
+    public $Text;
+    public $Player;
+    public $Date;
+    function __construct($Text, $Player, $Date) {
+        $this->Text = $Text;
+        $this->Player = $Player;
+        $this->Date = $Date;
+    }
+}
+
+#195
+abstract class ClientMsg implements Union, FSharpUnion {
+}
+
+#195
 class ClientMsg_Events extends ClientMsg {
     public $Item1;
     public $Item2;
@@ -4212,7 +4238,7 @@ class ClientMsg_Events extends ClientMsg {
     }
 }
 
-#194
+#195
 class ClientMsg_Message extends ClientMsg {
     public $Item;
     function __construct($Item) {
@@ -4226,13 +4252,15 @@ class ClientMsg_Message extends ClientMsg {
     }
 }
 
-#194
+#195
 class ClientMsg_Sync extends ClientMsg {
     public $Item1;
     public $Item2;
-    function __construct($Item1, $Item2) {
+    public $Item3;
+    function __construct($Item1, $Item2, $Item3) {
         $this->Item1 = $Item1;
         $this->Item2 = $Item2;
+        $this->Item3 = $Item3;
     }
     function get_Case() {
         return 'ClientMsg_Sync';
@@ -4242,7 +4270,7 @@ class ClientMsg_Sync extends ClientMsg {
     }
 }
 
-#194
+#195
 class ClientMsg_SyncPlayer extends ClientMsg {
     public $Item;
     function __construct($Item) {
@@ -4253,6 +4281,20 @@ class ClientMsg_SyncPlayer extends ClientMsg {
     }
     function get_FSharpCase() {
         return 'SyncPlayer';
+    }
+}
+
+#195
+class ClientMsg_ReceiveMessage extends ClientMsg {
+    public $Item;
+    function __construct($Item) {
+        $this->Item = $Item;
+    }
+    function get_Case() {
+        return 'ClientMsg_ReceiveMessage';
+    }
+    function get_FSharpCase() {
+        return 'ReceiveMessage';
     }
 }
 
@@ -4483,6 +4525,23 @@ function SharedServer___bgaScore($events__2, $board__4, $updateScore) {
  }, $events__2);
     } else {
         return NULL;
+    }
+}
+
+#7
+function SharedServer___textAction($_arg1__2) {
+    if ($_arg1__2 instanceof BoardEvent_Played) {
+        switch (get_class($_arg1__2->Item2))
+        {
+            case 'Event_Annexed':
+                return _('Annexion');
+            case 'Event_FenceDrawn':
+                return _('Player drew a fence');
+            default:
+                return '';
+        }
+    } else {
+        return '';
     }
 }
 

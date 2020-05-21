@@ -125,6 +125,7 @@ and PhpExpr =
     | PhpTernary of gard: PhpExpr * thenExpr: PhpExpr * elseExpr: PhpExpr
     | PhpIsA of expr: PhpExpr * PhpType
     | PhpAnonymousFunc of args: string list * uses: Capture list * body: PhpStatement list
+    | PhpMacro of macro: string * args: PhpExpr list
    
 and PhpStatement =
     | Return of PhpExpr
@@ -391,6 +392,18 @@ module Output =
                 writei ctx "}"
             else
                 write ctx " }"
+        | PhpMacro(macro, args) ->
+            let regex = System.Text.RegularExpressions.Regex("\$(?<n>\d)")
+            let matches = regex.Matches(macro)
+            let mutable pos = 0
+            for m in matches do
+                let n = int m.Groups.["n"].Value
+                write ctx (macro.Substring(pos,m.Index-pos))
+                writeExpr ctx args.[n]
+                pos <- m.Index + m.Length
+            write ctx (macro.Substring(pos))
+
+
     and writeArgs ctx args =
         let mutable first = true
         for arg in args do
@@ -845,6 +858,11 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
     | Fable.Operation(Fable.CurriedApply(expr, args),_,_) ->
         PhpCall(convertExpr ctx expr, [for arg in args -> convertExpr ctx arg]) 
 
+    | Fable.Operation(Fable.Emit(macro,args),_,_) ->
+        match args with
+        | None -> PhpMacro(macro, [])
+        | Some args ->
+            PhpMacro(macro, [for arg in args.Args -> convertExpr ctx arg])
     | Fable.Get(expr, kind ,t,_) ->
         let phpExpr = convertExpr ctx expr
         match kind with 
@@ -1213,7 +1231,8 @@ let convertDecl ctx decl =
 let files = 
     [ @"C:\development\crazy\src\Shared\Shared.fs"
       @"C:\development\crazy\src\Shared\SharedGame.fs"
-      @"C:\development\crazy\src\Server\SharedServer.fs" ]
+      @"C:\development\crazy\src\Server\SharedServer.fs"
+      ]
 
 let opts   =
     let projOptions: FSharpProjectOptions =
@@ -1221,7 +1240,7 @@ let opts   =
                  ProjectId = None
                  ProjectFileName = @"C:\development\crazy\src\Game\Game.fsproj"
                  SourceFiles = List.toArray files 
-                 OtherOptions = [||]
+                 OtherOptions = [| @"-r:C:\development\crazy\packages\Fable.Core\lib\netstandard2.0\Fable.Core.dll"|]
                  ReferencedProjects = [||] //p2pProjects |> Array.ofList
                  IsIncompleteTypeCheckEnvironment = false
                  UseScriptResolutionRules = false
@@ -1257,9 +1276,6 @@ let asts =
         Fable.Transforms.FSharp2Fable.Compiler.transformFile com proj.ImplementationFiles
         |> Fable.Transforms.FableTransforms.optimizeFile com ]
 
-
-
-
 let phpComp = PhpCompiler.empty
 let fs = 
     [ 
@@ -1269,7 +1285,7 @@ let fs =
                 i,d
     ]
 
-convertDecl phpComp asts.[2].Declarations.[2]
+convertDecl phpComp asts.[2].Declarations.[8]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w

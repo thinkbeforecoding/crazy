@@ -114,3 +114,15 @@ let bgaScore events board updateScore =
             | _ -> ()
     | _ -> ()
 
+[<Fable.Core.EmitAttribute("_($0)")>]
+let translate (s: string) = s
+
+
+
+let textAction = function
+    | Board.Played (_, Player.Annexed(_)) ->
+        translate "Annexion"
+    | Board.Played (_, Player.FenceDrawn(_)) ->
+        translate "Player drew a fence"
+    | _ -> ""
+
