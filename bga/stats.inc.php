@@ -56,6 +56,14 @@ $stats_type = array(
                     "name" => totranslate("Number of turns"),
                     "type" => "int" ),
 
+        "fences_drawn" => ["id" => 11,
+                    "name" => totranslate("Fences drawn"),
+                    "type" => "int"],
+    
+        "fences_cut" => ["id" => 12,
+                    "name" => totranslate("Fences cut"),
+                    "type" => "int"]
+
 /*
         Examples:
 
@@ -73,10 +81,19 @@ $stats_type = array(
     // Statistics existing for each player
     "player" => array(
 
-        "turns_number" => array("id"=> 10,
-                    "name" => totranslate("Number of turns"),
-                    "type" => "int" ),
     
+        "fences_drawn" => [ "id" => 10,
+                    "name" => totranslate("Fences drawn"),
+                    "type" => "int" ],
+
+        "fences_cut" => ["id" => 11,
+                    "name" => totranslate("Number of fences cut"),
+                    "type" => "int"],
+        "cut_number" => ["id" => 12,
+                    "name" => totranslate("Number of time you've been cut"),
+                    "type" => "int"]
+
+                
 /*
         Examples:    
         

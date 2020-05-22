@@ -183,5 +183,24 @@ let textAction b es =
         "", Map.empty
 
 
-    
+module Stats =
+    let turns_number = "turns_number"
+    let fences_drawn = "fences_drawn"
+    let fences_cut = "fences_cut"
+    let cut_number = "cut_number"
+
+let updateStats es (incStat: int -> string -> string option -> unit) =
+    for e in es do
+        match e with
+        | Board.Next ->
+            incStat 1 Stats.turns_number None
+        | Board.Played(p, Player.CutFence e) ->
+            incStat 1 Stats.fences_cut None
+            incStat 1 Stats.fences_cut (Some p)
+            incStat 1 Stats.cut_number (Some e.Player)
+        | Board.Played(p, Player.FenceDrawn _) ->
+            incStat 1 Stats.fences_drawn None
+            incStat 1 Stats.fences_drawn (Some p)
+
+        | _ -> ()
 

@@ -107,6 +107,14 @@ class CrazyFarmers extends Table
 
         // TODO: setup the initial game situation here
 
+        self::initStat( "table", "turns_number", 0);
+        self::initStat( "table", "fences_drawn", 0);
+        self::initStat( "table", "fences_cut", 0);
+
+        self::initStat( "player", "fences_drawn", 0);
+        self::initStat( "player", "fences_cut", 0);
+        self::initStat( "player", "cut_number", 0);
+
         switch ($this->gamestate->table_globals[100])
         {
             case 1:
@@ -306,6 +314,8 @@ class CrazyFarmers extends Table
         $board = self::fold($board, $es);
 
         self::updateScore($es,$board);
+        SharedServer___updateStats($es, function($d,$n,$p) { self::incStat($d,$n,$p); });
+
         if (!empty($es))
         {
 
@@ -331,6 +341,7 @@ class CrazyFarmers extends Table
             self::notifyAllPlayers( "specatorEvents", "", $args);
         }
         self::updateState($es,$board);
+
     }
 
     function updateScore($es, $board)
