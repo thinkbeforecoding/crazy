@@ -368,7 +368,7 @@ let playedCard dispatch card =
       div [ClassName "played-card"
            Style [Top (sprintf "calc (%fpx + 10em)" top)]
            OnAnimationEnd (fun _ -> dispatch HidePlayedCard) ]
-          [ div [ClassName ("card " + cardName c)] [] ]
+          [ div [ClassName ("card " + Client.cardName c)] [] ]
     | None -> 
       //div [ClassName "played-card"
       //     Style [Top 40] ]

@@ -1,3 +1,6 @@
+### 0.4.11  - 2020-05-20
+* Fix player name in min chat
+
 ### 0.4.10  - 2020-05-20
 * Fix player name in chat
 

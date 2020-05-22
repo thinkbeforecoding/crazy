@@ -323,6 +323,7 @@ i.fa-bars {
 
 }
 
+
 #game_play_area {
     .board {
         margin-top: 0;
@@ -426,6 +427,16 @@ i.fa-bars {
                 background-image: url(~img/selected-player-red.png);
             }
         }
+    }
+}
+
+.cardicon {
+    width: 1.8em;
+    float: left;
+    margin-right: 0.5em;
+
+    .card {
+        width: auto;
     }
 }
 

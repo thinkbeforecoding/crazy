@@ -3,6 +3,6 @@
 open Fable.Core
 
 [<Emit("_($0)")>]
-let translate (s: string) = s
+let translate s = s
 
 

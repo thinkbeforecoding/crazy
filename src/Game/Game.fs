@@ -200,8 +200,8 @@ let chatView dispatch playerId (board: PlayingBoard) chat =
                 let entry = List.last chat.Entries
                 if entry.Player <> playerId && chat.Pop then 
                     div [ ClassName "chat-pop"; OnClick(fun _ -> dispatch ToggleChat); OnAnimationEnd( fun e -> dispatch HidePop) ] [
-                           let name = board.Table.Names.[playerId]
-                           let color = board.Players.[playerId] |> Player.color
+                           let name = board.Table.Names.[entry.Player]
+                           let color = board.Players.[entry.Player] |> Player.color
                            div [ ClassName "author"] [
                                div [ ClassName (colorName color)] [ div [ ClassName "player" ] []] 
                                div [ ClassName "name"] [ str name ]

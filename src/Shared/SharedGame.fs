@@ -1809,6 +1809,20 @@ module Board =
             | None -> []
         | _ -> []
 
+module Client =
+    let cardName =
+        function
+        | Nitro One -> "card nitro-1"
+        | Nitro Two -> "card nitro-2"
+        | Rut -> "card rut"
+        | HayBale One -> "card hay-bale-1"
+        | HayBale Two -> "card hay-bale-2"
+        | Dynamite -> "card dynamite"
+        | HighVoltage -> "card high-voltage"
+        | Watchdog -> "card watchdog"
+        | Helicopter -> "card helicopter"
+        | Bribe -> "card bribe"
+
 /// A type that specifies the messages sent to the server from the client on Elmish.Bridge
 /// to learn more, read about at https://github.com/Nhowka/Elmish.Bridge#shared
 type ServerMsg =

@@ -289,7 +289,7 @@ module Output =
             | PhpConstNumber n -> write ctx (string n)
             | PhpConstString s -> 
                 write ctx "'"
-                write ctx s
+                write ctx (s.Replace("'",@"\'"))
                 write ctx "'"
             | PhpConstBool true -> write ctx "true"
             | PhpConstBool false -> write ctx "false"
@@ -393,13 +393,28 @@ module Output =
             else
                 write ctx " }"
         | PhpMacro(macro, args) ->
-            let regex = System.Text.RegularExpressions.Regex("\$(?<n>\d)")
+            let regex = System.Text.RegularExpressions.Regex("\$(?<n>\d)(?<s>\.\.\.)?")
             let matches = regex.Matches(macro)
             let mutable pos = 0
             for m in matches do
                 let n = int m.Groups.["n"].Value
                 write ctx (macro.Substring(pos,m.Index-pos))
-                writeExpr ctx args.[n]
+                if m.Groups.["s"].Success then
+                    match args.[n] with
+                    | PhpArray items ->
+                       let mutable first = true
+                       for _,value in items do
+                           if first then
+                               first <- false
+                           else
+                               write ctx ", "
+                           writeExpr ctx value 
+
+
+                    | _ -> failwith "Splice param should be a array"
+
+                else
+                    writeExpr ctx args.[n]
                 pos <- m.Index + m.Length
             write ctx (macro.Substring(pos))
 
@@ -801,7 +816,10 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
         let opstr =
             match op with
             | BinaryOperator.BinaryMultiply -> "*"
-            | BinaryOperator.BinaryPlus -> "+"
+            | BinaryOperator.BinaryPlus ->
+                match t with
+                | Fable.Type.String -> "."
+                | _ -> "+"
             | BinaryOperator.BinaryMinus -> "-"
             | BinaryOperator.BinaryLess -> "<"
             | BinaryOperator.BinaryGreater -> ">"
@@ -829,6 +847,7 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
         | Fable.ImportKind.Library, Fable.Value(Fable.StringConstant cls,_) ->
             match s with
             | "op_UnaryNegation_Int32" -> PhpUnaryOp("-", convertExpr ctx args.Args.[0])
+            | "join" -> PhpCall(PhpConst(PhpConstString "join"), convertArgs ctx args)
             | _ -> 
                 let phpCls =
                     match cls with
@@ -1141,9 +1160,10 @@ and convertExprToStatement ctx expr returnStrategy =
                         IntCase i, [
                             match Map.tryFind i cases with
                             | Some case ->
-                                for id, b in List.zip idents case do
-                                    ctx.AddLocalVar(fixName id.Name)
-                                    Assign(PhpVar(fixName id.Name, None), convertExpr ctx b)
+                                // Assigns have already been made in switch 1
+                                //for id, b in List.zip idents case do
+                                //    ctx.AddLocalVar(fixName id.Name)
+                                //    Assign(PhpVar(fixName id.Name, None), convertExpr ctx b)
                                 yield! convertExprToStatement ctx expr returnStrategy
                             | None -> ()
                             match returnStrategy with
