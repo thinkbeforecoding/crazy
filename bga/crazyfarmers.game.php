@@ -107,13 +107,43 @@ class CrazyFarmers extends Table
 
         // TODO: setup the initial game situation here
 
-        self::initStat( "table", "turns_number", 0);
+        self::initStat( "table", "turns_number", 1);
         self::initStat( "table", "fences_drawn", 0);
         self::initStat( "table", "fences_cut", 0);
+        self::initStat( "table", "takeovers_number", 0);
+        self::initStat( "table", "biggest_takeover", 0);
+        self::initStat( "table", "freebarns_number", 0);
+        self::initStat( "table", "occupiedbarns_number", 0);
+        self::initStat( "table", "cardsplayed_number", 0);
+        self::initStat( "table", "haybales_number", 0);
+        self::initStat( "table", "dynamites_number", 0);
+        self::initStat( "table", "haybales_max_number", 0);
+        self::initStat( "table", "helicopters_number", 0);
+        self::initStat( "table", "highvoltages_number", 0);
+        self::initStat( "table", "watchdogs_number", 0);
+        self::initStat( "table", "bribes_number", 0);
+        self::initStat( "table", "nitro1_number", 0);
+        self::initStat( "table", "nitro2_number", 0);
+        self::initStat( "table", "ruts_number", 0);
 
         self::initStat( "player", "fences_drawn", 0);
         self::initStat( "player", "fences_cut", 0);
         self::initStat( "player", "cut_number", 0);
+        self::initStat( "player", "takeovers_number", 0);
+        self::initStat( "player", "biggest_takeover", 0);
+        self::initStat( "player", "freebarns_number", 0);
+        self::initStat( "player", "occupiedbarns_number", 0);
+        self::initStat( "player", "cardsplayed_number", 0);
+        self::initStat( "player", "haybales_number", 0);
+        self::initStat( "player", "dynamites_number", 0);
+        self::initStat( "player", "helicopters_number", 0);
+        self::initStat( "player", "highvoltages_number", 0);
+        self::initStat( "player", "watchdogs_number", 0);
+        self::initStat( "player", "bribes_number", 0);
+        self::initStat( "player", "nitro1_number", 0);
+        self::initStat( "player", "nitro2_number", 0);
+        self::initStat( "player", "ruts_number", 0);
+        self::initStat( "player", "rutted_number", 0);
 
         switch ($this->gamestate->table_globals[100])
         {
@@ -314,7 +344,15 @@ class CrazyFarmers extends Table
         $board = self::fold($board, $es);
 
         self::updateScore($es,$board);
-        SharedServer___updateStats($es, function($d,$n,$p) { self::incStat($d,$n,$p); });
+        SharedServer___updateStats($es, function($d,$n,$p) { self::incStat($d,$n,$p); }, 
+            function($f,$n,$p) {
+                $current = self::getStat($n,$p);
+                $newValue = $f($current);
+                self::setStat($newValue,$n,$p); },
+            function($n,$p) {
+                return self::getStat($n,$p);
+            }
+    );
 
         if (!empty($es))
         {

@@ -188,8 +188,24 @@ module Stats =
     let fences_drawn = "fences_drawn"
     let fences_cut = "fences_cut"
     let cut_number = "cut_number"
+    let takeovers_number = "takeovers_number"
+    let biggest_takeover = "biggest_takeover"
+    let freebarns_number = "freebarns_number"
+    let occupiedbarns_number = "occupiedbarns_number"
+    let cardsplayed_number = "cardsplayed_number"
+    let haybales_max_number = "haybales_max_number"
+    let haybales_number = "haybales_number"
+    let dynamites_number = "dynamites_number"
+    let helicopters_number = "helicopters_number"
+    let highvoltages_number = "highvoltages_number"
+    let watchdogs_number = "watchdogs_number"
+    let bribes_number = "bribes_number"
+    let nitro1_number = "nitro1_number"
+    let nitro2_number = "nitro2_number"
+    let ruts_number = "ruts_number"
+    let rutted_number = "rutted_number"
 
-let updateStats es (incStat: int -> string -> string option -> unit) =
+let updateStats es (incStat: int -> string -> string option -> unit) (updateStat:  (int -> int) -> string -> string option -> unit) (getStat: string -> string option -> int ) =
     for e in es do
         match e with
         | Board.Next ->
@@ -201,6 +217,56 @@ let updateStats es (incStat: int -> string -> string option -> unit) =
         | Board.Played(p, Player.FenceDrawn _) ->
             incStat 1 Stats.fences_drawn None
             incStat 1 Stats.fences_drawn (Some p)
+        | Board.Played(p, Player.Annexed e) ->
+            incStat 1 Stats.takeovers_number None
+            incStat 1 Stats.takeovers_number (Some p)
+            let size = List.length e.NewField
+            updateStat (fun current -> max current size) Stats.biggest_takeover (Some p)
+            updateStat (fun current -> max current size) Stats.biggest_takeover None
+            let freeBarns = List.length e.FreeBarns
+            incStat freeBarns Stats.freebarns_number None
+            incStat freeBarns Stats.freebarns_number (Some p)
+            let occupiedBarns = List.length e.OccupiedBarns
+            incStat occupiedBarns Stats.occupiedbarns_number None
+            incStat occupiedBarns Stats.occupiedbarns_number (Some p)
+        | Board.Played(p, Player.CardPlayed cp )->
+            incStat 1 Stats.cardsplayed_number None
+            incStat 1 Stats.cardsplayed_number (Some p)
+            match cp with
+            | PlayHayBale hb ->
+                let hayBales = List.length hb
+                incStat hayBales Stats.haybales_number None
+                incStat hayBales Stats.haybales_number (Some p)
+
+                updateStat (fun current ->
+                    let totalHayBales = getStat Stats.haybales_number None - getStat Stats.dynamites_number None
+                    max current totalHayBales
+                ) Stats.haybales_max_number None
+            | PlayDynamite _ ->
+                incStat 1 Stats.dynamites_number None
+                incStat 1 Stats.dynamites_number (Some p)
+            | PlayHelicopter _ ->
+                incStat 1 Stats.helicopters_number None
+                incStat 1 Stats.helicopters_number (Some p)
+            | PlayHighVoltage ->
+                incStat 1 Stats.highvoltages_number None
+                incStat 1 Stats.highvoltages_number (Some p)
+            | PlayWatchdog ->
+                incStat 1 Stats.watchdogs_number None
+                incStat 1 Stats.watchdogs_number (Some p)
+            | PlayBribe _ ->
+                incStat 1 Stats.bribes_number None
+                incStat 1 Stats.bribes_number (Some p)
+            | PlayNitro One ->
+                incStat 1 Stats.nitro1_number None
+                incStat 1 Stats.nitro1_number (Some p)
+            | PlayNitro Two ->
+                incStat 1 Stats.nitro2_number None
+                incStat 1 Stats.nitro2_number (Some p)
+            | PlayRut victim ->
+                incStat 1 Stats.ruts_number None
+                incStat 1 Stats.ruts_number (Some p)
+                incStat 1 Stats.rutted_number (Some victim)
 
         | _ -> ()
 
