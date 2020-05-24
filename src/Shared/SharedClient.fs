@@ -467,82 +467,6 @@ let helicopterDestinations player board =
                       ])
 
 
-let findCutPaths hayBales =
-    let neighbor dir crossroad = 
-        let neighbor = Crossroad.neighbor dir crossroad
-        if Crossroad.isOnBoard neighbor then
-            let path = Path.neighbor dir crossroad
-            if Set.contains path hayBales then
-                None
-            else
-                Some (path,neighbor)
-        else
-            None
-
-    let mutable cut = []
-    let mutable visited = Map.empty
-    let mutable time = 0
-    let rec loop parent crossroad : int =
-        visited <- Map.add crossroad time visited
-        let d0 = time
-        time <- time + 1 
-        let upDepth =
-            match neighbor Up crossroad with
-            | Some (p,nxt) when nxt <> parent ->
-                let n = 
-                    match Map.tryFind nxt visited with
-                    | Some d -> d
-                    | None -> loop crossroad nxt 
-                if n > d0 then
-                    cut <- p :: cut 
-                n
-            | _ -> 
-                d0 + 1
-        let downDepth = 
-            match neighbor Down crossroad with
-            | Some (p,nxt) when nxt <> parent ->
-                let n = 
-                    match Map.tryFind nxt visited with
-                    | Some d -> d
-                    | None -> loop crossroad nxt 
-                if n > d0 then
-                    cut <- p :: cut 
-                n
-            | _ -> 
-                d0 + 1
-        let horizontalDepth = 
-            match neighbor Horizontal crossroad with
-            | Some (p,nxt) when nxt <> parent ->
-                let n = 
-                    match Map.tryFind nxt visited with
-                    | Some d -> d
-                    | None -> loop crossroad nxt 
-                if n > d0 then
-                    cut <- p :: cut 
-                n
-            | _ -> 
-                d0 + 1
-
-        let d = min upDepth downDepth |> min horizontalDepth 
-        visited <- Map.add crossroad d visited
-        d
-
-    let start = Crossroad(Axe.center, CLeft)
-    loop start start |> ignore
-    set cut
-
-    
-
-
-let hayBaleDestinations board hayBales =
-    Path.allInnerPaths 
-        - Set.unionMany 
-            [ for KeyValue(_,p) in board.Players do
-                p  |> Player.fence |> Fence.fencePaths |> set ]
-        - hayBales
-        - findCutPaths hayBales
-
-
 let boardCardActionView dispatch board  cardAction =
 
     match cardAction with
@@ -551,14 +475,14 @@ let boardCardActionView dispatch board  cardAction =
         [ for c in helicopterDestinations player board do
             crossroad c (fun _ -> dispatch (PlayCard (PlayHelicopter c))) ]
     | Some { Card =  HayBale One } ->
-        [ for p in hayBaleDestinations board board.HayBales do
+        [ for p in HayBales.hayBaleDestinations (Map.toSeq board.Players) board.HayBales do
             path p (fun _ -> dispatch (PlayCard (PlayHayBale [ p ]))) ]
     | Some {Card = HayBale Two; Ext = (NoExt | Hidden) } ->
-        [ for p in hayBaleDestinations board board.HayBales  do
+        [ for p in HayBales.hayBaleDestinations (Map.toSeq board.Players) board.HayBales  do
             path p (fun _ -> dispatch (SelectHayBale p) ) ]
     | Some {Card = HayBale Two; Ext = FirstHayBale(_,fp) } ->
         [ haybale fp
-          for p in hayBaleDestinations board (Set.add fp board.HayBales ) do
+          for p in HayBales.hayBaleDestinations (Map.toSeq board.Players) (Set.add fp board.HayBales ) do
             path p (fun _ -> dispatch (PlayCard (PlayHayBale [fp; p])) ) ]
     | Some { Card =  Dynamite}  ->
         [ for p in board.HayBales do

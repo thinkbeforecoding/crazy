@@ -456,6 +456,7 @@ class Set implements IteratorAggregate {
         return new Set($table->Comparer, SetTree::remove($table->Comparer,$item, $table->Tree));
     }
 
+
     static function contains($value, $s)
     {
         return SetTree::mem($s->Comparer, $value, $s->Tree);
@@ -497,6 +498,18 @@ class Set implements IteratorAggregate {
     static function toArray($set)
     {
         return iterator_to_array($set);
+    }
+
+    static function union($x,$y)
+    {
+        return new Set($x->Comparer, SetTree::union($x->Comparer, $x->Tree, $y->Tree));
+    }
+
+    static function unionMany($sets)
+    {
+        $comparer = [ 'Compare' => 'Util::comparePrimitives'];
+
+        return Seq::fold(function($acc,$s) { return Set::union($acc,$s); }, Set::empty($comparer), $sets);
     }
 
     public function getIterator() {

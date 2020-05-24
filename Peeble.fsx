@@ -258,7 +258,7 @@ module Output =
         let clear ctx = { ctx with Precedence = Int32.MaxValue} 
 
     let withPrecedence ctx prec f =
-        let useParens = prec > ctx.Precedence
+        let useParens = prec > ctx.Precedence || (prec = 14 && ctx.Precedence = 14)
         let subCtx = { ctx with Precedence = prec }
         if useParens then
             write subCtx "("
@@ -488,10 +488,14 @@ module Output =
             let body = indent ctx
             for st in thenCase do
                 writeStatement body st
-            writeiln ctx "} else {"
-            for st in elseCase do
-                writeStatement body st
-            writeiln ctx "}"
+            writei ctx "}"
+            if List.isEmpty elseCase then
+                writeiln ctx ""
+            else
+                writeiln ctx " else {"
+                for st in elseCase do
+                    writeStatement body st
+                writeiln ctx "}"
         | Throw s ->
             writei ctx "throw new Exception('"
             write ctx s
@@ -626,9 +630,10 @@ module PhpList =
 
 module PhpResult =
     let result = { Name = "Result"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
-    let ok = { Name = "Ok"; Fields = []; Methods = []; Abstract = true; BaseType = Some result; Interfaces = [] }
+    let okValue = { Name = "OkValue"; Type = ""}
+    let ok = { Name = "Ok"; Fields = [okValue]; Methods = []; Abstract = true; BaseType = Some result; Interfaces = [] }
     let errorValue = { Name = "ErrorValue"; Type = ""}
-    let error = { Name = "Error"; Fields = [errorValue] ; Methods = []; Abstract = true; BaseType = Some result; Interfaces = [] }
+    let error = { Name = "ResultError"; Fields = [errorValue] ; Methods = []; Abstract = true; BaseType = Some result; Interfaces = [] }
 
 module PhpUnion =
     let union = { Name = "Union"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
@@ -662,10 +667,15 @@ type PhpCompiler =
         phpType
 
     member this.AddLocalVar(var) =
-        this.LocalVars <- Set.add var this.LocalVars
+        if this.CapturedVars.Contains(Capture.ByRef var) then
+            ()
+        elif this.CapturedVars.Contains(Capture.ByValue var) then
+            this.CapturedVars <- this.CapturedVars |> Set.remove (Capture.ByValue var)  |> Set.add(ByRef var)
+        else
+            this.LocalVars <- Set.add var this.LocalVars
 
     member this.UseVar(var) =
-        if not (Set.contains var this.LocalVars) then
+        if not (Set.contains var this.LocalVars) && not (Set.contains (ByRef var) this.CapturedVars) then
             this.CapturedVars <- Set.add (ByValue var) this.CapturedVars
 
     member this.UseVarByRef(var) =
@@ -719,12 +729,49 @@ let convertUnion (ctx: PhpCompiler) (info: Fable.UnionConstructorInfo) =
                             { Name = e.Name 
                               Type  = convertType e.FieldType } ]
               Methods = [ 
-                  { PhpFun.Name = "get_FSharpCase";
+                  { PhpFun.Name = "get_FSharpCase"
                     PhpFun.Args = []
                     PhpFun.Matchings = []
                     PhpFun.Static = false
                     PhpFun.Body = 
                       [ PhpStatement.Return(PhpConst(PhpConstString(case.Name)))] } 
+                  { PhpFun.Name = "CompareTo"
+                    PhpFun.Args = ["other"]
+                    PhpFun.Matchings = []
+                    PhpFun.Static = false
+                    PhpFun.Body =
+                                      [ for e in case.UnionCaseFields do 
+                                            let cmp = PhpVar(ctx.MakeUniqueVar "cmp",None)
+                                            match e.FieldType.TypeDefinition.CompiledName with
+                                            | "int" -> 
+                                                Assign(cmp, 
+                                                    PhpTernary( PhpBinaryOp(">", 
+                                                                    PhpProp(PhpVar("this",None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None),
+                                                                    PhpProp(PhpVar("other", None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None) ),
+                                                                    PhpConst(PhpConstNumber 1.),
+                                                                       PhpTernary(
+                                                                           PhpBinaryOp("<", 
+                                                                               PhpProp(PhpVar("this",None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None),
+                                                                               PhpProp(PhpVar("other", None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None)),
+                                                                               PhpConst(PhpConstNumber -1.), 
+                                                                                PhpConst(PhpConstNumber 0.)
+                                                                        
+                                                    
+                                                   ) ) )
+                                            | _ ->
+                                                Assign(cmp, 
+                                                    PhpMethod(PhpProp(PhpVar("this",None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None),
+                                                              "CompareTo",
+                                                              [PhpProp(PhpVar("other", None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None) ])
+                                                
+                                                )
+                                            If(PhpBinaryOp("!=", cmp, PhpConst(PhpConstNumber 0.) ),
+                                                [PhpStatement.Return cmp],
+                                                []
+                                            )
+                                        PhpStatement.Return (PhpConst (PhpConstNumber 0.))
+                                      ]
+                    }
               ]
               Abstract = false
               BaseType = None
@@ -741,7 +788,7 @@ let convertUnion (ctx: PhpCompiler) (info: Fable.UnionConstructorInfo) =
               Interfaces = [PhpUnion.union; PhpUnion.fSharpUnion ]}
       ctx.AddType(baseType) |> PhpType
 
-      for case in info.Entity.UnionCases do
+      for i, case in Seq.indexed info.Entity.UnionCases do
         let t = 
             { Name = caseName case
               Fields = [ for e in case.UnionCaseFields do 
@@ -761,6 +808,71 @@ let convertUnion (ctx: PhpCompiler) (info: Fable.UnionConstructorInfo) =
                             PhpFun.Body = 
                                 [ PhpStatement.Return(PhpConst(PhpConstString(case.Name)))]
                             } 
+
+                          { PhpFun.Name = "get_Tag"
+                            PhpFun.Args = []
+                            PhpFun.Matchings = []
+                            PhpFun.Static = false
+                            PhpFun.Body =
+                                [ PhpStatement.Return(PhpConst(PhpConstNumber (float i)))]
+                            }
+                          { PhpFun.Name = "CompareTo"
+                            PhpFun.Args = ["other"]
+                            PhpFun.Matchings = []
+                            PhpFun.Static = false
+                            PhpFun.Body =
+                                              [ let cmp = PhpVar(ctx.MakeUniqueVar "cmp",None)
+                                                Assign(cmp, 
+                                                    PhpTernary( PhpBinaryOp(">", 
+                                                                    PhpMethod(PhpVar("this",None), "get_Tag", []),
+                                                                    PhpMethod(PhpVar("other", None), "get_Tag", []) ),
+                                                                    PhpConst(PhpConstNumber 1.),
+                                                                       PhpTernary(
+                                                                           PhpBinaryOp("<", 
+                                                                               PhpMethod(PhpVar("this",None), "get_Tag", []),
+                                                                               PhpMethod(PhpVar("other", None), "get_Tag" , [])),
+                                                                               PhpConst(PhpConstNumber -1.), 
+                                                                                PhpConst(PhpConstNumber 0.))))
+                                                if not case.HasFields then
+                                                    PhpStatement.Return(cmp)
+                                                else
+                                                    If(PhpBinaryOp("!=", cmp, PhpConst(PhpConstNumber 0.) ),
+                                                        [PhpStatement.Return cmp],
+                                                        []
+                                                    )
+                                                    for e in case.UnionCaseFields do 
+                                                        let cmp = PhpVar(ctx.MakeUniqueVar "cmp",None)
+                                                        match e.FieldType.TypeDefinition.CompiledName with
+                                                        | "int" -> 
+                                                            Assign(cmp, 
+                                                                PhpTernary( PhpBinaryOp(">", 
+                                                                                PhpProp(PhpVar("this",None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None),
+                                                                                PhpProp(PhpVar("other", None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None) ),
+                                                                                PhpConst(PhpConstNumber 1.),
+                                                                                   PhpTernary(
+                                                                                       PhpBinaryOp("<", 
+                                                                                           PhpProp(PhpVar("this",None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None),
+                                                                                           PhpProp(PhpVar("other", None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None)),
+                                                                                           PhpConst(PhpConstNumber -1.), 
+                                                                                            PhpConst(PhpConstNumber 0.)
+                                                                                    
+                                                                
+                                                               ) ) )
+                                                        | _ ->
+                                                            Assign(cmp, 
+                                                                PhpMethod(PhpProp(PhpVar("this",None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None),
+                                                                          "CompareTo",
+                                                                          [PhpProp(PhpVar("other", None), Prop.Field { Name = e.Name; Type = convertType e.FieldType }, None) ])
+                                                            
+                                                            )
+                                                        If(PhpBinaryOp("!=", cmp, PhpConst(PhpConstNumber 0.) ),
+                                                            [PhpStatement.Return cmp],
+                                                            []
+                                                        )
+                                                    PhpStatement.Return (PhpConst (PhpConstNumber 0.))
+                                              ]
+                            }
+
                             ]
               Abstract = false
               BaseType = Some baseType
@@ -1216,7 +1328,8 @@ and convertExprToStatement ctx expr returnStrategy =
     | Fable.Set(expr,kind,value,_) ->
         let left = convertExpr ctx expr
         match left with
-        | PhpVar(v,_) -> ctx.AddLocalVar(v) 
+        | PhpVar(v,_) -> 
+            ctx.AddLocalVar(v)
         | _ -> ()
         [ Assign(left, convertExpr ctx value)]
             
@@ -1305,7 +1418,7 @@ let fs =
                 i,d
     ]
 
-convertDecl phpComp asts.[2].Declarations.[8]
+convertDecl phpComp asts.[1].Declarations.[167]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w

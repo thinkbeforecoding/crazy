@@ -155,7 +155,6 @@ abstract class FSharpList implements IteratorAggregate {
         return $result;
     }
 
-
     static function tail($list)
     {
         return $list->next;

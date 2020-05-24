@@ -73,7 +73,7 @@ class MapTree {
     static function mk($l, $k, $v, $r)
     { 
         if($l instanceof MapEmpty && $r instanceof MapEmpty)
-            return MapOne ($k, $v);
+            return new MapOne ($k, $v);
         $hl = MapTree::height($l); 
         $hr = MapTree::height($r); 
         $m = $hl < $hr ? $hr : $hl; 
@@ -420,7 +420,7 @@ class Map implements IteratorAggregate
                 break;
                 default:
                     $tree = array_pop($stack);
-            break;
+                break;
             }
         }
     } 

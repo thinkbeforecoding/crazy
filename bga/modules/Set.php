@@ -500,6 +500,18 @@ class Set implements IteratorAggregate {
         return iterator_to_array($set);
     }
 
+    static function union($x,$y)
+    {
+        return new Set($x->Comparer, SetTree::union($x->Comparer, $x->Tree, $y->Tree));
+    }
+
+    static function unionMany($sets)
+    {
+        $comparer = [ 'Compare' => 'Util::comparePrimitives'];
+
+        return Seq::fold(function($acc,$s) { return Set::union($acc,$s); }, Set::empty($comparer), $sets);
+    }
+
     public function getIterator() {
         $stack = [];
         $tree = $this->Tree;

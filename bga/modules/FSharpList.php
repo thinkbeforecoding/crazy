@@ -377,6 +377,17 @@ abstract class FSharpList implements IteratorAggregate {
         return $maxVal;
     }
 
+    static function forAll($predicate, $list)
+    {
+        while($list instanceof Cons)
+        {
+            if (!$predicate($list->value))
+                return false;
+            $list = $list->next;
+        }
+        return true;
+    }
+
     public function getIterator() {
         $list = $this;
         while ($list instanceof Cons)

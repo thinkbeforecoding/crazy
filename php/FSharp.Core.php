@@ -73,8 +73,6 @@ class Util {
         
     }
 }
-
-
 interface Union {
     public function get_Case();
 }
@@ -82,3 +80,26 @@ interface FSharpUnion {
     public function get_FSharpCase();
 }
 
+function void($x) {}
+
+
+class Result {
+
+}
+
+class Ok extends Result {
+    public $ResultValue;
+    function __construct($value)
+    {
+        $this->ResultValue = $value;
+    }
+
+}
+
+class Error extends Result {
+    public $ResultValue;
+    function __construct($value)
+    {
+        $this->ResultValue = $value;
+    }
+}

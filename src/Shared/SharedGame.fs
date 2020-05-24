@@ -719,6 +719,85 @@ module Barns =
         { Free = barns.Free - annexed.Free
           Occupied = barns.Occupied + (Field.interesect barns.Free annexed.Free) }
 
+module HayBales =
+
+    let findCutPaths hayBales =
+        let neighbor dir crossroad = 
+            let neighbor = Crossroad.neighbor dir crossroad
+            if Crossroad.isOnBoard neighbor then
+                let path = Path.neighbor dir crossroad
+                if Set.contains path hayBales then
+                    None
+                else
+                    Some (path,neighbor)
+            else
+                None
+
+        let mutable cut = []
+        let mutable visited = Map.empty
+        let mutable time = 0
+        let rec loop parent crossroad : int =
+            visited <- Map.add crossroad time visited
+            let d0 = time
+            time <- time + 1 
+            let upDepth =
+                match neighbor Up crossroad with
+                | Some (p,nxt) when nxt <> parent ->
+                    let n = 
+                        match Map.tryFind nxt visited with
+                        | Some d -> d
+                        | None -> loop crossroad nxt 
+                    if n > d0 then
+                        cut <- p :: cut 
+                    n
+                | _ -> 
+                    d0 + 1
+            let downDepth = 
+                match neighbor Down crossroad with
+                | Some (p,nxt) when nxt <> parent ->
+                    let n = 
+                        match Map.tryFind nxt visited with
+                        | Some d -> d
+                        | None -> loop crossroad nxt 
+                    if n > d0 then
+                        cut <- p :: cut 
+                    n
+                | _ -> 
+                    d0 + 1
+            let horizontalDepth = 
+                match neighbor Horizontal crossroad with
+                | Some (p,nxt) when nxt <> parent ->
+                    let n = 
+                        match Map.tryFind nxt visited with
+                        | Some d -> d
+                        | None -> loop crossroad nxt 
+                    if n > d0 then
+                        cut <- p :: cut 
+                    n
+                | _ -> 
+                    d0 + 1
+
+            let d = min upDepth downDepth |> min horizontalDepth 
+            visited <- Map.add crossroad d visited
+            d
+
+        let start = Crossroad(Axe.center, CLeft)
+        loop start start |> ignore
+        set cut
+
+        
+
+
+    let hayBaleDestinations players hayBales =
+        Path.allInnerPaths 
+            - Set.unionMany 
+                [ for _,p in players do
+                    match p with
+                    | Playing p -> p.Fence |> Fence.fencePaths |> set
+                    | _ -> Set.empty ]
+            - hayBales
+            - findCutPaths hayBales
+
 
 
 
@@ -765,6 +844,34 @@ module Moves =
 
     let doMove m =
         { m with Done = m.Done + 1}
+
+module DrawPile =
+    let cards =
+        [ Nitro One,   6
+          Nitro Two,   3
+          Rut,         2
+          HayBale One, 4
+          HayBale Two, 3
+          Dynamite,    4
+          HighVoltage, 3
+          Watchdog,    2
+          Helicopter,  6
+          Bribe,       3]
+        |> List.collect (fun (c,n) -> [for _ in 1..n -> c])
+
+
+    let shuffle cards =
+        let rand = System.Random()
+        List.sortBy (fun _ -> rand.Next()) cards
+
+
+    let remove cards pile =
+        let count = Hand.count cards
+        pile |> List.skip (min (List.length pile) count)
+
+    let take count pile =
+        pile |> List.truncate count
+
 
 module Player =
     type Command =
@@ -929,7 +1036,7 @@ module Player =
         | _ -> false
      
 
-    let decide (otherPlayers: (string * CrazyPlayer) list) barns command player =
+    let decide (otherPlayers: (string * CrazyPlayer) list) barns hayBales bribeParcels command player =
         match player, command with
         | Starting _, SelectFirstCrossroad cmd ->
             [ FirstCrossroadSelected { Crossroad = cmd.Crossroad } ]
@@ -1041,24 +1148,44 @@ module Player =
                 | PlayRut _ ->
                     [ CardPlayed card ]
                 | PlayHelicopter crossroad ->
-                    if canUseHelicopter player then
+                    let othersCrossroads = 
+                        set [ for _,p in otherPlayers do
+                                match p with
+                                | Playing p -> yield! Fence.fenceCrossroads p.Tractor p.Fence
+                                | _ -> () ] 
+                    if canUseHelicopter player 
+                        && Crossroad.isInField (field player) crossroad
+                        && not (Set.contains crossroad othersCrossroads)
+                        then
                         [  CardPlayed card
                            Heliported crossroad
                            if p.Power = PowerDown && Crossroad.isInField p.Field crossroad then
                                 PoweredUp ]
                     else
                         []
-                | PlayHayBale _ 
-                | PlayDynamite _ ->
-                    [ CardPlayed card
-                      BonusDiscarded (Card.ofPlayCard card) ]
+                | PlayHayBale hb  ->
+                    let dests = HayBales.hayBaleDestinations (("",player) :: otherPlayers) hayBales
+                    
+                    if hb |> List.forall (fun b -> Set.contains b dests) then
+                        [ CardPlayed card
+                          BonusDiscarded (Card.ofPlayCard card) ]
+                    else
+                        []
+                | PlayDynamite hb ->
+                    if Set.contains hb hayBales then
+                        [ CardPlayed card
+                          BonusDiscarded (Card.ofPlayCard card) ]
+                    else
+                        []
                 | PlayBribe parcel ->
-
-                    [ CardPlayed card
-                      for playerId, player in otherPlayers do
-                        if field player |> Field.containsParcel parcel then
-                          Bribed { Parcel = parcel; Victim = playerId }
-                      BonusDiscarded (Card.ofPlayCard card) ]
+                    match bribeParcels() with
+                    | Ok bribable when Field.containsParcel parcel bribable ->
+                        [ CardPlayed card
+                          for playerId, player in otherPlayers do
+                            if field player |> Field.containsParcel parcel then
+                              Bribed { Parcel = parcel; Victim = playerId }
+                          BonusDiscarded (Card.ofPlayCard card) ]
+                    | _ -> []
 
 
             else 
@@ -1117,21 +1244,21 @@ module Player =
 
 
 
-    let exec otherPlayers barns cmd state =
+    let exec otherPlayers barns haybales cmd state =
         state
-        |> decide otherPlayers barns cmd
+        |> decide otherPlayers barns haybales (fun() -> Ok Field.empty) cmd
         |> List.fold evolve state
 
     let move dir player =
         match player with
         | Playing p ->
             player
-            |> exec [] Barns.empty (Move {Direction = dir; Destination = p.Tractor })
+            |> exec [] Barns.empty Set.empty (Move {Direction = dir; Destination = p.Tractor })
         | _ -> failwith "Not playing"
 
     let start color parcel pos =
         Starting  { Parcel = parcel; Color = color; Hand = PublicHand []; Bonus = Bonus.empty  }
-        |> exec [] Barns.empty (SelectFirstCrossroad { Crossroad = pos})
+        |> exec [] Barns.empty Set.empty (SelectFirstCrossroad { Crossroad = pos})
 
 
     let possibleMove player dir =
@@ -1264,34 +1391,6 @@ module Player =
                 Bonus = p.SBonus
             }
         | SKo color -> Ko color
-
-module DrawPile =
-    let cards =
-        [ Nitro One,   6
-          Nitro Two,   3
-          Rut,         2
-          HayBale One, 4
-          HayBale Two, 3
-          Dynamite,    4
-          HighVoltage, 3
-          Watchdog,    2
-          Helicopter,  6
-          Bribe,       3]
-        |> List.collect (fun (c,n) -> [for _ in 1..n -> c])
-
-
-    let shuffle cards =
-        let rand = System.Random()
-        List.sortBy (fun _ -> rand.Next()) cards
-
-
-    let remove cards pile =
-        let count = Hand.count cards
-        pile |> List.skip (min (List.length pile) count)
-
-    let take count pile =
-        pile |> List.truncate count
-
 module Board =
     let initialState = InitialState
 
@@ -1388,7 +1487,7 @@ module Board =
            Bonus.startTurn (Player.bonus nextPlayer)
            |> List.map (fun c -> Played(nextPlayerId, Player.BonusDiscarded c))
                        ]
-    type BribeBocker =
+    type BribeBlocker =
         | InstantVictory
         | NoParcelsToBribe
 
@@ -1630,7 +1729,7 @@ module Board =
 
             if playerid = state.Table.Player then
                 let events = 
-                    Player.decide others state.Barns cmd player
+                    Player.decide others state.Barns state.HayBales (fun() -> bribeParcels state) cmd player
 
 
 

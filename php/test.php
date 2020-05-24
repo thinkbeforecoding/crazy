@@ -385,6 +385,20 @@ $Events = array(
     
     var_dump($newBoard->Item->HayBales);
 
+    $ax = new Axe(3,3);
+    $ay = new Axe(3,2);
+    echo "ax ay ", var_dump($ax->CompareTo($ay)), "<br/>"; 
+    echo "ay ax ", var_dump($ay->CompareTo($ax)), "<br/>"; 
+
+    $cx = new Crossroad(new Axe(3,2), new CrossroadSide_CLeft());
+    $cy = new Crossroad(new Axe(3,2), new CrossroadSide_CRight());
+    echo "cx cy", var_dump($cx->CompareTo($cy)),"<br/>";
+    echo "cy cx", var_dump($cy->CompareTo($cx)),"<br/>";
+
+    $cut = Shared_002EHayBales___findCutPaths(Set::empty([ 'Compare' => function ($_x__49, $_y__50) {         return $_x__49->CompareTo($_y__50);
+    }]));
+
+    echo_list("cut", $cut);
         ?>
     </body>
 </html>
