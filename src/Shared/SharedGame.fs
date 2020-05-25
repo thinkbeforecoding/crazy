@@ -398,6 +398,36 @@ module Parcel =
        px = py+Axe.N || px = py+Axe.NE || px = py+Axe.SE || 
                    px = py+Axe.S || px = py+Axe.SW || px = py+Axe.NW 
 
+    type ParcelDir =
+        | PN
+        | PNE
+        | PSE
+        | PS
+        | PSW
+        | PNW
+
+    let getDir (Parcel px) (Parcel py) =
+        if px + Axe.N = py then PN
+        elif px + Axe.NE = py then PNE
+        elif px + Axe.SE = py then PSE
+        elif px + Axe.S = py then PS
+        elif px + Axe.SW = py then PSW
+        else PNW
+
+    let dir n = 
+        match n % 6 with
+        | 0 -> PN
+        | 1 -> PNE
+        | 2 -> PSE
+        | 3 -> PS
+        | 4 -> PSW
+        | _ -> PNW
+
+    let dirs s n =
+        set [ for i in 0 .. n -> dir (s + i) ]
+        
+
+
 module Path =
     let neighbor dir (Crossroad(tile, side)) =
         match side, dir with
@@ -1591,8 +1621,18 @@ module Board =
            
         | [n1;n2;n3] -> not ((Parcel.areNeighbors n1 n2 && Parcel.areNeighbors n1 n3)
                             || (Parcel.areNeighbors n2 n1 && Parcel.areNeighbors n2 n3)
-                            || (Parcel.areNeighbors n3 n1 && Parcel.areNeighbors n3 n2)
-                            )
+                            || (Parcel.areNeighbors n3 n1 && Parcel.areNeighbors n3 n2) )
+        | [n1;n2;n3;n4] ->
+            let dirs = 
+                set [ Parcel.getDir parcel n1
+                      Parcel.getDir parcel n2
+                      Parcel.getDir parcel n3
+                      Parcel.getDir parcel n4 ]
+            [ for d in 0 .. 5 -> Parcel.dirs d 4]
+            |> List.exists (fun ds -> ds = dirs)
+            |> not
+            
+
         | _ -> false
 
     let cutParcels (field: Field) (Field parcels) =

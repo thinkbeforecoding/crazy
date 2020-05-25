@@ -459,7 +459,7 @@ let hayBalesView cardAction board =
                 | _ -> board.HayBales
         
             for p in hb do
-            haybale p
+                haybale p
         ]
 
 let boardView cardAction board =
@@ -537,29 +537,36 @@ let boardCardActionView dispatch board  cardAction =
             [ for p in board.HayBales do
                 path p (fun _ -> dispatch (RemoveHayBale  p )) ]
         | Place, [] ->
-            [ for p in HayBales.hayBaleDestinations (Map.toSeq board.Players) (board.HayBales - set rm + set added)  do
-                path p (fun _ -> dispatch (SelectHayBale p) ) ]
+            [ for p, result in HayBales.hayBaleDestinationsWithComment (Map.toSeq board.Players) (board.HayBales - set rm + set added)  do
+                match result with
+                | Ok _ -> path p (fun _ -> dispatch (SelectHayBale p))
+                | Error HayBales.FenceBlocker -> pathWithTooltip p (translate "You cannot place a hay bale on a fence")
+                | Error HayBales.CutPathBlocker -> pathWithTooltip  p (translate "You cannot block a crossroad with hay bales")
+                | Error HayBales.BorderBlocker -> pathWithTooltip  p (translate "You cannot block a border path") ]
         | Place, _ ->
-            [ for p in HayBales.hayBaleDestinations (Map.toSeq board.Players) (board.HayBales - set rm + set added)  do
-                path p (fun _ -> dispatch (PlayCard (PlayHayBale(p :: added, rm) ) ) ) ]
+            [ for p, result in HayBales.hayBaleDestinationsWithComment (Map.toSeq board.Players) (board.HayBales - set rm + set added)  do
+                match result with
+                | Ok _ -> path p (fun _ -> dispatch (PlayCard (PlayHayBale( p::added , rm))))
+                | Error HayBales.FenceBlocker -> pathWithTooltip p (translate "You cannot place a hay bale on a fence")
+                | Error HayBales.CutPathBlocker -> pathWithTooltip  p (translate "You cannot block a crossroad with hay bales")
+                | Error HayBales.BorderBlocker -> pathWithTooltip  p (translate "You cannot block a border path") ]
     | Some { Card =  Dynamite}  ->
         [ for p in board.HayBales do
             path p (fun _ -> dispatch (PlayCard (PlayDynamite p))) ]
     | Some { Card =  Bribe}  ->
-        match Board.bribeParcels board with
-        | Ok parcels ->
-            [ for p in Field.parcels parcels do
-                tile p (fun _ -> dispatch (PlayCard (PlayBribe p)))
+
+            [ match Board.bribeParcels board with
+              | Ok parcels ->
+                for p in Field.parcels parcels do
+                    tile p (fun _ -> dispatch (PlayCard (PlayBribe p)))
+              | Error _ -> ()
               for p, blocker in Board.bribeParcelsBlockers board do
                 match blocker with
                 | Board.BribeParcelBlocker.BarnBlocker -> tileWithTooltip p (translate "You cannot bribe a barn")
                 | Board.BribeParcelBlocker.FenceBlocker -> tileWithTooltip p (translate "You cannot bribe a parcel that would cut a fence or where the player is")
                 | Board.BribeParcelBlocker.LastParcelBlocker -> tileWithTooltip p (translate "You cannot bribe another player's last parcel")
                 | Board.BribeParcelBlocker.WatchedBlocker -> tileWithTooltip p (translate "You cannot bribe parcel protected by a watchdog")
-                | Board.BribeParcelBlocker.FallowBlocker -> tileWithTooltip p (translate "You cannot bribe parcel that with split a fallow land")
-                
-                ]
-        | Error _ -> []
+                | Board.BribeParcelBlocker.FallowBlocker -> tileWithTooltip p (translate "You cannot bribe parcel that with split a fallow land") ]
     | _ ->
         []
 
@@ -576,17 +583,29 @@ let bonusMarkers bonus =
     div [ ClassName "markers"]
         [
           for _ in  1 .. bonus.Rutted do
-            div [ ClassName "rut-marker" ] []
+            div [ ClassName "rut-marker" ] [
+                tooltip (translate "Rut: The player looses 2 moves")
+            ]
           for _ in 1 .. bonus.NitroOne do
-            div [ ClassName "nitro-1-marker"] []
+            div [ ClassName "nitro-1-marker"] [
+                tooltip (translate "Nitro+1: The player get 1 extra move")
+            ]
           for _ in 1 .. bonus.NitroTwo do
-            div [ ClassName "nitro-2-marker"] []
+            div [ ClassName "nitro-2-marker"] [
+                tooltip (translate "Nitro+2: The player get 2 extra moves")
+            ]
           if bonus.HighVoltage then
-            div [ ClassName "highvoltage-marker" ] []
+            div [ ClassName "highvoltage-marker" ] [
+                tooltip (translate "High Voltage: The player's fence is protected until next turn")
+            ]
           if bonus.Watched then
-            div [ ClassName "watchdog-marker" ] []
+            div [ ClassName "watchdog-marker" ] [
+                tooltip (translate "Watchdog: The player's fence is protected until next turn")
+            ]
           if bonus.Heliported > 0 then
-            div [ ClassName "helicopter-marker" ] []
+            div [ ClassName "helicopter-marker" ] [
+                tooltip (translate "Helicopter: The player cannot cut fences until the end of the turn")
+            ]
 
         ]
 

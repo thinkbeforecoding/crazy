@@ -356,13 +356,35 @@ i.fa-bars {
     .markers {
         margin-left: 3em;
         align-self: flex-end;
+
+        & > div {
+            .tooltiptext {
+                visibility: hidden;
+                width: 120px;
+                background-color: black;
+                color: #fff;
+                text-align: center;
+                padding: 5px 0;
+                border-radius: 6px;
+                /* Position the tooltip text - see examples below! */
+                position: relative;
+                height: auto;
+                top: -3.5em;
+                left: -20px;
+                z-index: 30;
+            }
+        }
+
+        & > div:hover .tooltiptext {
+                visibility: visible;
+
+        }
     }
 
     .common-goal, .individual-goal {
         font-size: 110%;
         align-self: flex-end;
     }
-
 }
 
 

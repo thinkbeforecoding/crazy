@@ -28,7 +28,7 @@ $gameinfos = array(
 'publisher' => 'The Freaky 42',                     
 
 // Url of game publisher website
-'publisher_website' => 'http://www.thefreaky42.com/',   
+'publisher_website' => 'https://www.facebook.com/TheFreaky42/',   
 
 // Board Game Geek ID of the publisher
 'publisher_bgg_id' => 40187,
@@ -70,7 +70,7 @@ $gameinfos = array(
 
 // If in the game, all losers are equal (no score to rank them or explicit in the rules that losers are not ranked between them), set this to true 
 // The game end result will display "Winner" for the 1st player and "Loser" for all other players
-'losers_not_ranked' => false,
+'losers_not_ranked' => true,
 
 // Game is "beta". A game MUST set is_beta=1 when published on BGA for the first time, and must remains like this until all bugs are fixed.
 'is_beta' => 1,                     
@@ -123,9 +123,19 @@ $gameinfos = array(
 // Each paragraph must be wrapped with totranslate() for translation and should not contain html (plain text without formatting).
 // A good length for this text is between 100 and 150 words (about 6 to 9 lines on a standard display)
 'presentation' => array(
-//    totranslate("This wonderful game is about geometric shapes!"),
-//    totranslate("It was awarded best triangle game of the year in 2005 and nominated for the Spiel des Jahres."),
-//    ...
+
+    totranslate("Crazy Farmers And The Clotures Electriques is an equally accessible and wacky game,
+where you’ll get to experience the best UFC games ever. As you may wonder, UFC stands
+for Ultimate Farming Championship. In 2042, the European Union has long since cut off
+financial aid to farmers. In order to get out of this situation, farmers created a competition for
+the installation of electric fences, which very quickly attracted the attention of the public and
+sponsors."),
+    totranslate("So now is the time for you to enter the arena and become the best electric fence installer.
+During your turn, move your tractor along the paths on the board. Place electric fences
+behind you. As soon as you surround a plot with your fences, take control of it. As soon as
+you control a certain number of plots (depending on the number of players), you win the
+game. However, it will not be that simple. You will need to be on the lookout, as your
+opponents will try to stop you by cutting your electric fences or playing event cards...")
 ),
 
 // Games categories
