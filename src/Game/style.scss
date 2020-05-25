@@ -149,6 +149,27 @@ i.fa-bars {
     position: absolute;
     width: 3%;
     height: 3%;
+    /* Tooltip text */
+    .tooltiptext {
+        visibility: hidden;
+        width: 120px;
+        background-color: black;
+        color: #fff;
+        text-align: center;
+        padding: 5px 0;
+        border-radius: 6px;
+        /* Position the tooltip text - see examples below! */
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 30;
+    }
+}
+
+.path:hover {
+    .tooltiptext {
+        visibility: visible;
+    }
 }
 
 .header {

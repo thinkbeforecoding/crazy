@@ -156,9 +156,16 @@
         $r = self::getArg( "r", AT_int, true );
         $side = self::getArg( "side", AT_enum, true, "BN", ["BNW", "BN", "BNE"] );
 
+        $rm_q = self::getArg( "rm_q", AT_int, false );
+        $rm_r = self::getArg( "rm_r", AT_int, false );
+        $rm_side = self::getArg( "rm_side", AT_enum, false, NULL, ["BNW", "BN", "BNE"] );
       
+        if (!(is_null($rm_q) || is_null($rm_r) ||is_null($rm_side)))
+            $rm_path = FSharpList::ofArray([ self::newPath($rm_q,$rm_r,$rm_side)]);
+        else
+            $rm_path = FSharpList::get_Nil();
 
-        $this->game->playCard(new PlayCard_PlayHayBale(FSharpList::ofArray([ self::newPath($q,$r,$side)  ])));
+        $this->game->playCard(new PlayCard_PlayHayBale(FSharpList::ofArray([ self::newPath($q,$r,$side)  ]), $rm_path));
 
         self::ajaxResponse(); 
     }
@@ -190,9 +197,25 @@
         $r2 = self::getArg( "r2", AT_int, true );
         $side2 = self::getArg( "side2", AT_enum, true, "BN", ["BNW", "BN", "BNE"] );
 
+        $rm_q1 = self::getArg( "rm_q1", AT_int, false );
+        $rm_r1 = self::getArg( "rm_r1", AT_int, false );
+        $rm_side1 = self::getArg( "rm_side1", AT_enum, false, NULL, ["BNW", "BN", "BNE"] );
+        $rm_q2 = self::getArg( "rm_q2", AT_int, false );
+        $rm_r2 = self::getArg( "rm_r2", AT_int, false );
+        $rm_side2 = self::getArg( "rm_side2", AT_enum, false, NULL, ["BNW", "BN", "BNE"] );
+
+        $rm_path = FSharpList::get_Nil(); 
+        if (!(is_null($rm_q1) || is_null($rm_r1) ||is_null($rm_side1)))
+            $rm_path = new Cons(self::newPath($rm_q1,$rm_r1,$rm_side1), $rm_path);
+
+        if (!(is_null($rm_q2) || is_null($rm_r2) ||is_null($rm_side2)))
+            $rm_path = new Cons(self::newPath($rm_q2,$rm_r2,$rm_side2),$rm_path);
+
         $this->game->playCard(new PlayCard_PlayHayBale(FSharpList::ofArray([
                 self::newPath($q1,$r1,$side1), 
-                self::newPath($q2,$r2,$side2) ])));
+                self::newPath($q2,$r2,$side2) ]),
+                $rm_path
+            ));
 
         self::ajaxResponse(); 
     }

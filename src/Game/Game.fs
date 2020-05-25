@@ -65,30 +65,65 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | Move(dir,crossroad) ->
         Player.Move { Direction = dir; Destination = crossroad }
         |> handleCommand currentModel
+    | DiscardCard(card) ->
+        Player.Discard card
+        |> handleCommand currentModel
     | SelectCard(card,i) ->
         { currentModel with
-            CardAction = Some { Index = i; Card = card; Ext = NoExt} }, Cmd.none
+            CardAction = Some { Index = i; Card = card; Hidden = false
+                                Ext = match card with
+                                      | HayBale _ -> 
+                                            if HayBales.maxReached (Board.hayBales currentModel.Board) then
+                                                HayBales(Remove,[],[])
+                                            else
+                                                HayBales(Place, [], [])
+                                      | _ -> NoExt
+                } }, Cmd.none
     | CancelCard ->
         { currentModel with
             CardAction = None }, Cmd.none
     | PlayCard(card) ->
         Player.PlayCard card
         |> handleCommand { currentModel with CardAction = None}
+    | RemoveHayBale bale ->
+        { currentModel with
+            CardAction = 
+                currentModel.CardAction
+                |> Option.map (fun c -> 
+                    { c with Ext = 
+                                match c.Ext with
+                                | NoExt -> HayBales(Place, [], [bale] )
+                                | HayBales(_,added,removed) -> HayBales (Place, added, bale :: removed) })}, Cmd.none
+
+
     | SelectHayBale bale ->
         { currentModel with
             CardAction = 
                 currentModel.CardAction
-                |> Option.map (fun c -> { c with Ext = FirstHayBale (false,bale) })}, Cmd.none
+                |> Option.map (fun c ->
+                    { c with Ext = 
+                                
+                                let action =
+                                    let hb = Board.hayBales currentModel.Board |> Set.add bale
+                                    let currentHb =
+                                        match c.Ext with
+                                        | NoExt -> hb
+                                        | HayBales(_,added,removed) -> hb + set added + set removed
+                                    if HayBales.maxReached(currentHb) then
+                                        Remove
+                                    else
+                                        Place
+
+                                match c.Ext with
+                                | NoExt -> HayBales(action,[bale], [])
+                                | HayBales(_,added,removed) -> HayBales (action, bale :: added, removed) })}, Cmd.none
     | Go ->
         { currentModel with
             CardAction =
                 currentModel.CardAction
                 |> Option.map (fun c ->
                     { c with
-                        Ext = 
-                            match c.Ext with
-                            | FirstHayBale(_,bale) -> FirstHayBale(true,bale)
-                            | _ -> Hidden }) 
+                        Hidden = true }) 
         }, Cmd.none
     | HidePlayedCard ->
         { currentModel with
@@ -227,7 +262,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
         div [] 
             [ playersDashboard model dispatch
               div [ ClassName "board" ]
-                [ yield! boardView board
+                [ yield! boardView model.CardAction board
 
                   for m in model.Moves do
                     moveView dispatch m
@@ -250,7 +285,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
         div []
             [ playersDashboard model dispatch
               div [ ClassName "board" ]
-                  [ yield! boardView board
+                  [ yield! boardView model.CardAction board
         
                     let player = board.Players.[winner]
 

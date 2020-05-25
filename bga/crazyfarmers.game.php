@@ -118,6 +118,7 @@ class CrazyFarmers extends Table
         self::initStat( "table", "haybales_number", 0);
         self::initStat( "table", "dynamites_number", 0);
         self::initStat( "table", "haybales_max_number", 0);
+        self::initStat( "table", "haybales_moved_number", 0);
         self::initStat( "table", "helicopters_number", 0);
         self::initStat( "table", "highvoltages_number", 0);
         self::initStat( "table", "watchdogs_number", 0);

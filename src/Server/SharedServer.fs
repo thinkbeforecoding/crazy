@@ -141,7 +141,7 @@ let textAction b es =
                 | Board.PlayerDrewCards e ->
                     Php.clienttranslate "and draws ${cardcount} card(s)", Map.ofList [ "cardcount" ==> Hand.count e.Cards]
                 | Board.Played(p, Player.Event.Bribed e) ->
-                    Php.clienttranslate "Bribe: ${player} takes one of ${bribed}'s parcel", Map.ofList ["player" ==> playerName p; "bribed" ==> playerName e.Victim]
+                    Php.clienttranslate "${icon} ${player} takes one of ${bribed}'s parcel", Map.ofList ["player" ==> playerName p; "bribed" ==> playerName e.Victim;  "icon" ==> cardIcon Bribe  ]
                 | Board.Played(p, Player.Event.Eliminated) ->
                     Php.clienttranslate "${player} is eliminated !", Map.ofList ["player" ==> playerName p ]
                 | Board.Played(p, Player.Event.CardPlayed(PlayHelicopter _)) ->
@@ -152,7 +152,7 @@ let textAction b es =
                     Php.clienttranslate "${icon} ${player} field is protected until next turn", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Watchdog ]
                 | Board.Played(p, Player.CardPlayed(PlayRut victim )) ->
                     Php.clienttranslate "${icon} ${player} makes ${rutted} loose 2 moves during next turn", Map.ofList ["player" ==> playerName p; "rutted" ==> playerName victim; "icon" ==> cardIcon Rut ]
-                | Board.Played(p, Player.CardPlayed(PlayHayBale hb  as pc) ) ->
+                | Board.Played(p, Player.CardPlayed(PlayHayBale(hb,_)  as pc) ) ->
                     Php.clienttranslate "${icon} ${player} blocks ${haybales} paths", Map.ofList ["player" ==> playerName p; "haybales" ==> List.length hb; "icon" ==> cardIcon (Card.ofPlayCard pc) ]
                 | Board.Played(p, Player.CardPlayed(PlayDynamite _)) ->
                     Php.clienttranslate "${icon} ${player} dynamites 1 hay bale", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Dynamite ]
@@ -180,6 +180,7 @@ module Stats =
     let haybales_max_number = "haybales_max_number"
     let haybales_number = "haybales_number"
     let dynamites_number = "dynamites_number"
+    let haybales_moved_number = "haybales_moved_number"
     let helicopters_number = "helicopters_number"
     let highvoltages_number = "highvoltages_number"
     let watchdogs_number = "watchdogs_number"
@@ -217,18 +218,24 @@ let updateStats es (incStat: int -> string -> string option -> unit) (updateStat
             incStat 1 Stats.cardsplayed_number None
             incStat 1 Stats.cardsplayed_number (Some p)
             match cp with
-            | PlayHayBale hb ->
+            | PlayHayBale(hb,rm) ->
                 let hayBales = List.length hb
+                let moved = List.length rm
                 incStat hayBales Stats.haybales_number None
                 incStat hayBales Stats.haybales_number (Some p)
+                incStat moved Stats.haybales_moved_number None
 
                 updateStat (fun current ->
-                    let totalHayBales = getStat Stats.haybales_number None - getStat Stats.dynamites_number None
+                    let totalHayBales = getStat Stats.haybales_number None - getStat Stats.dynamites_number None - getStat Stats.haybales_moved_number None
                     max current totalHayBales
                 ) Stats.haybales_max_number None
             | PlayDynamite _ ->
                 incStat 1 Stats.dynamites_number None
                 incStat 1 Stats.dynamites_number (Some p)
+                updateStat (fun current ->
+                                  let totalHayBales = getStat Stats.haybales_number None - getStat Stats.dynamites_number None  - getStat Stats.haybales_moved_number None
+                                  max current totalHayBales
+                              ) Stats.haybales_max_number None
             | PlayHelicopter _ ->
                 incStat 1 Stats.helicopters_number None
                 incStat 1 Stats.helicopters_number (Some p)

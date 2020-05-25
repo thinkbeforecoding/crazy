@@ -92,10 +92,25 @@ type Bridge(dispatch: ClientMsg -> unit) =
             | PlayNitro One -> send ("playNitro", createObj ["power" ==>  "One"; "lock" ==> true ])
             | PlayNitro Two -> send ("playNitro", createObj ["power" ==>  "Two"; "lock" ==> true ])
             | PlayRut victim -> send ("playRut", createObj ["victim" ==> victim; "lock" ==> true ])
-            | PlayHayBale [Path(Axe(q,r), side)] -> send ("playOneHayBale", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ])
-            | PlayHayBale [Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)] -> 
+            | PlayHayBale ([Path(Axe(q,r), side)], []) -> send ("playOneHayBale", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ])
+            | PlayHayBale ([Path(Axe(q,r), side)], [Path(Axe(rm_q,rm_r), rm_side)]) -> 
+                send ("playOneHayBale", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side;
+                                                   "rm_q" ==> rm_q; "rm_r" ==> rm_r; "rm_side" ==> string rm_side 
+                                                   "lock" ==> true ])
+            | PlayHayBale([Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)], []) -> 
                             send ("playTwoHayBale", createObj ["q1" ==>  q1; "r1" ==> r1; "side1" ==> string side1
                                                                "q2" ==> q2; "r2" ==> r2; "side2" ==> string side2
+                                                               "lock" ==> true ]) 
+            | PlayHayBale([Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)], [Path(Axe(rm_q1,rm_r1), rm_side1)]) -> 
+                            send ("playTwoHayBale", createObj ["q1" ==>  q1; "r1" ==> r1; "side1" ==> string side1
+                                                               "q2" ==> q2; "r2" ==> r2; "side2" ==> string side2
+                                                               "rm_q1" ==> rm_q1; "rm_r1" ==> rm_r1; "rm_side1" ==> string rm_side1
+                                                               "lock" ==> true ]) 
+            | PlayHayBale([Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)], [Path(Axe(rm_q1,rm_r1), rm_side1); Path(Axe(rm_q2,rm_r2), rm_side2)]) -> 
+                            send ("playTwoHayBale", createObj ["q1" ==>  q1; "r1" ==> r1; "side1" ==> string side1
+                                                               "q2" ==> q2; "r2" ==> r2; "side2" ==> string side2
+                                                               "rm_q1" ==> rm_q1; "rm_r1" ==> rm_r1; "rm_side1" ==> string rm_side1
+                                                               "rm_q2" ==> rm_q2; "rm_r2" ==> rm_r2; "rm_side2" ==> string rm_side2
                                                                "lock" ==> true ]) 
             | PlayDynamite (Path(Axe(q,r),side)) -> send ("playDynamite", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ])
             | PlayHighVoltage  -> send ("playHighVoltage", createObj ["value" ==> true; "lock" ==> true ])
@@ -235,28 +250,60 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         |> handleCommand currentModel
     | SelectCard(card,i) ->
         { currentModel with
-            CardAction = Some { Index = i; Card = card; Ext = NoExt} }, Cmd.none
+            CardAction = Some { Index = i; Card = card; Hidden = false
+                                Ext = match card with
+                                      | HayBale _ -> 
+                                            if HayBales.maxReached (Board.hayBales currentModel.Board) then
+                                                HayBales(Remove,[],[])
+                                            else
+                                                HayBales(Place, [], [])
+                                      | _ -> NoExt
+                } }, Cmd.none
     | CancelCard ->
         { currentModel with
             CardAction = None }, Cmd.none
     | PlayCard(card) ->
         Player.PlayCard card
         |> handleCommand { currentModel with CardAction = None}
+    | RemoveHayBale bale ->
+        { currentModel with
+            CardAction = 
+                currentModel.CardAction
+                |> Option.map (fun c -> 
+                    { c with Ext = 
+                                match c.Ext with
+                                | NoExt -> HayBales(Place, [], [bale] )
+                                | HayBales(_,added,removed) -> HayBales (Place, added, bale :: removed) })}, Cmd.none
+
+
     | SelectHayBale bale ->
         { currentModel with
             CardAction = 
                 currentModel.CardAction
-                |> Option.map (fun c -> { c with Ext = FirstHayBale (false,bale) })}, Cmd.none
+                |> Option.map (fun c ->
+                    { c with Ext = 
+                                
+                                let action =
+                                    let hb = Board.hayBales currentModel.Board |> Set.add bale
+                                    let currentHb =
+                                        match c.Ext with
+                                        | NoExt -> hb
+                                        | HayBales(_,added,removed) -> hb + set added + set removed
+                                    if HayBales.maxReached(currentHb) then
+                                        Remove
+                                    else
+                                        Place
+
+                                match c.Ext with
+                                | NoExt -> HayBales(action,[bale], [])
+                                | HayBales(_,added,removed) -> HayBales (action, bale :: added, removed) })}, Cmd.none
     | Go ->
         { currentModel with
             CardAction =
                 currentModel.CardAction
                 |> Option.map (fun c ->
                     { c with
-                        Ext = 
-                            match c.Ext with
-                            | FirstHayBale(_,bale) -> FirstHayBale(true,bale)
-                            | _ -> Hidden }) 
+                        Hidden = true } )
         }, Cmd.none
     | HidePlayedCard ->
         { currentModel with
@@ -403,7 +450,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
               playersHand model dispatch
 
               div [ Id "board"; ClassName "board" ]
-                [ yield! boardView board
+                [ yield! boardView model.CardAction board
 
                   for m in model.Moves do
                     moveView dispatch m
@@ -419,7 +466,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
         div []
             [ 
               div [ ClassName "board" ]
-                  [ yield! boardView board
+                  [ yield! boardView model.CardAction board
         
                     let player = board.Players.[winner]
 

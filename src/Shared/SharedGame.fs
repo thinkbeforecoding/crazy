@@ -93,7 +93,7 @@ and CardPower = One | Two
 type PlayCard =
     | PlayNitro of power:CardPower
     | PlayRut of victim:string
-    | PlayHayBale of path:Path list
+    | PlayHayBale of path:Path list * moved: Path list
     | PlayDynamite of path:Path
     | PlayHighVoltage
     | PlayWatchdog
@@ -105,7 +105,7 @@ module Card =
         function
         | PlayNitro power -> Nitro power
         | PlayRut _ -> Rut
-        | PlayHayBale cs -> if List.length cs < 2 then HayBale One else HayBale Two
+        | PlayHayBale(hb,_) -> if List.length hb < 2 then HayBale One else HayBale Two
         | PlayDynamite _ -> Dynamite
         | PlayHighVoltage -> HighVoltage
         | PlayWatchdog -> Watchdog
@@ -427,6 +427,28 @@ module Path =
               for q in -2 .. 3 do
                 for r in max -3 (-2-q) .. min 3 (3-q) do
                     Path(Axe(q,r), BNW) ]
+
+    let boderPaths =
+        set [
+            for r in 0 .. 3 do
+                Path(Axe(-3,r), BNW)
+                Path(Axe(-3,r) + Axe.SW, BNE )
+                Path(Axe(3,-r), BNE)
+                Path(Axe(3,-r) + Axe.SE, BNW )
+
+            for q in -3..0 do
+                Path(Axe(q,-q-3), BNW)
+                Path(Axe(q,-q-3), BN)
+                Path(Axe(q,3), BNW)
+                Path(Axe(q,3)+Axe.SW, BNE)
+                Path(Axe(q,3)+Axe.S, BN)
+
+            for q in 0..3 do
+                Path(Axe(q,-3), BN)
+                Path(Axe(q,-3), BNE)
+                Path(Axe(q,3-q)+Axe.S, BN)
+                Path(Axe(q,3-q)+Axe.SE, BNW)
+        ]
         
 
 type LMax =  
@@ -804,7 +826,33 @@ module HayBales =
             - hayBales
             - findCutPaths hayBales
 
+    type Blocker =
+        | BorderBlocker
+        | FenceBlocker
+        | CutPathBlocker
 
+    let hayBaleDestinationsWithComment players hayBales =
+        let players = Set.unionMany [ for _,p in players do
+                           match p with
+                           | Playing p -> p.Fence |> Fence.fencePaths |> set
+                           | _ -> Set.empty ]
+        let cutPaths = findCutPaths hayBales
+
+        
+        [ for p in Path.allInnerPaths - players - hayBales - cutPaths do
+            p, Ok()
+          for p in players do
+            p, Error FenceBlocker
+          for p in cutPaths do
+            p, Error CutPathBlocker
+          for p in Path.boderPaths do
+            p, Error BorderBlocker
+
+        ]
+
+
+    let maxReached hayBales =
+        Set.count hayBales >= 8
 
 
 
@@ -1042,6 +1090,7 @@ module Player =
         match player with
         | Playing p -> Fence.isEmpty p.Fence
         | _ -> false
+
      
 
     let decide (otherPlayers: (string * CrazyPlayer) list) barns hayBales bribeParcels command player =
@@ -1171,12 +1220,18 @@ module Player =
                                 PoweredUp ]
                     else
                         []
-                | PlayHayBale hb  ->
-                    let dests = HayBales.hayBaleDestinations (("",player) :: otherPlayers) hayBales
-                    
-                    if hb |> List.forall (fun b -> Set.contains b dests) then
-                        [ CardPlayed card
-                          BonusDiscarded (Card.ofPlayCard card) ]
+                | PlayHayBale(hb,rm)  ->
+                    if max (Set.count hayBales + List.length hb - 8) 0 = List.length rm then
+                        if Set.isSubset (set rm) hayBales then
+                            let dests = HayBales.hayBaleDestinations (("",player) :: otherPlayers) hayBales
+                            
+                            if hb |> List.forall (fun b -> Set.contains b dests) then
+                                [ CardPlayed card
+                                  BonusDiscarded (Card.ofPlayCard card) ]
+                            else
+                                []
+                        else
+                            []
                     else
                         []
                 | PlayDynamite hb ->
@@ -1425,7 +1480,7 @@ module Board =
         | Next
         | PlayerDrewCards of PlayerDrewCards
         | GameWon of string
-        | HayBalesPlaced of Path list
+        | HayBalesPlaced of added: Path list * removed: Path list
         | HayBaleDynamited of Path
         | DiscardPileShuffled of Card list
     and 
@@ -1457,6 +1512,12 @@ module Board =
        players
        |> Map.fold (fun count _ p -> count + Player.fieldTotalSize p) 0
 
+
+    let hayBales board =
+        match board with
+        | Board.InitialState -> Set.empty
+        | Board.Board b -> b.HayBales
+        | Board.Won(_,b) -> b.HayBales
 
     let endGameWithBribe (board: PlayingBoard) =
         match board.Goal with
@@ -1601,10 +1662,10 @@ module Board =
                     Players = Map.add e.Player player board.Players
                     DrawPile = newDrawPile }
 
-        | Board board, HayBalesPlaced p ->
+        | Board board, HayBalesPlaced (added, removed) ->
             Board {
                 board with
-                    HayBales = board.HayBales + set p }
+                    HayBales = board.HayBales - set removed + set added }
         | Board board, HayBaleDynamited p ->
             Board {
                 board with
@@ -1772,8 +1833,8 @@ module Board =
                     match e with
                     | Player.CardPlayed (PlayRut victim) -> 
                         Played(victim, Player.Rutted)
-                    | Player.CardPlayed (PlayHayBale bales) ->
-                        HayBalesPlaced bales
+                    | Player.CardPlayed (PlayHayBale(added,removed)) ->
+                        HayBalesPlaced(added, removed)
                     | Player.CardPlayed (PlayDynamite bale) ->
                         HayBaleDynamited bale
                     | _ -> ()

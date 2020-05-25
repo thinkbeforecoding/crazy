@@ -6,14 +6,16 @@ open Fable.React.Props
 open Elmish.React
 open Globalization
 
+type HayBaleAction = Place | Remove
+
 type CardExt =
 | NoExt
-| FirstHayBale of bool * Path
-| Hidden 
+| HayBales of HayBaleAction * added:Path list * removed:Path list
 
 type CardAction = 
     { Index: int
       Card: Card
+      Hidden: bool
       Ext: CardExt }
 
 
@@ -49,6 +51,7 @@ type Msg =
     | PlayCard of PlayCard
     | SelectFirstCrossroad of Crossroad
     | SelectCard of Card * int
+    | RemoveHayBale of Path
     | SelectHayBale of Path
     | CancelCard
     | DiscardCard of Card
@@ -186,8 +189,6 @@ let drawcrossroad pos f =
           | Error PhytosanitaryProducts -> tooltip (translate "You cannot cut a fence just after using an Helicopter: with phytosanitary products, it could explode")
           | Error Protection -> tooltip (translate "You cannot cut on the two fences behind a tractor. Too close, you'd be shotgunned !")
           | Error HighVoltageProtection -> tooltip (translate "The fence is under High Voltage. You'd be reduced to ashes !")
-          
-                
         ]
 
 let crossroad pos f = drawcrossroad pos (Ok f)
@@ -226,6 +227,17 @@ let path p f =
 
           ]
         []
+
+let pathWithTooltip p text =
+    let x,y = Pix.ofFence p |> Pix.translate (0.2,-0.8) |> Pix.rotate
+    div [ ClassName "path"
+          Style [ Left (sprintf "%f%%" x)
+                  Top (sprintf "%f%%" y) ]
+          ]
+        [ tooltip text]
+
+
+
 
 
 let sameField x y =
@@ -342,13 +354,13 @@ let handView dispatch title playerId board cardAction hand =
                                   | _ -> OnClick (fun _ -> dispatch (SelectCard(c,i))) ] []
 
                             match cardAction with
-                            | Some { Index = index; Card = Nitro power; Ext = NoExt} when index = i ->
+                            | Some { Index = index; Card = Nitro power; Hidden = false} when index = i ->
                                 action ( match power with One -> translate "Nitro +1" | Two -> translate  "Nitro +2") 
                                     [ str (sprintf (translate "Gives you %d extra move(s) during this turn.") (match power with One -> 1 | Two -> 2 ))
                                       Standard.i [] [str (translate "(Reminder: max. 5 moves per turn)") ] ]
                                      [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str (translate "Play") ] 
                                        yield! discard (Nitro power)]
-                            | Some { Index = index; Card = Rut; Ext = NoExt } when index = i ->
+                            | Some { Index = index; Card = Rut; Hidden = false } when index = i ->
                                 action (translate "Rut")
                                     [ str (translate "Choose an opponent; he/she will have two fewer moves during his next turn") ]
                                     [ for playerId, player in otherPlayers do
@@ -356,17 +368,17 @@ let handView dispatch title playerId board cardAction hand =
                                                 ClassName (colorName (Player.color player)) ] [
                                                     div [ ClassName "player"] [] ] 
                                       yield! discard Rut]
-                            | Some { Index = index; Card = HighVoltage; Ext = NoExt } when index = i ->
+                            | Some { Index = index; Card = HighVoltage; Hidden = false } when index = i ->
                                 action (translate "High Voltage")
                                     [ str (translate "Protects the entire length of the fence, even the starting point until your next turn. Other tractors cannot go through or cut your fence.") ]
                                     [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str (translate "Play") ] 
                                       yield! discard HighVoltage ]
-                            | Some { Index = index; Card = Watchdog; Ext = NoExt } when index = i ->
+                            | Some { Index = index; Card = Watchdog; Hidden = false } when index = i ->
                                 action (translate "Watchdog")
                                     [ str (translate "Protects your plots and barns from being annexed until next turn. Annexations by opponents leave your plots and barns in place.") ]
                                     [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str (translate "Play") ] 
                                       yield! discard Watchdog ] 
-                            | Some { Index = index; Card = Helicopter; Ext = NoExt } when index = i ->
+                            | Some { Index = index; Card = Helicopter; Hidden = false } when index = i ->
                                 let canUseHelicopter = Player.canUseHelicopter player
                                 action (translate "Helicopter")
                                     [ str (translate "Moves your tractor to any point in your field. The point of arrival must be in the field or at the edge. Once moved, you cannot cut any more fences until the end of the turn: crop protection agents + electicity... I could explode!")
@@ -377,31 +389,31 @@ let handView dispatch title playerId board cardAction hand =
                                     [ if canUseHelicopter then
                                         go 
                                       yield! discard Helicopter ]
-                            | Some { Index = index; Card = HayBale One; Ext = NoExt } when index = i ->
+                            | Some { Index = index; Card = HayBale One; Hidden = false; Ext = HayBales(act,_,_) } when index = i ->
                                 action (translate "1 Hay Bale")
                                     [ str (translate "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent.")
-                                      str (translate "Select a free path for the hay bale") ]
+                                      match act with
+                                      | Place -> str (translate "Select a free path for the hay bale")
+                                      | Remove -> str (translate "There are already 8 hay bales, select one to move") ]
                                     [ go 
                                       yield! discard (HayBale One)]
-                            | Some { Index = index; Card = HayBale Two; Ext = NoExt } when index = i ->
+                            | Some { Index = index; Card = HayBale Two; Hidden = false; Ext = HayBales(act,add,_) } when index = i ->
                                 action (translate "2 Hay Bales")
                                     [ str (translate "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent.")
-                                      str (translate "Select a  free paths for the first hay bale") ]
+                                      match act, add with
+                                      | Place, [] -> str (translate "Select a  free paths for the first hay bale")
+                                      | Place, _ ->  str (translate "Select a free paths for the second hay bales")
+                                      | Remove, _ -> str (translate "There are already 8 hay bales, select one to move") 
+                                      ]
                                     [ go 
                                       yield! discard (HayBale Two)]
-                            | Some { Index = index; Card = HayBale Two; Ext = FirstHayBale (false,_) } when index = i ->
-                                 action "2 Hay Bales"
-                                    [ str "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent."
-                                      str "Select a free paths for the second hay bales" ] 
-                                    [ go 
-                                      yield! discard (HayBale Two)]
-                            | Some { Index = index; Card = Dynamite; Ext = NoExt } when index = i ->
+                            | Some { Index = index; Card = Dynamite; Hidden = false } when index = i ->
                                  action (translate "Dynamite")
                                     [ str (translate "Remove 1 Hay Bale of your choice")
                                       str (translate "Select a hay bale to blow up") ]
                                     [ go
                                       yield! discard Dynamite]
-                            | Some { Index = index; Card =  Bribe; Ext = NoExt } when index = i ->
+                            | Some { Index = index; Card =  Bribe; Hidden = false } when index = i ->
                                  action (translate "Bribe")
                                     [ str (translate "It wasn't clear on the plan... slipping a small bill should do the trick. The choose a plot of an opponent's field that has a common edge with yours... now it belongs to you! Careful, it needs to be discreet. You cannot take a plot of land from which a fence starts, it would cut it off, hence a bit conspicuous... You cannot take a barn either, hard to hide... You cannot place your last plot using this bonus, it would be a bit much!")
                                       match Board.bribeParcels board with
@@ -428,13 +440,18 @@ let barnsView barns =
           for parcel in Field.parcels barns.Occupied do
             barn parcel true ]
 
-let hayBalesView board =
+let hayBalesView cardAction board =
     div []
-        [ for p in board.HayBales do
+        [   let hb =
+                match cardAction with
+                | Some { Ext = HayBales(_,added,removed) } -> board.HayBales - set removed + set added
+                | _ -> board.HayBales
+        
+            for p in hb do
             haybale p
         ]
 
-let boardView board =
+let boardView cardAction board =
    [ for _,p in Map.toSeq board.Players do
          playerField p
 
@@ -446,7 +463,7 @@ let boardView board =
      for playerid,p in Map.toSeq board.Players do
          playerTractor (Table.isCurrent playerid board.Table)  p
          
-     hayBalesView board ]
+     hayBalesView cardAction  board ]
 
 let goalView board =
     match board.Goal with
@@ -488,16 +505,32 @@ let boardCardActionView dispatch board  cardAction =
         let player = Board.currentPlayer board
         [ for c in helicopterDestinations player board do
             crossroad c (fun _ -> dispatch (PlayCard (PlayHelicopter c))) ]
-    | Some { Card =  HayBale One } ->
-        [ for p in HayBales.hayBaleDestinations (Map.toSeq board.Players) board.HayBales do
-            path p (fun _ -> dispatch (PlayCard (PlayHayBale [ p ]))) ]
-    | Some {Card = HayBale Two; Ext = (NoExt | Hidden) } ->
-        [ for p in HayBales.hayBaleDestinations (Map.toSeq board.Players) board.HayBales  do
-            path p (fun _ -> dispatch (SelectHayBale p) ) ]
-    | Some {Card = HayBale Two; Ext = FirstHayBale(_,fp) } ->
-        [ haybale fp
-          for p in HayBales.hayBaleDestinations (Map.toSeq board.Players) (Set.add fp board.HayBales ) do
-            path p (fun _ -> dispatch (PlayCard (PlayHayBale [fp; p])) ) ]
+    | Some { Card =  HayBale One; Ext = HayBales(action,_,rm) }  ->
+        match action with
+        | Place ->
+            [ for p, result in HayBales.hayBaleDestinationsWithComment (Map.toSeq board.Players) board.HayBales do
+                match result with
+                | Ok _ -> path p (fun _ -> dispatch (PlayCard (PlayHayBale([ p ], rm))))
+                | Error HayBales.FenceBlocker -> pathWithTooltip p (translate "You cannot place a hay bale on a fence")
+                | Error HayBales.CutPathBlocker -> pathWithTooltip  p (translate "You cannot block a crossroad with hay bales")
+                | Error HayBales.BorderBlocker -> pathWithTooltip  p (translate "You cannot block a border path")
+                ]
+
+        | Remove ->
+            [ for p in board.HayBales do
+                path p (fun _ -> dispatch (RemoveHayBale  p )) ]
+            
+    | Some {Card = HayBale Two; Ext = HayBales(action, added,rm)  } ->
+        match action, added with
+        | Remove, _ ->
+            [ for p in board.HayBales do
+                path p (fun _ -> dispatch (RemoveHayBale  p )) ]
+        | Place, [] ->
+            [ for p in HayBales.hayBaleDestinations (Map.toSeq board.Players) (board.HayBales - set rm + set added)  do
+                path p (fun _ -> dispatch (SelectHayBale p) ) ]
+        | Place, _ ->
+            [ for p in HayBales.hayBaleDestinations (Map.toSeq board.Players) (board.HayBales - set rm + set added)  do
+                path p (fun _ -> dispatch (PlayCard (PlayHayBale(p :: added, rm) ) ) ) ]
     | Some { Card =  Dynamite}  ->
         [ for p in board.HayBales do
             path p (fun _ -> dispatch (PlayCard (PlayDynamite p))) ]

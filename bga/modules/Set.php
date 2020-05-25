@@ -382,6 +382,24 @@ class SetTree {
         return SetTree::intersectionAux($comparer, $b, $a, new SetEmpty());
     }
 
+    static function forall($f, $m)
+    {
+        switch (get_class($m))
+        {
+            case 'SetNode':
+                return $f($m->value) && SetTree::forall($f, $m->left) && SetTree::forall($f, $m->right);
+            case 'SetOne': 
+                return $f($m->value);
+            default:
+                return true;
+        }
+    }
+
+    static function subset($comparer, $a, $b)
+    {
+        return SetTree::forall(function ($x) use($comparer, $b) { return SetTree::mem($comparer, $x, $b); }, $a);
+    }
+
 }
 
 class SetEmpty extends SetTree { }
@@ -462,10 +480,11 @@ class Set implements IteratorAggregate {
         return SetTree::mem($s->Comparer, $value, $s->Tree);
     }
 
-    static function ofSeq($seq)
+    static function ofSeq($seq, $comparer=NULL)
     {
         $tree = new SetEmpty();
-        $comparer = [ 'Compare' => 'Util::comparePrimitives'];
+        if (is_null($comparer))
+            $comparer = [ 'Compare' => 'Util::comparePrimitives'];
 
         foreach($seq as $item)
         {
@@ -510,6 +529,11 @@ class Set implements IteratorAggregate {
         $comparer = [ 'Compare' => 'Util::comparePrimitives'];
 
         return Seq::fold(function($acc,$s) { return Set::union($acc,$s); }, Set::empty($comparer), $sets);
+    }
+
+    static function isSubset($set1, $set2) 
+    {
+        return SetTree::subset($set1->Comparer, $set1->Tree, $set2->Tree); 
     }
 
     public function getIterator() {

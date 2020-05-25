@@ -261,6 +261,9 @@ module Dto =
     type PlayCardDto =
         { Card: string 
           Effect: obj }
+    type HayBalesDto =
+        { Added: PathDto[]
+          Removed: PathDto[] }
 
     let ofPlayCard (cp: PlayCard) =
         { Card = Card.ofPlayCard cp |> ofCard
@@ -268,7 +271,8 @@ module Dto =
             match cp with
             | PlayNitro _ -> null
             | PlayRut v -> v |> box
-            | PlayHayBale ps -> ps |> Seq.map ofPath |> Seq.toArray |> box
+            | PlayHayBale(added,removed) -> { Added = added |> Seq.map ofPath |> Seq.toArray
+                                              Removed = removed |> Seq.map ofPath |> Seq.toArray }  |> box
             | PlayDynamite p -> ofPath p |> box
             | PlayHighVoltage -> null
             | PlayWatchdog -> null
@@ -280,7 +284,16 @@ module Dto =
         match toCard cp.Card with
         | Nitro p -> PlayNitro p
         | Rut -> PlayRut (unbox<string> cp.Effect)
-        | HayBale _ -> PlayHayBale (((cp.Effect :?> JArray).ToObject<_[]>())|> Seq.map toPath |> Seq.toList )
+        | HayBale _ -> 
+            match cp.Effect with
+            | :? JArray as a ->
+                PlayHayBale ((a.ToObject<_[]>())|> Seq.map toPath |> Seq.toList, [] )
+            | :? JObject as o ->
+                let hb : HayBalesDto = o.ToObject()
+                PlayHayBale (hb.Added |> Seq.map toPath |> Seq.toList,
+                             hb.Removed |> Seq.map toPath |> Seq.toList )
+            | _ -> failwith "Unknow haybale format"  
+
         | Dynamite -> PlayDynamite(toPath ((cp.Effect :?> JObject).ToObject()))
         | HighVoltage -> PlayHighVoltage
         | Watchdog -> PlayWatchdog
@@ -355,6 +368,7 @@ let serialize =
         "MovedPowerless" , box { Player = playerid; Event = Dto.ofMoved e }
     | Board.Event.Played (playerid, Player.Event.PoweredUp  ) -> "PoweredUp" , box { Player = playerid; Event = null }
     | Board.Event.Played (playerid, Player.Event.CardPlayed e  ) -> "CardPlayed" , box { Player = playerid; Event = (Dto.ofPlayCard e) }
+    | Board.Event.Played (playerid, Player.Event.CardDiscarded e  ) -> "CardDiscarded" , box { Player = playerid; Event = (Dto.ofCard e) }
     | Board.Event.Played (playerid, Player.Event.HighVoltaged  ) -> "HighVoltaged" , box { Player = playerid; Event = null }
     | Board.Event.Played (playerid, Player.Event.Watched  ) -> "Watched" , box { Player = playerid; Event = null }
     | Board.Event.Played (playerid, Player.Event.Rutted  ) -> "Rutted" , box { Player = playerid; Event = null }
@@ -367,7 +381,9 @@ let serialize =
     | Board.Event.PlayerDrewCards e  -> 
         "PlayerDrewCards" , box { Dto.PlayerDrewCardsDto.Player = e.Player
                                   Dto.PlayerDrewCardsDto.Cards = Dto.ofHand e.Cards }
-    | Board.Event.HayBalesPlaced e  -> "HayBalesPlaced" , box (e |> Seq.map Dto.ofPath |> Seq.toArray)
+    | Board.Event.HayBalesPlaced(added,removed)  -> 
+        "HayBalesPlaced" , box ({ Dto.HayBalesDto.Added = added |> Seq.map Dto.ofPath |> Seq.toArray
+                                  Dto.HayBalesDto.Removed = removed |> Seq.map Dto.ofPath |> Seq.toArray } )
     | Board.Event.HayBaleDynamited e  -> "HayBaleDynamited" , box (Dto.ofPath e)
     | Board.Event.DiscardPileShuffled e  -> "DiscardPileShuffled" , box (e |> Seq.map Dto.ofCard |> Seq.toArray) 
     | Board.Event.GameWon e  -> "GameWon" , box e
@@ -405,6 +421,7 @@ let deserialize data =
             [Board.Played(p, Player.MovedPowerless (Dto.toMoved e))]
         | "PoweredUp", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.PoweredUp )]
         | "CardPlayed", JObj { Player = p; Event = JObj (e: Dto.PlayCardDto) } -> [Board.Played(p, Player.CardPlayed (Dto.toPlayCard e) )]
+        | "CardDiscarded", JObj { Player = p; Event = JObj (e: string) } -> [Board.Played(p, Player.CardDiscarded (Dto.toCard e) )]
         | "HighVoltaged", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.HighVoltaged )]
         | "Watched", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Watched )]
         | "Rutted", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Rutted )]
@@ -415,7 +432,16 @@ let deserialize data =
         | "Eliminated", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Eliminated )]
         | "Next", _ -> [ Board.Next]
         | "PlayerDrewCards", JObj (e: Dto.PlayerDrewCardsDto) -> [ Board.PlayerDrewCards { Player = e.Player; Cards = Dto.toHand e.Cards } ]
-        | "HayBalesPlaced", JObj (e: Dto.PathDto[]) -> [ Board.HayBalesPlaced (e |> Seq.map Dto.toPath |> Seq.toList) ]
+        | "HayBalesPlaced",  (e: obj) ->
+            match e with
+            | :? JArray as a ->
+                [ Board.HayBalesPlaced (a.ToObject<Dto.PathDto[]>() |> Seq.map Dto.toPath |> Seq.toList, []) ]
+            | :? JObject as o ->
+                let hb = o.ToObject<Dto.HayBalesDto>()
+                [ Board.HayBalesPlaced (hb.Added |> Seq.map Dto.toPath |> Seq.toList,
+                                        hb.Removed |> Seq.map Dto.toPath |> Seq.toList) ]
+            | _ -> []
+
         | "HayBaleDynamited", JObj (e: Dto.PathDto) -> [ Board.HayBaleDynamited (Dto.toPath e) ]
         | "DiscardPileShuffled", JObj (e: string[]) -> [ Board.DiscardPileShuffled (e |> Seq.map Dto.toCard |> Seq.toList) ]
         | "GameWon", JObj e -> [ Board.GameWon e ]
@@ -433,6 +459,7 @@ let serializeCmd =
     | Board.Play (p, Player.Move c) -> "Move", box { Player = p; Command = box c }
     | Board.Play (p, Player.EndTurn) -> "EndTurn", box { Player = p; Command = null }
     | Board.Play (p, Player.PlayCard c) -> "PlayCard", box { Player = p; Command = box c }
+    | Board.Play (p, Player.Discard c) -> "Discard", box { Player = p; Command = box c }
     | Board.Play (p, Player.SelectFirstCrossroad c) -> "SelectFirstCrossroad", box { Player = p; Command = box c }
 
 
