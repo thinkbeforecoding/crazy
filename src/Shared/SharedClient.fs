@@ -151,6 +151,18 @@ let tile (Parcel pos) f =
           
         []
 
+let tooltip txt =
+    div [ ClassName "tooltiptext"] [ str txt ]
+
+let tileWithTooltip (Parcel pos) text = 
+    let x,y = Pix.ofTile pos |> Pix.rotate
+    div ([ ClassName "tile"
+           Style [ Left (sprintf "%f%%" x)
+                   Top (sprintf "%f%%" y)
+                   ]
+         ]   )
+        [ tooltip text ]
+
 let barn (Parcel pos) occupied = 
     let x,y = Pix.ofTile pos |> Pix.rotate
     div [ classBaseList "barn" [ "occupied", occupied ]
@@ -172,8 +184,7 @@ let player active pos =
     |> drawplayer active
 
 
-let tooltip txt =
-    div [ ClassName "tooltiptext"] [ str txt ]
+
 let drawcrossroad pos f =
     let x,y = Pix.ofPlayer pos |> Pix.rotate
     div [ ClassName "crossroad"
@@ -538,7 +549,16 @@ let boardCardActionView dispatch board  cardAction =
         match Board.bribeParcels board with
         | Ok parcels ->
             [ for p in Field.parcels parcels do
-                tile p (fun _ -> dispatch (PlayCard (PlayBribe p))) ]
+                tile p (fun _ -> dispatch (PlayCard (PlayBribe p)))
+              for p, blocker in Board.bribeParcelsBlockers board do
+                match blocker with
+                | Board.BribeParcelBlocker.BarnBlocker -> tileWithTooltip p (translate "You cannot bribe a barn")
+                | Board.BribeParcelBlocker.FenceBlocker -> tileWithTooltip p (translate "You cannot bribe a parcel that would cut a fence or where the player is")
+                | Board.BribeParcelBlocker.LastParcelBlocker -> tileWithTooltip p (translate "You cannot bribe another player's last parcel")
+                | Board.BribeParcelBlocker.WatchedBlocker -> tileWithTooltip p (translate "You cannot bribe parcel protected by a watchdog")
+                | Board.BribeParcelBlocker.FallowBlocker -> tileWithTooltip p (translate "You cannot bribe parcel that with split a fallow land")
+                
+                ]
         | Error _ -> []
     | _ ->
         []

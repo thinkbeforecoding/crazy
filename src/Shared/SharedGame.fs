@@ -394,6 +394,10 @@ module Parcel =
         |> List.filter isOnBoard
 
 
+    let areNeighbors (Parcel px) (Parcel py) =
+       px = py+Axe.N || px = py+Axe.NE || px = py+Axe.SE || 
+                   px = py+Axe.S || px = py+Axe.SW || px = py+Axe.NW 
+
 module Path =
     let neighbor dir (Crossroad(tile, side)) =
         match side, dir with
@@ -566,7 +570,7 @@ module Field =
         Set.contains parcel parcels
 
 
-    let interesect (Field x) (Field y) =
+    let intersect (Field x) (Field y) =
         Field(Set.intersect x y)
 
     let unionMany (fields: Field list)=
@@ -734,8 +738,8 @@ module Barns =
     let empty = { Free = Field.empty; Occupied = Field.empty }
 
     let intersectWith (field: Field) barns =
-        { Free = Field.interesect field barns.Free
-          Occupied = Field.interesect field barns.Occupied }
+        { Free = Field.intersect field barns.Free
+          Occupied = Field.intersect field barns.Occupied }
 
     let init barns =
         { Free = Field.ofParcels barns
@@ -745,7 +749,7 @@ module Barns =
 
     let annex annexed barns =
         { Free = barns.Free - annexed.Free
-          Occupied = barns.Occupied + (Field.interesect barns.Free annexed.Free) }
+          Occupied = barns.Occupied + (Field.intersect barns.Free annexed.Free) }
 
 module HayBales =
 
@@ -1146,7 +1150,7 @@ module Player =
                                     [ for color,p in otherPlayers do
                                         match p with
                                         | Playing p ->
-                                            let lost = Field.interesect annexed p.Field
+                                            let lost = Field.intersect annexed p.Field
                                             if not (Field.isEmpty lost) then
                                                 color, Field.parcels lost
                                         |_ -> ()
@@ -1567,6 +1571,38 @@ module Board =
         | InstantVictory
         | NoParcelsToBribe
 
+    type BribeParcelBlocker =
+        | BarnBlocker
+        | LastParcelBlocker
+        | WatchedBlocker
+        | FenceBlocker
+        | FallowBlocker
+
+
+
+    let isCutParcel (field: Field) (parcel: Parcel) =
+        let neighbors =
+            [ Axe.N; Axe.NE; Axe.SE; Axe.S; Axe.SW; Axe.NW ]
+            |> List.choose (fun axe -> 
+                                let n = parcel + axe
+                                if Field.containsParcel n field then Some n else None)
+        match neighbors with
+        | [n1;n2] -> not (Parcel.areNeighbors n1 n2)
+           
+        | [n1;n2;n3] -> not ((Parcel.areNeighbors n1 n2 && Parcel.areNeighbors n1 n3)
+                            || (Parcel.areNeighbors n2 n1 && Parcel.areNeighbors n2 n3)
+                            || (Parcel.areNeighbors n3 n1 && Parcel.areNeighbors n3 n2)
+                            )
+        | _ -> false
+
+    let cutParcels (field: Field) (Field parcels) =
+        parcels
+        |> Seq.filter (fun p -> isCutParcel field p)
+        |> Field.ofParcels
+            
+            
+
+
 
     let bribeParcels (board: PlayingBoard) =
         if  endGameWithBribe board then
@@ -1584,26 +1620,68 @@ module Board =
                         if Field.size field = 1 || bonus.Watched  then
                             Field.empty
                         else
+                            let cutParcels = cutParcels field (Field.intersect field border)
+                            
                             match player with
                             | Playing p ->
                                 let startCrossRoad = Fence.start p.Tractor p.Fence
                                 let startTiles = 
                                     Crossroad.neighborTiles startCrossRoad
                                     |> Field.ofParcels
-                                field - startTiles
+
+                                
+                                field - startTiles - cutParcels
+                                
+
                             | Starting _ 
                             | Ko _ -> field
                                 )
                  |> Field.unionMany
             
 
-            let parcelsToBribe = (Field.interesect border otherPlayersFields) - barns
+            let parcelsToBribe = (Field.intersect border otherPlayersFields) - barns
             if Field.isEmpty parcelsToBribe then
                 Error NoParcelsToBribe
             else
                 Ok parcelsToBribe
-                    
-        
+
+    let bribeParcelsBlockers (board: PlayingBoard) =
+        if  endGameWithBribe board then
+            []
+        else
+            let player = board.Players.[board.Table.Player]
+            let border = Field.borderTiles (Player.field player) 
+            let barns = Field.intersect border (board.Barns.Free + board.Barns.Occupied)
+            let border = border - barns
+
+            [ for barn in Field.parcels barns do
+                barn, BarnBlocker
+            
+              for (_, player) in currentOtherPlayers board do
+                let field = Player.field player
+                let bonus = Player.bonus player
+                let fieldBorder = Field.intersect border field
+                if Field.size field = 1  then
+                    for p in Field.parcels fieldBorder do
+                        p, LastParcelBlocker
+                elif bonus.Watched  then
+                    for p in Field.parcels fieldBorder do
+                        p, WatchedBlocker
+                else
+                    match player with
+                    | Playing p ->
+                        let startCrossRoad = Fence.start p.Tractor p.Fence
+                        let startTiles = 
+                            Crossroad.neighborTiles startCrossRoad
+                            |> Field.ofParcels
+                        let borderStarts = Field.intersect startTiles border
+                        for p in Field.parcels borderStarts do
+                            p, FenceBlocker
+                        let cutParcels = cutParcels field (Field.intersect field border)
+                        for p in Field.parcels cutParcels do
+                            p, FallowBlocker
+                    | Starting _ 
+                    | Ko _ -> () ]
 
 
     let annexed playerid e (board: PlayingBoard) =

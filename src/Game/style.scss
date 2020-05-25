@@ -79,6 +79,27 @@ body {
     width: 9%;
     height: 9%;
     position: absolute;
+
+    .tooltiptext {
+        visibility: hidden;
+        width: 120px;
+        background-color: black;
+        color: #fff;
+        text-align: center;
+        padding: 5px 0;
+        border-radius: 6px;
+        /* Position the tooltip text - see examples below! */
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 30;
+    }
+}
+
+.tile:hover {
+    .tooltiptext {
+        visibility: visible;
+    }
 }
 
 .fallow {
@@ -346,11 +367,22 @@ i.fa-bars {
 
 
 #game_play_area {
+    .crazy-box {
+        display: flex;
+        flex-flow: column;
+        align-items: center;
+    }
+    .board-box {
+        max-width: 100vh;
+        width: 100%
+    }
+
     .board {
         margin-top: 0;
     }
 
     .cards {
+        align-self: stretch;
         padding-top: 1em;
         padding-bottom: 1em;
         height: 6em;
@@ -370,7 +402,7 @@ i.fa-bars {
     }
 
     .hand-title {
-        position:absolute;
+        position: absolute;
         top: 0.3em;
         left: 0.3em;
         font-family: 'BigSlabHammer';

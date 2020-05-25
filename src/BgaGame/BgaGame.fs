@@ -440,43 +440,48 @@ let playedCard dispatch card =
 let view (model : Model) (dispatch : Msg -> unit) =
     match model.Board with
     | InitialState -> 
-        div [ClassName "board" ] [
-            div [] [ ]
-        
-        ]
+        div [ ClassName "crazy-box" ]
+            [ div [ClassName "board-box"]
+                [ div [ClassName "board" ] [ div [] [ ] ] ]
+            ]
     | Board board ->
-        div [] 
+        div [ ClassName "crazy-box" ] 
             [ 
               playersHand model dispatch
 
-              div [ Id "board"; ClassName "board" ]
-                [ yield! boardView model.CardAction board
+              div [ClassName "board-box"] 
+                [
+                  div [ Id "board"; ClassName "board" ]
+                    [ yield! boardView model.CardAction board
 
-                  for m in model.Moves do
-                    moveView dispatch m
+                      for m in model.Moves do
+                        moveView dispatch m
 
-                  yield! endTurnView dispatch model.PlayerId board
+                      yield! endTurnView dispatch model.PlayerId board
 
-                  yield! boardCardActionView dispatch board model.CardAction 
+                      yield! boardCardActionView dispatch board model.CardAction 
 
-                ]
-              lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
+                    ]
+                  lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
+                  ]
             ]
     | Won(winner, board) ->
-        div []
-            [ 
-              div [ ClassName "board" ]
-                  [ yield! boardView model.CardAction board
-        
-                    let player = board.Players.[winner]
+        div [ ClassName "crazy-box" ] 
+            [ div [ClassName "board-box"]
+                [ 
+                  div [ ClassName "board" ]
+                      [ yield! boardView model.CardAction board
+            
+                        let player = board.Players.[winner]
 
-                    div [ ClassName "victory" ]
-                        [ p [] [ str "And the winner is"]
-                          div [ ClassName ("winner " + colorName (Player.color player)) ]
-                              [ div [ ClassName "player"] [] ]
-                          p [] [ str board.Table.Names.[winner] ] 
+                        div [ ClassName "victory" ]
+                            [ p [] [ str "And the winner is"]
+                              div [ ClassName ("winner " + colorName (Player.color player)) ]
+                                  [ div [ ClassName "player"] [] ]
+                              p [] [ str board.Table.Names.[winner] ] 
 
-                          ] ] ]
+                              ] ] ]
+            ]
 
 
 
