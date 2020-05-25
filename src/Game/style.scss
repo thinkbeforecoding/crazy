@@ -519,36 +519,37 @@ i.fa-bars {
     flex: 1 1 auto;
     margin-left: 0.5em;
 
-    div {
+    & > div  {
         width: 2.5em;
         height: 2.5em;
-        background-size: contain;
-        background-repeat: no-repeat;
+        background-image: url(~img/markers.png);
+        background-size: 600% 100%;
+        background-position-y: 0;
         display: inline-block;
     }
 
     .rut-marker {
-        background-image: url(~img/rut-marker.png);
+        background-position-x: -200%;
     }
 
     .nitro-1-marker {
-        background-image: url(~img/nitro-1-marker.png);
+        background-position-x: 0px;
     }
 
     .nitro-2-marker {
-        background-image: url(~img/nitro-2-marker.png);
+        background-position-x: -100%;
     }
 
     .watchdog-marker {
-        background-image: url(~img/watchdog-marker.png);
+        background-position-x: -400%;
     }
 
     .highvoltage-marker {
-        background-image: url(~img/highvoltage-marker.png);
+        background-position-x: -300%;
     }
 
     .helicopter-marker {
-        background-image: url(~img/helicopter-marker.png);
+        background-position-x: -500%;
     }
 }
 
