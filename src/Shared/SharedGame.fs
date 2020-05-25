@@ -156,6 +156,12 @@ module Hand =
             p |> List.isEmpty |> not
         | PrivateHand p -> p > 0
 
+    let shouldDiscard =
+        function
+        | PublicHand p ->
+            List.length p > 6
+        | PrivateHand p -> p > 6
+
 
 type CrazyPlayer =
     | Starting of Starting
@@ -879,6 +885,7 @@ module Player =
         | SelectFirstCrossroad of SelectFirstCrossroad
         | Move of PlayerMove
         | PlayCard of PlayCard
+        | Discard of Card
         | EndTurn
     and Start =
         { Parcel: Parcel }
@@ -903,6 +910,7 @@ module Player =
         | Rutted
         | HighVoltaged
         | BonusDiscarded of Card
+        | CardDiscarded of Card
         | Watched
         | Heliported of Crossroad
         | Bribed of Bribed
@@ -1190,6 +1198,11 @@ module Player =
 
             else 
                 []
+        | Playing p, Discard card ->
+            if Hand.contains card p.Hand then
+                [ CardDiscarded card ]
+            else
+                []
 
                     
         | _ -> failwith "Invalid operation"      
@@ -1238,6 +1251,8 @@ module Player =
         |  Playing player, BonusDiscarded e ->
             Playing { player with
                         Bonus = player.Bonus |> Bonus.discard e }
+        | Playing player, CardDiscarded card ->
+            Playing { player with Hand = player.Hand |> Hand.remove card }
         | Playing player, Eliminated ->
             Ko player.Color
         | _ -> player 
@@ -1626,13 +1641,15 @@ module Board =
             let player = Player.evolve board.Players.[playerid] e
             let newDiscardPile =
                 match e with
-                | Player.BonusDiscarded card ->
+                | Player.BonusDiscarded card
+                | Player.CardDiscarded card ->
                     card :: board.DiscardPile
                 | _ -> board.DiscardPile
 
             Board { board with
                        Players = Map.add playerid player board.Players
                        DiscardPile = newDiscardPile }
+        
         | Board board, Next ->
             let nextTable = board.Table.Next
             let player = Player.startTurn board.Players.[nextTable.Player]
@@ -1717,12 +1734,27 @@ module Board =
             if state.Table.Player = playerId then
                 let player = state.Players.[playerId]
                 match player with
-                | Playing p when not (Moves.canMove p.Moves) -> 
+                | Playing p when not (Moves.canMove p.Moves || Hand.shouldDiscard p.Hand ) -> 
                     next state
                 | _ -> []
             else
                 []
-            
+        | Board state, Play(playerId,(Player.Discard card as cmd))  ->
+            if state.Table.Player = playerId then
+                let player = state.Players.[playerId]
+                let others = otherPlayers playerId state
+                let events =
+                    Player.decide others state.Barns state.HayBales (fun() -> bribeParcels state) cmd player
+
+                [ for e in events do
+                    Played(playerId, e)
+
+                  match player with
+                  | Playing p when List.exists (function Player.CardDiscarded _ -> true | _ -> false) events && not (Hand.shouldDiscard (Hand.remove card p.Hand)) && not (Moves.canMove p.Moves) ->
+                      yield! next state 
+                  | _ -> () ]
+            else
+                []
         | Board state,Play (playerid, cmd) ->
             let player = state.Players.[playerid]
             let others = otherPlayers playerid state

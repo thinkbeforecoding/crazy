@@ -78,21 +78,29 @@ $machinestates = array(
     		"description" => clienttranslate('${actplayer} must move or play a card'),
     		"descriptionmyturn" => clienttranslate('${you} must move or play a card'),
     		"type" => "activeplayer",
-    		"possibleactions" => [ "move", "playCard", "next" ],
+    		"possibleactions" => [ "move", "playCard", "next",  "discard", "endGame" ],
             "updateGameProgression" => true,
-    		"transitions" => [ "move" => 3, "playCard" => 3, "next" => 10 , "endTurn" => 4, "endGame" => 99 ]
+    		"transitions" => [ "canMove" => 3, "next" => 10 , "endTurn" => 4, "shouldDiscard" => 5, "endGame" => 99 ]
     ], 
 
     4 => [
         "name" => "endTurn",
     	"description" => clienttranslate('${actplayer} must play a card or end turn'),
-    	"descriptionmyturn" => clienttranslate('${you} must play a card or '),
+    	"descriptionmyturn" => clienttranslate('${you} must play a card or end turn'),
     	"type" => "activeplayer",
-        "possibleactions" => [ "playCard", "next", "moreMoves", "move" ],
+        "possibleactions" => [ "playCard", "next", "move", "discard", "move" ],
         "updateGameProgression" => true,
-    	"transitions" => [ "playCard" => 4, "move" => 4, "moreMoves" => 3, "next" => 10,  "endGame" => 99 ]
+    	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10, "endTurn" => 4,  "endGame" => 99 ]
     ],
-
+    5 => [
+        "name" => "discard",
+    	"description" => clienttranslate('${actplayer} must play or discard a card to have max 6 cards'),
+    	"descriptionmyturn" => clienttranslate('${you} must play or discard a card to have max 6 cards'),
+    	"type" => "activeplayer",
+        "possibleactions" => [ "playCard", "next", "move", "discard", "move" ],
+        "updateGameProgression" => true,
+    	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10,  "endTurn" => 4, "endGame" => 99 ]
+    ],
     10 => [
         "name" => "next",
         "description" => '',

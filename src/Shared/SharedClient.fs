@@ -51,6 +51,7 @@ type Msg =
     | SelectCard of Card * int
     | SelectHayBale of Path
     | CancelCard
+    | DiscardCard of Card
     | SwitchDashboard
     | EndTurn
     | Remote of ClientMsg
@@ -301,6 +302,9 @@ let handView dispatch title playerId board cardAction hand =
     let active =  Option.exists (fun p -> p = board.Table.Player) playerId
     let otherPlayers = Board.currentOtherPlayers board
     let cancel = a [ ClassName "cancel"; Href "#"; OnClick (fun _ -> dispatch CancelCard)] [ str (translate "Cancel") ]
+    let discard card =  
+        [ span [] []
+          a [ ClassName "discard"; Href "#"; OnClick (fun _ -> dispatch (DiscardCard card))] [ str (translate "Discard") ] ]
     let go = button [ OnClick (fun _ -> dispatch Go )]  [str (translate "Go") ]
     let action title texts buttons =
         div [ClassName "action" ]
@@ -342,22 +346,26 @@ let handView dispatch title playerId board cardAction hand =
                                 action ( match power with One -> translate "Nitro +1" | Two -> translate  "Nitro +2") 
                                     [ str (sprintf (translate "Gives you %d extra move(s) during this turn.") (match power with One -> 1 | Two -> 2 ))
                                       Standard.i [] [str (translate "(Reminder: max. 5 moves per turn)") ] ]
-                                     [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str (translate "Play") ] ]
+                                     [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str (translate "Play") ] 
+                                       yield! discard (Nitro power)]
                             | Some { Index = index; Card = Rut; Ext = NoExt } when index = i ->
                                 action (translate "Rut")
                                     [ str (translate "Choose an opponent; he/she will have two fewer moves during his next turn") ]
                                     [ for playerId, player in otherPlayers do
                                           div [ OnClick (fun _ -> dispatch (PlayCard (PlayRut playerId)))
                                                 ClassName (colorName (Player.color player)) ] [
-                                                    div [ ClassName "player"] [] ] ]
+                                                    div [ ClassName "player"] [] ] 
+                                      yield! discard Rut]
                             | Some { Index = index; Card = HighVoltage; Ext = NoExt } when index = i ->
                                 action (translate "High Voltage")
                                     [ str (translate "Protects the entire length of the fence, even the starting point until your next turn. Other tractors cannot go through or cut your fence.") ]
-                                    [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str (translate "Play") ] ]
+                                    [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str (translate "Play") ] 
+                                      yield! discard HighVoltage ]
                             | Some { Index = index; Card = Watchdog; Ext = NoExt } when index = i ->
                                 action (translate "Watchdog")
                                     [ str (translate "Protects your plots and barns from being annexed until next turn. Annexations by opponents leave your plots and barns in place.") ]
-                                    [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str (translate "Play") ] ] 
+                                    [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str (translate "Play") ] 
+                                      yield! discard Watchdog ] 
                             | Some { Index = index; Card = Helicopter; Ext = NoExt } when index = i ->
                                 let canUseHelicopter = Player.canUseHelicopter player
                                 action (translate "Helicopter")
@@ -367,27 +375,32 @@ let handView dispatch title playerId board cardAction hand =
                                       else
                                         str (translate "Cannot be played with a fence") ]
                                     [ if canUseHelicopter then
-                                        go ]
+                                        go 
+                                      yield! discard Helicopter ]
                             | Some { Index = index; Card = HayBale One; Ext = NoExt } when index = i ->
                                 action (translate "1 Hay Bale")
                                     [ str (translate "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent.")
                                       str (translate "Select a free path for the hay bale") ]
-                                    [ go ]
+                                    [ go 
+                                      yield! discard (HayBale One)]
                             | Some { Index = index; Card = HayBale Two; Ext = NoExt } when index = i ->
                                 action (translate "2 Hay Bales")
                                     [ str (translate "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent.")
                                       str (translate "Select a  free paths for the first hay bale") ]
-                                    [ go ]
+                                    [ go 
+                                      yield! discard (HayBale Two)]
                             | Some { Index = index; Card = HayBale Two; Ext = FirstHayBale (false,_) } when index = i ->
                                  action "2 Hay Bales"
                                     [ str "Hay bales block the path for all players until blasted out with dynamite. You cannot place a Hay Bale on a fence in progress or on the edge of the board. It is forbiddent to lock in an opponent."
                                       str "Select a free paths for the second hay bales" ] 
-                                    [ go ]
+                                    [ go 
+                                      yield! discard (HayBale Two)]
                             | Some { Index = index; Card = Dynamite; Ext = NoExt } when index = i ->
                                  action (translate "Dynamite")
                                     [ str (translate "Remove 1 Hay Bale of your choice")
                                       str (translate "Select a hay bale to blow up") ]
-                                    [ go ]
+                                    [ go
+                                      yield! discard Dynamite]
                             | Some { Index = index; Card =  Bribe; Ext = NoExt } when index = i ->
                                  action (translate "Bribe")
                                     [ str (translate "It wasn't clear on the plan... slipping a small bill should do the trick. The choose a plot of an opponent's field that has a common edge with yours... now it belongs to you! Careful, it needs to be discreet. You cannot take a plot of land from which a fence starts, it would cut it off, hence a bit conspicuous... You cannot take a barn either, hard to hide... You cannot place your last plot using this bonus, it would be a bit much!")
@@ -396,7 +409,8 @@ let handView dispatch title playerId board cardAction hand =
                                       | Error Board.InstantVictory -> str (translate "You cannot bribe to take the last parcel ! That would be too visible !")
                                       | Error Board.NoParcelsToBribe -> str (translate "There is no parcel to bribe.")
                                     ]
-                                    [ go ]
+                                    [ go 
+                                      yield! discard Bribe]
                             | _ -> ()
                         ]
            ]

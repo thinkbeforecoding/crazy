@@ -42,34 +42,18 @@ let bgaUpdateState events board state changeState =
         | Board.GameWon _ -> changeState "endGame"
         | Board.Played(_,Player.FirstCrossroadSelected _) ->
             changeState "selectFirstCrossroad"
-        | Board.Played(p, Player.MovedInField _)
-        | Board.Played(p, Player.MovedPowerless _)
-        | Board.Played(p, Player.FenceDrawn _) ->
+        | Board.Played(p, _) ->
             match board with
             | Board.Board b ->
                 match b.Players.[p] with
                 | Playing player ->
                     if Moves.canMove player.Moves then
-                        changeState "move"
+                        changeState "canMove"
                     elif Hand.canPlay player.Hand then
-                        if state = "endTurn" then
-                            changeState "next"
+                        if Hand.shouldDiscard player.Hand then
+                            changeState "shouldDiscard"
                         else
                             changeState "endTurn"
-                | _ -> ()
-            | _ -> ()
-        | Board.Played(p, Player.CardPlayed _) ->
-            match board with
-            | Board.Board b ->
-                match b.Players.[p] with
-                | Playing player ->
-                    if Moves.canMove player.Moves then
-                        if state = "endTurn" then
-                            changeState "moreMoves"
-                        else
-                            changeState "playCard"
-                    elif Hand.canPlay player.Hand then
-                        changeState "playCard"
                 | _ -> ()
             | _ -> ()
         | _ -> ()

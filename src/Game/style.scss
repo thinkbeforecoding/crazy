@@ -692,10 +692,30 @@ div.back {
             margin-top: 0.3em;
             width: 100%;
             padding-right: 1em;
+            display: flex;
+            flex-flow: row wrap;
+            justify-items: flex-start;
+
+            button {
+                flex: 0 0 auto; 
+            }
+
+            span {
+                flex: 1 0 auto;
+            }
+
+
+            .discard {
+                flex: 0 0 auto;
+                color: black;
+                justify-self: flex-end;
+                margin-right: 1em;
+            }
 
             .cancel {
-                float: right;
+                flex: 0 0 auto;
                 color: black;
+                justify-self: flex-end;
             }
         }
 

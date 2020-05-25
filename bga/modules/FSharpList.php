@@ -387,6 +387,16 @@ abstract class FSharpList implements IteratorAggregate {
         }
         return true;
     }
+    static function exists($predicate, $list)
+    {
+        while($list instanceof Cons)
+        {
+            if ($predicate($list->value))
+                return true;
+            $list = $list->next;
+        }
+        return false;
+    }
 
     public function getIterator() {
         $list = $this;

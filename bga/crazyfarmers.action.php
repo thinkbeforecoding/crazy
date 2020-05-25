@@ -263,7 +263,50 @@
 
         self::ajaxResponse();
     }
-    
+    public function discard()
+    {
+        self::setAjaxMode();
+
+        $card = self::getArg( "card", AT_enum, true, "", ["Nitro1", "Nitro2", "Rut", "HayBale1", "HayBale2", "Dynamite", "HighVoltage", "Watchdog", "Helicopter", "Bribe"] );
+
+        switch($card)
+        {
+            case 'Nitro1': 
+                $card = new Card_Nitro(new CardPower_One());
+                break;
+            case 'Nitro2': 
+                $card = new Card_Nitro(new CardPower_Two());
+                break;
+            case 'Rut': 
+                $card =  new Card_Rut();
+            break;
+            case 'HayBale1': 
+                $card = new Card_HayBale(new CardPower_One());
+                break;
+            case 'HayBale2': 
+                $card = new Card_HayBale(new CardPower_Two());
+                break;
+            case 'Dynamite': 
+                $card = new Card_Dynamite();
+                break;
+            case 'HighVoltage': 
+                $card = new Card_HighVoltage();
+                break;
+            case 'Watchdog': 
+                $card = new Card_Watchdog();
+                break;
+            case 'Helicopter': 
+                $card = new Card_Helicopter();
+                break;
+            case 'Bribe': 
+                $card = new Card_Bribe();
+                break;
+        }
+
+        $this->game->discard($card);
+
+        self::ajaxResponse(); 
+    }  
   }
   
 

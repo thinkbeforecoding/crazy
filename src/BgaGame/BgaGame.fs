@@ -103,6 +103,18 @@ type Bridge(dispatch: ClientMsg -> unit) =
             | PlayHelicopter (Crossroad(Axe(q,r), side)) -> send ("playHelicopter", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ])
             | PlayBribe (Parcel(Axe(q,r)))  ->  send ("playBribe", createObj ["q" ==>  q; "r" ==> r; "lock" ==> true ])
             | PlayHayBale _ -> () 
+        | Player.Discard c ->
+            match c with
+            | Nitro One -> send ("discard", createObj [ "card" ==> "Nitro1"; "lock" ==> "true" ])
+            | Nitro Two -> send ("discard", createObj [ "card" ==> "Nitro2"; "lock" ==> "true" ])
+            | Rut -> send ("discard", createObj [ "card" ==> "Rut"; "lock" ==> "true" ])
+            | HayBale One -> send ("discard", createObj [ "card" ==> "HayBale1"; "lock" ==> "true" ])
+            | HayBale Two -> send ("discard", createObj [ "card" ==> "HayBale2"; "lock" ==> "true" ])
+            | Dynamite -> send ("discard", createObj [ "card" ==> "Dynamite"; "lock" ==> "true" ])
+            | HighVoltage -> send ("discard", createObj [ "card" ==> "HighVoltage"; "lock" ==> "true" ])
+            | Watchdog -> send ("discard", createObj [ "card" ==> "Watchdog"; "lock" ==> "true" ])
+            | Helicopter -> send ("discard", createObj [ "card" ==> "Helicopter"; "lock" ==> "true" ])
+            | Bribe -> send ("discard", createObj [ "card" ==> "Bribe"; "lock" ==> "true" ])
         | Player.Start _ -> ()
         //send json
 
@@ -217,6 +229,9 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         |> handleCommand  currentModel
     | Move(dir,crossroad) ->
         Player.Move { Direction = dir; Destination = crossroad }
+        |> handleCommand currentModel
+    | DiscardCard(card) ->
+        Player.Discard card
         |> handleCommand currentModel
     | SelectCard(card,i) ->
         { currentModel with
