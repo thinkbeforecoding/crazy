@@ -59,11 +59,11 @@ body {
     margin-top: 2em;
 }
 .fence {
-    background-size: contain;
-    background-repeat: no-repeat;
     width: 4.3%;
     height: 1.1%;
     position: absolute;
+    background-image: url(~img/fences.png);
+    background-size: 100% 400%;
 }
 .player {
     background-image: url(~img/players.png);
@@ -158,9 +158,9 @@ i.fa-bars {
     }
 }
 .hay-bale {
-    background-image: url(~img/hay-bale.png);
-    background-repeat: no-repeat;
-    background-size: contain;
+    background-image: url(~img/markers.png);
+    background-size: 800% 100%;
+    background-position: 100% 0;
     position: absolute;
 
     width: 3%;
@@ -289,8 +289,8 @@ i.fa-bars {
 
     .flash {
         background-image: url(~img/markers.png);
-        background-size: 1400% 100%;
-        background-position: 200% 0;
+        background-size: 1600% 100%;
+        background-position: 400% 0;
         width: 0.75em;
         height: 1.5em;
         margin-right: 0.15em;
@@ -298,7 +298,7 @@ i.fa-bars {
     }
 
     .flash.inactive {
-       background-position-x: 100%;
+       background-position-x: 300%;
     }
 }
 
@@ -512,7 +512,7 @@ i.fa-bars {
         width: 2.5em;
         height: 2.5em;
         background-image: url(~img/markers.png);
-        background-size: 700% 100%;
+        background-size: 800% 100%;
         background-position-y: 0;
         display: inline-block;
     }
@@ -588,7 +588,7 @@ i.fa-bars {
 
 .blue {
     .fence {
-        background-image: url(~img/fence-blue.png);
+        background-position: 0 0;
     }
 
     .player {
@@ -609,7 +609,7 @@ i.fa-bars {
 }
 .yellow {
     .fence {
-        background-image: url(~img/fence-yellow.png);
+        background-position: 0 -100%;
     }
 
     .player {
@@ -629,7 +629,7 @@ i.fa-bars {
 
 .purple {
     .fence {
-        background-image: url(~img/fence-purple.png);
+        background-position: 0 -200%;
     }
 
     .player {
@@ -651,7 +651,7 @@ i.fa-bars {
 
 .red {
     .fence {
-        background-image: url(~img/fence-red.png);
+        background-position: 0 -300%;
     }
 
     .player {
