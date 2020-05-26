@@ -66,16 +66,16 @@ body {
     position: absolute;
 }
 .player {
-    background-size: contain;
-    background-repeat: no-repeat;
+    background-image: url(~img/players.png);
+    background-size: 400% 300%;
     width: 2.5%;
     height: 2.5%;
     position: absolute;
 }
 
 .tile {
-    background-size: contain;
-    background-repeat: no-repeat;
+    background-image: url(~img/tiles.png);
+    background-size: 600% 100%;
     width: 9%;
     height: 9%;
     position: absolute;
@@ -107,15 +107,15 @@ body {
 }
 
 .barn {
-    background-size: contain;
     width: 9%;
     height: 9%;
     position: absolute;
-    background-image: url(~img/barn.png);
-    background-repeat: no-repeat;
+    background-image: url(~img/tiles.png);
+    background-size: 600% 100%;
+    background-position: -400% 0;
 }
 .barn.occupied {
-    background-image: url(~img/barn-occupied.png);
+    background-position: -500% 0;
 }
 
 i.fa-bars {
@@ -288,16 +288,17 @@ i.fa-bars {
 
 
     .flash {
-        background-image: url(~img/flash.png);
-        width: 1.5em;
+        background-image: url(~img/markers.png);
+        background-size: 1400% 100%;
+        background-position: 200% 0;
+        width: 0.75em;
         height: 1.5em;
+        margin-right: 0.15em;
         display: inline-block;
-        background-size: contain;
-        background-repeat: no-repeat;
     }
 
     .flash.inactive {
-        background-image: url(~img/flash-inactive.png);
+       background-position-x: 100%;
     }
 }
 
@@ -483,29 +484,10 @@ i.fa-bars {
             position: static;
         }
 
-        .blue {
-            .player:hover {
-                background-image: url(~img/selected-player-blue.png);
-            }
+        .player:hover {
+            background-position-y: -100%;
         }
 
-        .yellow {
-            .player:hover {
-                background-image: url(~img/selected-player-yellow.png);
-            }
-        }
-
-        .purple {
-            .player:hover {
-                background-image: url(~img/selected-player-purple.png);
-            }
-        }
-
-        .red {
-            .player:hover {
-                background-image: url(~img/selected-player-red.png);
-            }
-        }
     }
 }
 
@@ -530,7 +512,7 @@ i.fa-bars {
         width: 2.5em;
         height: 2.5em;
         background-image: url(~img/markers.png);
-        background-size: 600% 100%;
+        background-size: 700% 100%;
         background-position-y: 0;
         display: inline-block;
     }
@@ -610,19 +592,19 @@ i.fa-bars {
     }
 
     .player {
-        background-image: url(~img/player-blue.png);
+        background-position: 0 0;
     }
 
     .player.selected {
-        background-image: url(~img/selected-player-blue.png);
+        background-position: 0 -100%;
     }
 
     .player.ko {
-        background-image: url(~img/ko-player-blue.png);
+        background-position: 0 -200%;
     }
 
     .tile {
-        background-image: url(~img/tile-blue.png);
+        background-position: 0 0;
     }
 }
 .yellow {
@@ -631,38 +613,17 @@ i.fa-bars {
     }
 
     .player {
-        background-image: url(~img/player-yellow.png);
+        background-position: -100% 0;
     }
     .player.selected {
-        background-image: url(~img/selected-player-yellow.png);
-    }
-    .ko.selected {
-        background-image: url(~img/ko-player-yellow.png);
-    }
-
-    .tile {
-        background-image: url(~img/tile-yellow.png);
-    }
-}
-
-.red {
-    .fence {
-        background-image: url(~img/fence-red.png);
-    }
-
-    .player {
-        background-image: url(~img/player-red.png);
-    }
-
-    .player.selected {
-        background-image: url(~img/selected-player-red.png);
+        background-position: -100% -100%;
     }
     .player.ko {
-        background-image: url(~img/ko-player-red.png);
+        background-position: -100% -200%;
     }
 
     .tile {
-        background-image: url(~img/tile-red.png);
+        background-position: -100% 0%;
     }
 }
 
@@ -672,17 +633,40 @@ i.fa-bars {
     }
 
     .player {
-        background-image: url(~img/player-purple.png);
+        background-position: -200% 0;
     }
+
     .player.selected {
-        background-image: url(~img/selected-player-purple.png);
+        background-position: -200% -100%;
     }
+
     .player.ko {
-        background-image: url(~img/ko-player-purple.png);
+        background-position: -200% -200%;
     }
 
     .tile {
-        background-image: url(~img/tile-purple.png);
+        background-position: -200% 0%;
+    }
+}
+
+.red {
+    .fence {
+        background-image: url(~img/fence-red.png);
+    }
+
+    .player {
+        background-position: -300% 0;
+    }
+
+    .player.selected {
+        background-position: -300% -100%;
+    }
+    .player.ko {
+        background-position: -300% -200%;
+    }
+
+    .tile {
+        background-position: -300% 0%;
     }
 }
 
