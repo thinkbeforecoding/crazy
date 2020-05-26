@@ -358,26 +358,34 @@ class CrazyFarmers extends Table
         if (!empty($es))
         {
 
-            $result = SharedServer___textAction($board, $es);
-            $text = $result[0];
+
             $args = [];
-            foreach(Map::toSeq($result[1]) as $kv)
-            {
-                $args[$kv[0]] = $kv[1];
-            }
-            
-                
             $args['version'] = $newVersion;
             foreach(self::loadPlayersBasicInfos() as $id => $p)
             {
                 $privateEs = SharedServer___privateEvents((string)$id, $es);
                 $args['events'] = convertToSimpleJson($privateEs);
-                self::notifyPlayer($id, "events", $text, $args );
+                self::notifyPlayer($id, "events", "", $args );
             }
 
             $privateEs = SharedServer___privateEvents("", $es);
             $args['events'] = convertToSimpleJson($privateEs);
             self::notifyAllPlayers( "specatorEvents", "", $args);
+
+            foreach ($es as $e)
+            {
+                $result = SharedServer___textAction($board, $e);
+                $text = $result[0];
+                if (!is_null($text))
+                {
+                    $args = [];
+                    foreach(Map::toSeq($result[1]) as $kv)
+                    {
+                        $args[$kv[0]] = $kv[1];
+                    }
+                    self::notifyAllPlayers("messages", $text, $args );
+                }
+            }
         }
         self::updateState($es,$board);
 

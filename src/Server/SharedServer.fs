@@ -117,7 +117,7 @@ let cardIcon card =
     "<div class=\"cardicon\"><div class=\"" + cardName + "\"></div></div>"
 
 
-let textAction b es = 
+let textAction b e = 
     match b with
     | Board board
     | Won (_,board) ->
@@ -131,40 +131,34 @@ let textAction b es =
                 | Red -> "EA222F"
             "<span style=\"font-weight:bold;color:#" + color + "\">" + name + "</span>"
 
-        let notifs =
-            [ for e in es do 
-                match e with
-                | Board.Played (p, Player.Annexed(e)) ->
-                    Php.clienttranslate "${player} takes over ${parcels} parcel(s)", Map.ofList  [ "player" ==> playerName p; "parcels" ==> List.length e.NewField ]
-                | Board.Played(p, Player.Event.CutFence e) ->
-                    Php.clienttranslate "${player} cut ${cut}'s fence",  Map.ofList [ "player" ==> playerName p; "cut" ==> e.Player ]
-                | Board.PlayerDrewCards e ->
-                    Php.clienttranslate "and draws ${cardcount} card(s)", Map.ofList [ "cardcount" ==> Hand.count e.Cards]
-                | Board.Played(p, Player.Event.Bribed e) ->
-                    Php.clienttranslate "${icon} ${player} takes one of ${bribed}'s parcel", Map.ofList ["player" ==> playerName p; "bribed" ==> playerName e.Victim;  "icon" ==> cardIcon Bribe  ]
-                | Board.Played(p, Player.Event.Eliminated) ->
-                    Php.clienttranslate "${player} is eliminated !", Map.ofList ["player" ==> playerName p ]
-                | Board.Played(p, Player.Event.CardPlayed(PlayHelicopter _)) ->
-                    Php.clienttranslate "${icon} ${player} is heliported to new crossroad", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Helicopter ]
-                | Board.Played(p, Player.Event.CardPlayed(PlayHighVoltage)) ->
-                    Php.clienttranslate "${icon} ${player}'s fence cannot be cut until next turn", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon HighVoltage ]
-                | Board.Played(p, Player.Event.CardPlayed(PlayWatchdog)) ->
-                    Php.clienttranslate "${icon} ${player} field is protected until next turn", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Watchdog ]
-                | Board.Played(p, Player.CardPlayed(PlayRut victim )) ->
-                    Php.clienttranslate "${icon} ${player} makes ${rutted} loose 2 moves during next turn", Map.ofList ["player" ==> playerName p; "rutted" ==> playerName victim; "icon" ==> cardIcon Rut ]
-                | Board.Played(p, Player.CardPlayed(PlayHayBale(hb,_)  as pc) ) ->
-                    Php.clienttranslate "${icon} ${player} blocks ${haybales} paths", Map.ofList ["player" ==> playerName p; "haybales" ==> List.length hb; "icon" ==> cardIcon (Card.ofPlayCard pc) ]
-                | Board.Played(p, Player.CardPlayed(PlayDynamite _)) ->
-                    Php.clienttranslate "${icon} ${player} dynamites 1 hay bale", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Dynamite ]
-                | Board.Played(p, Player.CardPlayed(PlayNitro power)) ->
-                    Php.clienttranslate "${icon} ${player} get ${nitro} extra move(s)", Map.ofList ["player" ==> playerName p; "nitro" ==> (match power with One -> 1 | Two -> 2); "icon" ==> cardIcon (Nitro power) ]
-                | _ -> ()
-                ]
-        let text = notifs |> List.map (fun (t,_) -> t) |> List.toArray |> String.concat ", "
-        let map = notifs |> List.fold (fun acc (_,m) -> m |> Map.fold (fun m2 k v -> Map.add k v m2) acc) Map.empty
-        text, map
+        match e with
+        | Board.Played (p, Player.Annexed(e)) ->
+            Php.clienttranslate "${player} takes over ${parcels} parcel(s)", Map.ofList  [ "player" ==> playerName p; "parcels" ==> List.length e.NewField ]
+        | Board.Played(p, Player.Event.CutFence e) ->
+            Php.clienttranslate "${player} cut ${cut}'s fence",  Map.ofList [ "player" ==> playerName p; "cut" ==> playerName e.Player ]
+        | Board.PlayerDrewCards e ->
+            Php.clienttranslate "${player} draws ${cardcount} card(s)", Map.ofList [  "player" ==> playerName e.Player; "cardcount" ==> Hand.count e.Cards]
+        | Board.Played(p, Player.Event.Bribed e) ->
+            Php.clienttranslate "${icon} ${player} takes one of ${bribed}'s parcel", Map.ofList ["player" ==> playerName p; "bribed" ==> playerName e.Victim;  "icon" ==> cardIcon Bribe  ]
+        | Board.Played(p, Player.Event.Eliminated) ->
+            Php.clienttranslate "${player} is eliminated !", Map.ofList ["player" ==> playerName p ]
+        | Board.Played(p, Player.Event.CardPlayed(PlayHelicopter _)) ->
+            Php.clienttranslate "${icon} ${player} is heliported to new crossroad", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Helicopter ]
+        | Board.Played(p, Player.Event.CardPlayed(PlayHighVoltage)) ->
+            Php.clienttranslate "${icon} ${player}'s fence cannot be cut until next turn", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon HighVoltage ]
+        | Board.Played(p, Player.Event.CardPlayed(PlayWatchdog)) ->
+            Php.clienttranslate "${icon} ${player} field is protected until next turn", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Watchdog ]
+        | Board.Played(p, Player.CardPlayed(PlayRut victim )) ->
+            Php.clienttranslate "${icon} ${player} makes ${rutted} loose 2 moves during next turn", Map.ofList ["player" ==> playerName p; "rutted" ==> playerName victim; "icon" ==> cardIcon Rut ]
+        | Board.Played(p, Player.CardPlayed(PlayHayBale(hb,_)  as pc) ) ->
+            Php.clienttranslate "${icon} ${player} blocks ${haybales} paths", Map.ofList ["player" ==> playerName p; "haybales" ==> List.length hb; "icon" ==> cardIcon (Card.ofPlayCard pc) ]
+        | Board.Played(p, Player.CardPlayed(PlayDynamite _)) ->
+            Php.clienttranslate "${icon} ${player} dynamites 1 hay bale", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Dynamite ]
+        | Board.Played(p, Player.CardPlayed(PlayNitro power)) ->
+            Php.clienttranslate "${icon} ${player} get ${nitro} extra move(s)", Map.ofList ["player" ==> playerName p; "nitro" ==> (match power with One -> 1 | Two -> 2); "icon" ==> cardIcon (Nitro power) ]
+        | _ -> null, Map.empty
     | _ ->
-        "", Map.empty
+        null, Map.empty
 
 
 module Stats =

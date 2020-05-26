@@ -288,6 +288,7 @@ function (dojo, declare,ui,c,v,crazy) {
             // 
 
             dojo.subscribe( 'events', this, "notif_Events" );
+            dojo.subscribe( 'messages', this, "notif_messages" );
             if (this.isSpectator) 
             {
                 dojo.subscribe( 'specatorEvents', this, "notif_Events" );
@@ -304,6 +305,12 @@ function (dojo, declare,ui,c,v,crazy) {
             
             // TODO: play the card in the user interface.
         },     
+        notif_messages: function( notif )
+        {
+            console.log( 'notif_messages' );
+            
+            // TODO: play the card in the user interface.
+        },  
         // TODO: from this point and below, you can write your game notifications handling methods
         
         /*

@@ -142,7 +142,7 @@ let parcel (Parcel pos) attr =
         []
 let tile (Parcel pos) f = 
     let x,y = Pix.ofTile pos |> Pix.rotate
-    div ([ ClassName "tile"
+    div ([ ClassName "tile empty"
            Style [ Left (sprintf "%f%%" x)
                    Top (sprintf "%f%%" y)
                    ]
@@ -156,7 +156,7 @@ let tooltip txt =
 
 let tileWithTooltip (Parcel pos) text = 
     let x,y = Pix.ofTile pos |> Pix.rotate
-    div ([ ClassName "tile"
+    div ([ ClassName "tile empty"
            Style [ Left (sprintf "%f%%" x)
                    Top (sprintf "%f%%" y)
                    ]
@@ -339,7 +339,7 @@ let handView dispatch title playerId board cardAction hand =
                   div [ ClassName "buttons" ] [ yield! buttons; yield cancel ] 
               else
                   div [ ClassName "buttons" ]
-                    [ str (translate ("You can only play cards during your turn."))
+                    [ str (translate ("You can only play cards during your turn"))
                       cancel ]
             ]
 
@@ -430,7 +430,7 @@ let handView dispatch title playerId board cardAction hand =
                                       match Board.bribeParcels board with
                                       | Ok _ -> str (translate "Select a parcel on the border of your field to take over")
                                       | Error Board.InstantVictory -> str (translate "You cannot bribe to take the last parcel ! That would be too visible !")
-                                      | Error Board.NoParcelsToBribe -> str (translate "There is no parcel to bribe.")
+                                      | Error Board.NoParcelsToBribe -> str (translate "There is no parcel to bribe")
                                     ]
                                     [ go 
                                       yield! discard Bribe]
@@ -600,7 +600,7 @@ let bonusMarkers bonus =
             ]
           if bonus.Watched then
             div [ ClassName "watchdog-marker" ] [
-                tooltip (translate "Watchdog: The player's fence is protected until next turn")
+                tooltip (translate "Watchdog: The player's field is protected until next turn")
             ]
           if bonus.Heliported > 0 then
             div [ ClassName "helicopter-marker" ] [

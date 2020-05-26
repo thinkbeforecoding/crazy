@@ -325,7 +325,7 @@ module.exports = [/*{
             },
             {
                 test: /\.(woff|woff2|ttf|eot)(\?.*)?$/,
-                use: [isProduction ? 'file-loader?name=./font/[name].[ext]' : 'file-loader?name=[name].[ext]'] 
+                use: [isProduction ? 'file-loader?name=./img/[name].[ext]' : 'file-loader?name=[name].[ext]'] 
             }
 
 

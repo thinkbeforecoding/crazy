@@ -1654,20 +1654,21 @@ module Board =
 
             let otherPlayersFields =
                  currentOtherPlayers board
-                 |> List.map (fun (_, player) -> 
-                        let field = Player.field player
-                        let bonus = Player.bonus player
+                 |> List.map (fun (_, neighborPlayer) -> 
+                        let field = Player.field neighborPlayer
+                        let bonus = Player.bonus neighborPlayer
                         if Field.size field = 1 || bonus.Watched  then
                             Field.empty
                         else
                             let cutParcels = cutParcels field (Field.intersect field border)
                             
-                            match player with
+                            match neighborPlayer with
                             | Playing p ->
                                 let startCrossRoad = Fence.start p.Tractor p.Fence
                                 let startTiles = 
                                     Crossroad.neighborTiles startCrossRoad
                                     |> Field.ofParcels
+                                    |> Field.intersect field
 
                                 
                                 field - startTiles - cutParcels
@@ -1697,9 +1698,9 @@ module Board =
             [ for barn in Field.parcels barns do
                 barn, BarnBlocker
             
-              for (_, player) in currentOtherPlayers board do
-                let field = Player.field player
-                let bonus = Player.bonus player
+              for (_, neighborPlayer) in currentOtherPlayers board do
+                let field = Player.field neighborPlayer
+                let bonus = Player.bonus neighborPlayer
                 let fieldBorder = Field.intersect border field
                 if Field.size field = 1  then
                     for p in Field.parcels fieldBorder do
@@ -1708,12 +1709,13 @@ module Board =
                     for p in Field.parcels fieldBorder do
                         p, WatchedBlocker
                 else
-                    match player with
+                    match neighborPlayer with
                     | Playing p ->
                         let startCrossRoad = Fence.start p.Tractor p.Fence
                         let startTiles = 
                             Crossroad.neighborTiles startCrossRoad
                             |> Field.ofParcels
+                            |> Field.intersect field
                         let borderStarts = Field.intersect startTiles border
                         for p in Field.parcels borderStarts do
                             p, FenceBlocker
