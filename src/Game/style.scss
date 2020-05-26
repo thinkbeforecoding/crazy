@@ -334,9 +334,9 @@ i.fa-bars {
         div {
             @include hover-count;
             font-size: large;
-            background-image: url(~img/card-back.jpg);
-            background-size: contain;
-            background-repeat: no-repeat;
+            background-image: url(~img/cards.jpg);
+            background-size: 1100% 100%;
+            background-position: 0 0;
             border-radius: 10%;
             position: absolute;
             top: 0;
@@ -394,6 +394,7 @@ i.fa-bars {
         flex-flow: column;
         align-items: center;
     }
+
     .board-box {
         max-width: 100vh;
         width: 100%
@@ -455,6 +456,9 @@ i.fa-bars {
         width: 4em;
         padding-top: 144%;
         position: relative;
+        background-image: url(~img/cards.jpg);
+        background-position-y: 0;
+        background-size: 1100% 100%;
     }
 
     .played-card {
@@ -512,6 +516,9 @@ i.fa-bars {
 
     .card {
         width: auto;
+        background-image: url(~img/cards.jpg);
+        background-size: 1100% 100%;
+        background-position-y: 0 ;
     }
 }
 
@@ -689,7 +696,6 @@ div.card {
     width: 5vw;
     padding-top: 144%;
     background-size: contain;
-    background-repeat: no-repeat;
     border-radius: 0.5vw;
     background-clip: padding-box;
     box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
@@ -700,47 +706,47 @@ div.card {
 
 div.back {
     position: relative;
-    background-image: url(~img/card-back.jpg);
+    background-position-x: 0;
 }
 
 .nitro-1 {
-    background-image: url(~img/card-nitro-1.jpg);
+    background-position-x: -100%;
 }
 
 .nitro-2 {
-    background-image: url(~img/card-nitro-2.jpg);
+    background-position-x: -200%;
 }
 
 .rut {
-    background-image: url(~img/card-rut.jpg);
+    background-position-x: -300%;
 }
 
 .hay-bale-1 {
-    background-image: url(~img/card-1-hay-bale.jpg);
+    background-position-x: -400%;
 }
 
 .hay-bale-2 {
-    background-image: url(~img/card-2-hay-bales.jpg);
+    background-position-x: -500%;
 }
 
 .dynamite {
-    background-image: url(~img/card-dynamite.jpg);
+    background-position-x: -600%;
 }
 
 .high-voltage {
-    background-image: url(~img/card-high-voltage.jpg);
+    background-position-x: -700%;
 }
 
 .watchdog {
-    background-image: url(~img/card-watchdog.jpg);
+    background-position-x: -800%;
 }
 
 .helicopter {
-    background-image: url(~img/card-helicopter.jpg);
+    background-position-x: -900%;
 }
 
 .bribe {
-    background-image: url(~img/card-bribe.jpg);
+    background-position-x: -1000%;
 }
 
 

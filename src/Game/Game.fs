@@ -44,6 +44,10 @@ let handleCommand (model : Model) command =
     match model.PlayerId with
     | Some playerid ->
         let events = Board.decide (Board.Play(playerid, command)) model.Board 
+                    // fitler out PlayerDrewCard since randomness cannot be computed locally
+                    // the actual card will be sent by the server
+                    |> List.filter (function Board.PlayerDrewCards e when e.Player = playerid -> false | _ -> true )
+
         if List.isEmpty events then
             model, Cmd.none
         else
