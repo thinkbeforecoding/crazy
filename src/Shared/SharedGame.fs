@@ -380,6 +380,12 @@ module Parcel =
           Crossroad(p+Axe.SW, CRight)
           Crossroad(p+Axe.SE, CLeft) ]
 
+    let contains (Crossroad(t,s)) (Parcel p) =
+        t = p
+        || (s = CRight && (t = p+Axe.NW || t = p+Axe.SW))
+        || (s = CLeft && (t = p+Axe.NE || t = p+Axe.SE))
+        
+
     let isOnBoard (Parcel p) =
         let x,y,z = Axe.cube p
         abs x <= 3 && abs y <= 3 && abs z <= 3
@@ -539,6 +545,33 @@ module Fence =
     let fencePaths (Fence paths) =
         paths |> List.map fst
 
+    let bribeAnnexation p tractor (Fence paths) =
+        let rec findExit remainingLength pos paths =
+           match paths with
+           | [] -> Some (remainingLength, pos, [])
+           | (_,dir) :: tail ->
+               let next = Crossroad.neighbor (Direction.rev dir) pos
+               if Parcel.contains next p then
+                   findExit remainingLength next tail
+               else
+                   Some (remainingLength, pos, paths)
+
+        let rec findContact remainingLength pos paths   =
+           match paths with
+           | [] -> None
+           | (_,dir) :: tail ->
+               let next = Crossroad.neighbor (Direction.rev dir) pos
+               if Parcel.contains next p then
+                   findExit (remainingLength+1) next tail
+               else
+                   findContact (remainingLength+1) next tail 
+            
+
+        if Parcel.contains tractor p then
+            findExit 0 tractor paths
+        else
+            findContact 0 tractor paths
+
 
     let start tractor (Fence paths) =
         let rec loop pos paths =
@@ -555,6 +588,8 @@ module Fence =
     let length (Fence paths) = List.length paths
 
     let remove toRemove (Fence paths) = Fence (List.skip (length toRemove) paths)
+
+    let truncate count (Fence paths) = Fence (List.truncate count paths)
 
     let toOriented tractor (Fence paths) =
         let o,end' =
@@ -763,6 +798,8 @@ module Field =
         else
             empty
 
+
+        
         
 module Barns =
     let empty = { Free = Field.empty; Occupied = Field.empty }
@@ -986,6 +1023,7 @@ module Player =
         | FenceLooped of FenceLooped
         | MovedInField of Moved
         | MovedPowerless of Moved
+        | FenceReduced of FenceReduced
         | Annexed of Annexed
         | CutFence of CutFence
         | PoweredUp
@@ -1019,9 +1057,12 @@ module Player =
            LostFields: (string * Parcel list) list
            FreeBarns: Parcel list
            OccupiedBarns: Parcel list
+           FenceLength: int
         }
     and CutFence = 
         { Player: string }
+    and FenceReduced = 
+        { NewLength: int }
     and SpedUp =
         { Speed: int }
     and Bribed = 
@@ -1195,7 +1236,8 @@ module Player =
                                     NewField = Field.parcels annexed
                                     LostFields = lostFields
                                     FreeBarns = annexedBarns.Free |> Field.parcels
-                                    OccupiedBarns = annexedBarns.Occupied |> Field.parcels }
+                                    OccupiedBarns = annexedBarns.Occupied |> Field.parcels
+                                    FenceLength = 0}
 
                                 for playerid, p in otherPlayers do
                                     match p with
@@ -1283,7 +1325,51 @@ module Player =
                           for playerId, player in otherPlayers do
                             if field player |> Field.containsParcel parcel then
                               Bribed { Parcel = parcel; Victim = playerId }
-                          BonusDiscarded (Card.ofPlayCard card) ]
+                          BonusDiscarded (Card.ofPlayCard card)
+
+                          match Fence.bribeAnnexation parcel p.Tractor p.Fence with
+                          | None -> ()
+                          | Some(remaining, _, [] ) ->
+                                FenceReduced { NewLength = remaining }
+                          | Some(remaining, pos, fence) ->
+                             
+                                let baseAnnexed = 
+                                    annexation (p.Field + Field.ofParcels [parcel]) (Fence fence) pos
+
+                                let annexed = 
+                                    otherPlayers
+                                    |> List.fold (fun anx (_,p) ->
+                                        anx - watchedField p) baseAnnexed
+
+                                let lostFields = 
+                                    [ for color,p in otherPlayers do
+                                        match p with
+                                        | Playing p ->
+                                            let lost = Field.intersect annexed p.Field
+                                            if not (Field.isEmpty lost) then
+                                                color, Field.parcels lost
+                                        |_ -> ()
+                                    ] 
+
+                                let annexedBarns = 
+                                    barns |> Barns.intersectWith annexed
+
+                                Annexed {
+                                    NewField = Field.parcels annexed
+                                    LostFields = lostFields
+                                    FreeBarns = annexedBarns.Free |> Field.parcels
+                                    OccupiedBarns = annexedBarns.Occupied |> Field.parcels
+                                    FenceLength = remaining }
+
+
+
+
+
+                          
+                          
+                          
+                          
+                          ]
                     | _ -> []
 
 
@@ -1315,8 +1401,9 @@ module Player =
         | Playing player, FenceLooped e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.remove e.Loop player.Fence ; Moves = Moves.doMove player.Moves }
         | Playing player, MovedInField e -> Playing { player with Tractor = e.Crossroad; Fence = Fence.empty; Moves = Moves.doMove player.Moves  }
         | Playing player, MovedPowerless e -> Playing { player with Tractor = e.Crossroad; Moves = Moves.doMove player.Moves  }
+        | Playing player, FenceReduced e -> Playing { player with Fence = Fence.truncate e.NewLength player.Fence}
         | Playing player, PoweredUp -> Playing { player with Power = PowerUp }
-        | Playing player, Annexed e -> Playing { player with Fence = Fence.empty; Field = player.Field + Field.ofParcels e.NewField}
+        | Playing player, Annexed e -> Playing { player with Fence = Fence.truncate e.FenceLength player.Fence ; Field = player.Field + Field.ofParcels e.NewField}
         | Playing player, HighVoltaged -> Playing { player with Bonus = { player.Bonus with  HighVoltage = true}}
         | Playing player, Watched -> Playing { player with Bonus = { player.Bonus with  Watched = true }}
         | Playing player, Rutted -> Playing { player with Bonus = { player.Bonus with  Rutted = player.Bonus.Rutted + 1 }}
@@ -1549,6 +1636,7 @@ module Board =
        |> Map.fold (fun count _ p -> count + Player.fieldTotalSize p) 0
 
 
+
     let hayBales board =
         match board with
         | Board.InitialState -> Set.empty
@@ -1557,8 +1645,8 @@ module Board =
 
     let endGameWithBribe (board: PlayingBoard) =
         match board.Goal with
-        | Common goal ->
-            totalSize board + 1>= goal
+        | Common _ -> 
+            false // the parcel always belong to another player and wont change the total size
         | Individual goal ->
             let player = currentPlayer board
             Player.fieldTotalSize player + 1 >= goal

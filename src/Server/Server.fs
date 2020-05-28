@@ -222,12 +222,21 @@ module Dto =
     type FirstCrossroadSelectedDto =
         { Crossroad: CrossroadDto }
 
+    type FenceReducedDto =
+        { NewLength: int }
+
+    let ofFenceReduced (e: Player.FenceReduced) =
+        { NewLength = e.NewLength }
+
+    let toFenceReduced (e: FenceReducedDto) =
+        { Player.FenceReduced.NewLength = e.NewLength }
 
     type AnnexedDto =
         { NewField: ParcelDto[]
           LostFields: LostFieldDto[]
           FreeBarns: ParcelDto[]
-          OccupiedBarns: ParcelDto[] }
+          OccupiedBarns: ParcelDto[]
+          FenceLength: int option }
     and LostFieldDto = 
         { Player: string 
           Field: ParcelDto[]
@@ -352,9 +361,12 @@ let serialize =
                                      Dto.LostFields = e.LostFields |> Seq.map Dto.ofLostField |> Seq.toArray
                                      Dto.FreeBarns = Dto.ofParcels e.FreeBarns
                                      Dto.OccupiedBarns = Dto.ofParcels e.OccupiedBarns
+                                     Dto.FenceLength = Some e.FenceLength
                                      } }
     | Board.Event.Played (playerid, Player.Event.CutFence e) -> 
         "CutFence" , box { Player = playerid; Event =  { Dto.CutFenceDto.Player = e.Player }  }
+    | Board.Event.Played (playerid, Player.Event.FenceReduced e) -> 
+        "FenceReduced" , box { Player = playerid; Event =  Dto.ofFenceReduced e  }
     | Board.Event.Played (playerid, Player.Event.FenceDrawn e ) -> 
         "FenceDrawn" , box { Player = playerid; Event = Dto.ofMoved e }
     | Board.Event.Played (playerid, Player.Event.FenceLooped e ) -> 
@@ -406,9 +418,12 @@ let deserialize data =
                                               LostFields = e.LostFields |> Seq.map Dto.toLostField |> Seq.toList 
                                               FreeBarns = Dto.toParcels e.FreeBarns
                                               OccupiedBarns = Dto.toParcels e.OccupiedBarns
+                                              FenceLength = e.FenceLength |> Option.defaultValue 0
                                               })]
         | "CutFence", JObj { Player = p; Event = JObj (e: Dto.CutFenceDto) } -> 
             [Board.Played(p, Player.CutFence { Player = e.Player })]
+        | "FenceReduced", JObj { Player = p; Event = JObj (e: Dto.FenceReducedDto) } -> 
+            [Board.Played(p, Player.FenceReduced (Dto.toFenceReduced e)) ]
         | "FenceDrawn", JObj { Player = p; Event = JObj (e: Dto.MovedDto) } -> 
             [Board.Played(p, Player.FenceDrawn (Dto.toMoved e))]
         | "FenceLooped", JObj { Player = p; Event = JObj (e: Dto.FenceLoopedDto) } -> 
