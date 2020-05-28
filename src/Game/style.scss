@@ -23,7 +23,7 @@
     /*src: url('webfont.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
     /*url('webfont.woff2') format('woff2'), Super modern browsers */
     //src: url('webfont.woff') format('woff'), /* Modern browsers */
-    src: url(~fonts/BigSlabHammer.ttf) format('truetype') /* Safari, Android, iOS */
+    src: url('~fonts/BigSlabHammer.ttf') format('truetype'); /* Safari, Android, iOS */
 }
 
 $crazy-tree: #9DAA52;
@@ -512,13 +512,33 @@ i.fa-bars {
     flex: 1 1 auto;
     margin-left: 0.5em;
 
-    & > div  {
+    & > div {
         width: 2.5em;
         height: 2.5em;
         background-image: url(~img/markers.png);
         background-size: 800% 100%;
         background-position-y: 0;
         display: inline-block;
+
+        .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: black;
+            color: #fff;
+            text-align: center;
+            padding: 5px 0;
+            border-radius: 6px;
+            /* Position the tooltip text - see examples below! */
+            position: relative;
+            top: 2.5em;
+            left: -20px;
+            z-index: 30;
+        }
+
+    }
+
+    & > div:hover .tooltiptext {
+        visibility: visible;
     }
 
     .rut-marker {
@@ -683,11 +703,13 @@ div.card {
     /*margin-top: 3em;*/
     width: 5vw;
     padding-top: 144%;
-    background-size: contain;
     border-radius: 0.5vw;
     background-clip: padding-box;
     box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
     /*display: inline-block;*/
+    background-image: url(~img/cards.jpg);
+    background-position-y: 0;
+    background-size: 1100% 100%;
 }
 
 

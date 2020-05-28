@@ -155,9 +155,26 @@ abstract class FSharpList implements IteratorAggregate {
         return $result;
     }
 
+    static function head($list)
+    {
+        return $list->value;
+    }
+
     static function tail($list)
     {
         return $list->next;
+    }
+
+    static function last($list)
+    {
+        $value = NULL;
+        while($list instanceof Cons)
+        {
+            $value = $list->value;
+            $list = $list->next;
+        }
+
+        return $value;
     }
 
     static function truncate($count, $list)
@@ -186,6 +203,7 @@ abstract class FSharpList implements IteratorAggregate {
         $p = FSharpList::get_Nil();
         return $lst;
     }
+
     static function choose($projection, $list)
     {
         $lst = NULL;

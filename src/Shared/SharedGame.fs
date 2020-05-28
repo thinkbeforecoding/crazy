@@ -866,10 +866,12 @@ module HayBales =
         | CutPathBlocker
 
     let hayBaleDestinationsWithComment players hayBales =
-        let players = Set.unionMany [ for _,p in players do
-                           match p with
-                           | Playing p -> p.Fence |> Fence.fencePaths |> set
-                           | _ -> Set.empty ]
+        let players = 
+            Set.unionMany 
+                [ for _,p in players do
+                   match p with
+                   | Playing p -> p.Fence |> Fence.fencePaths |> set
+                   | _ -> Set.empty ]
         let cutPaths = findCutPaths hayBales
 
         
@@ -1613,27 +1615,30 @@ module Board =
     let isCutParcel (field: Field) (parcel: Parcel) =
         let neighbors =
             [ Axe.N; Axe.NE; Axe.SE; Axe.S; Axe.SW; Axe.NW ]
-            |> List.choose (fun axe -> 
-                                let n = parcel + axe
-                                if Field.containsParcel n field then Some n else None)
-        match neighbors with
-        | [n1;n2] -> not (Parcel.areNeighbors n1 n2)
-           
-        | [n1;n2;n3] -> not ((Parcel.areNeighbors n1 n2 && Parcel.areNeighbors n1 n3)
-                            || (Parcel.areNeighbors n2 n1 && Parcel.areNeighbors n2 n3)
-                            || (Parcel.areNeighbors n3 n1 && Parcel.areNeighbors n3 n2) )
-        | [n1;n2;n3;n4] ->
-            let dirs = 
-                set [ Parcel.getDir parcel n1
-                      Parcel.getDir parcel n2
-                      Parcel.getDir parcel n3
-                      Parcel.getDir parcel n4 ]
-            [ for d in 0 .. 5 -> Parcel.dirs d 4]
-            |> List.exists (fun ds -> ds = dirs)
-            |> not
+            
+            
+        let rec find neighbors result =
+            match neighbors with
+            | [] -> result
+            | axe :: tail ->            
+                let neighbor = parcel + axe
+                let infield = Field.containsParcel neighbor field 
+                match result with
+                | [] -> find tail [infield]
+                | prev :: _ when prev = infield -> find tail result
+                | _ -> find tail (infield :: result)
+
+        let changes = find neighbors []
+        let changes =
+            if List.head changes = List.last changes then
+                List.tail changes
+            else
+                changes
+
+        List.length changes > 2
+                
             
 
-        | _ -> false
 
     let cutParcels (field: Field) (Field parcels) =
         parcels
@@ -1692,7 +1697,10 @@ module Board =
         else
             let player = board.Players.[board.Table.Player]
             let border = Field.borderTiles (Player.field player) 
-            let barns = Field.intersect border (board.Barns.Free + board.Barns.Occupied)
+            let othersFields = Field.unionMany [for (_,p) in currentOtherPlayers board -> Player.field p ]
+            let barns = 
+                Field.intersect border (board.Barns.Free + board.Barns.Occupied)
+                |> Field.intersect othersFields
             let border = border - barns
 
             [ for barn in Field.parcels barns do

@@ -16,6 +16,7 @@ open Fable.Core
 open Browser.Dom
 open Fable.Core.JsInterop
 open Fable.SimpleJson
+open SharedClient
 
 console.log("Startgin BGAGame loading")
 //module BGA =
@@ -58,7 +59,7 @@ module Serialization =
 [<AllowNullLiteral>]
 type gamegui =
     abstract constructor: unit -> unit
-    abstract setup: string * obj * int * (string * obj -> unit) -> unit
+    abstract setup: string option * obj * int * (string * obj -> unit) -> unit
     abstract onEnteringState: string ->  obj[] -> unit
     abstract onLeavingState: string -> obj[] -> unit
     abstract onUpdateActionButtons: string -> obj[] -> unit
@@ -158,7 +159,9 @@ type Bridge(dispatch: ClientMsg -> unit) =
 
 
             send <- sendCallback
-            dispatch (SyncPlayer playerId)
+            match playerId with
+            | Some playerId -> dispatch (SyncPlayer playerId)
+            | None -> ()
             dispatch (Sync (fsBoard, version, []))
         member _.onEnteringState stateName args =
             console.log("Entering state: " + stateName)
@@ -181,7 +184,7 @@ module Program =
         program
         |> Program.withSubscription(fun _ -> [ fun dispatch ->
             bridge <- Bridge(f >> dispatch )
-            window?crazyfarmers <- bridge ])
+            document?crazyfarmers <- bridge ])
     let withExtraView view (program: Program<'arg,'model,'msg,'view>) =
         let mutable lastRequest = None
         let setState model dispatch =
@@ -216,6 +219,7 @@ let init () : Model * Cmd<Msg> =
       DashboardOpen = true
       PlayedCard = None
       Chat = { Show = false; Entries = []; Pop = false}
+      ShowVictory = true
     }, Cmd.none
 
 
@@ -371,6 +375,8 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | ToggleChat 
     | Remote(ReceiveMessage _) ->
         currentModel, Cmd.none
+    | HideVictory ->
+         {currentModel with ShowVictory = false}, Cmd.none
 
 let playerBoard board playerid (player: CrazyPlayer) dispatch =
     div [] [
@@ -477,15 +483,19 @@ let view (model : Model) (dispatch : Msg -> unit) =
                   div [ ClassName "board" ]
                       [ yield! boardView model.CardAction board
             
-                        let player = board.Players.[winner]
+                        if model.ShowVictory then
+                            let player = board.Players.[winner]
 
-                        div [ ClassName "victory" ]
-                            [ p [] [ str "And the winner is"]
-                              div [ ClassName ("winner " + colorName (Player.color player)) ]
-                                  [ div [ ClassName "player"] [] ]
-                              p [] [ str board.Table.Names.[winner] ] 
+                            div [ ClassName "victory" ]
+                                [ p [] [ str (Globalization.translate "And the winner is")]
+                                  div [ ClassName ("winner " + colorName (Player.color player)) ]
+                                      [ div [ ClassName "player"] [] ]
+                                  p [] [ str board.Table.Names.[winner] ] 
 
-                              ] ] ]
+                                  p [ ClassName "back"] [ a [ Href "#"; OnClick(fun _ -> dispatch HideVictory) ] [ str (Globalization.translate "Hide") ]]
+
+                                  ] ]
+                      ]
             ]
 
 

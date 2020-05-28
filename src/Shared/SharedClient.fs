@@ -41,6 +41,7 @@ type Model =
     DashboardOpen: bool
     PlayedCard: Card option
     Chat: Chat
+    ShowVictory: bool
     }
 
 
@@ -64,6 +65,7 @@ type Msg =
     | SendMessage of string
     | ToggleChat
     | HidePop
+    | HideVictory
 
 
 

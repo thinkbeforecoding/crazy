@@ -30,7 +30,7 @@ function (dojo, declare,ui,c,v,crazy) {
             // Here, you can init the global variables of your user interface
             // Example:
             // this.myGlobalValue = 0;
-            this.crazy = window.crazyfarmers;
+            this.crazy = document.crazyfarmers;
             this.crazy.constructor();
         },
         
@@ -53,7 +53,7 @@ function (dojo, declare,ui,c,v,crazy) {
             console.log( "Starting game setup" );
             self = this;
 
-            this.crazy.setup(this.player_id.toString(), gamedatas.board,gamedatas.version, function(command,args) { return self.onCommand(command[0], command[1]); });
+            this.crazy.setup( (this.isSpectator ? null : this.player_id.toString()), gamedatas.board,gamedatas.version, function(command,args) { return self.onCommand(command[0], command[1]); });
             //this.cf.setup(gamedatas);
             // Setting up player boards
             for( var player_id in gamedatas.players )
@@ -308,8 +308,6 @@ function (dojo, declare,ui,c,v,crazy) {
         notif_messages: function( notif )
         {
             console.log( 'notif_messages' );
-            
-            // TODO: play the card in the user interface.
         },  
         // TODO: from this point and below, you can write your game notifications handling methods
         

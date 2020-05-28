@@ -35,6 +35,7 @@ let init () : Model * Cmd<Msg> =
       DashboardOpen = true
       PlayedCard = None
       Chat = { Entries = []; Show = false; Pop = false  }
+      ShowVictory = true
     }, Cmd.none
 
 // The update function computes the next state of the application based on the current state and the incoming events/messages
@@ -200,7 +201,8 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | HidePop ->
         { currentModel with
             Chat = { currentModel.Chat with Pop = false }}, Cmd.none
-        
+    | HideVictory ->
+        currentModel, Cmd.none
         
 let chatView dispatch playerId (board: PlayingBoard) chat =
     div [ classBaseList "chat" ["show", chat.Show]  ]

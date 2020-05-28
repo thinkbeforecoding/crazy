@@ -1388,6 +1388,7 @@ let opts   =
 
 let checker = FSharpChecker.Create(keepAssemblyContents = true)
 let result = checker.ParseAndCheckProject(opts) |> Async.RunSynchronously
+result.Errors
 let impls =
     [ for imp in result.AssemblyContents.ImplementationFiles do 
         imp.FileName, imp
