@@ -11,6 +11,7 @@ var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 var MiniCssExtractPlugin = require('mini-css-extract-plugin');
+var FixCssLoader = require('./fixcss-loader.js');
 
 var CONFIG = {
     // The tags to include the generated JS and CSS will be automatically injected in the HTML template
@@ -265,6 +266,9 @@ module.exports = [/*{
         }
 
     },
+    resolveLoader: {
+        modules: ['node_modules', path.resolve(__dirname)]
+        },
     // // Configuration for webpack-dev-server
     // devServer: {
     //     publicPath: '/1/',
@@ -309,6 +313,7 @@ module.exports = [/*{
                     isProduction
                         ? MiniCssExtractPlugin.loader
                         : 'style-loader',
+                    'fixcss-loader',
                     'css-loader',
                     {
                         loader: 'resolve-url-loader',

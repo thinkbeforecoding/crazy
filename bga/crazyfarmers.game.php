@@ -202,7 +202,7 @@ class CrazyFarmers extends Table
     {
         $result = array();
     
-        $current_player_id = self::getCurrentPlayerId();    // !! We must only return informations visible by this player !!
+        $current_player_id = strval(self::getCurrentPlayerId());    // !! We must only return informations visible by this player !!
     
         
         // Get information about players
