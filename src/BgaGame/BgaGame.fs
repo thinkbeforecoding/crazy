@@ -381,10 +381,14 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
 let playerBoard board playerid (player: CrazyPlayer) dispatch =
     div [] [
         let hand = Player.hand player
-
+        let cardCount = Hand.count hand
         let cards =
-            div [ ClassName "card-count " ]
-                [ div [] [span [][str (string (Hand.count hand))]] ]
+            div [ClassName "card-info"]
+              [ div [ ClassName "card-count" ]
+                    [ 
+                      div [] [span [][str (string (cardCount))]] 
+                       ]
+                tooltip (sprintf (Globalization.translate "%d cards in hand") cardCount) ]
 
 
         playerInfo { Name = None

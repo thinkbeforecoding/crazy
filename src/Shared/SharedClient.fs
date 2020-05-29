@@ -618,7 +618,9 @@ let commonGoal board goal =
            div [ ClassName ("stack " + colorName c)]
                [ div [ ClassName ("tile")] [] ]
          div [ClassName "tile-count"]
-           [ str (sprintf "x%d" (goal - Board.totalSize board)) ]
+           [ let totalSize = Board.totalSize board
+             str (sprintf "x%d" (goal - totalSize))
+             tooltip (sprintf  (translate "Common goal: %d parcels / Remaining: %d parcels") goal (goal - totalSize) ) ]
        ]
 
 type PlayerInfo = 
@@ -652,6 +654,31 @@ let playerInfo info (cards: ReactElement) dispatch =
                             for i in 1 .. p.Moves.Capacity do
                                 flash  (i <= p.Moves.Done)
                         | Ko _ -> ()
+
+
+                        tooltip 
+                            (String.concat " " [ 
+                                match info.Player with
+                                | Starting _ -> translate "3 base moves"
+                                | Playing p ->
+                                    translate "3 (base moves)"
+                                    if p.Moves.Acceleration then
+                                        translate "+1 (because >= 4 fences at the begining of the turn)"
+                                    for _ in 1 .. p.Bonus.Rutted do
+                                        translate "-2 (Rut)"
+                                    for _ in 1 .. p.Bonus.NitroOne do
+                                        translate "+1 (Nitro+1)"
+                                    for _ in 1 .. p.Bonus.NitroTwo do
+                                        translate "+2 (Nitro+2)"
+
+                                    if p.Moves.Capacity = 5 then
+                                        translate "(max 5 moves)"
+
+                                    sprintf (translate "/ %d moves done") p.Moves.Done
+
+                                | _ -> ()
+
+                            ])
                     ]
                 ]
 
@@ -664,7 +691,10 @@ let playerInfo info (cards: ReactElement) dispatch =
                    [ div [ ClassName ("stack " + colorName color)]
                          [ div [ ClassName ("tile")] []  ]
                      div [ClassName "tile-count"]
-                         [ str (sprintf "x %d" (goal - Player.fieldTotalSize info.Player)) ] 
+                         [ let totalSize = Player.fieldTotalSize info.Player
+                           str (sprintf "x %d" (goal - totalSize))
+                           tooltip (sprintf (translate "Individual goal: %d parcels / Remaining: %d parcels") goal (goal - totalSize))
+                           ] 
                    ]
             | _, Some (Common goal) ->
                 commonGoal info.PlayingBoard goal

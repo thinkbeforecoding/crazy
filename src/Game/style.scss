@@ -50,6 +50,28 @@ body {
     white-space: nowrap;
 }
 
+@mixin tooltip {
+    visibility: hidden;
+    white-space: normal;
+    width: 18em;
+    height: auto;
+    background-color: black;
+    background-image: none;
+    color: #fff;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 6px;
+    /* Position the tooltip text - see examples below! */
+    position: absolute;
+    top: 2em;
+    right: 20px;
+    z-index: 30;
+    font-family: Arial,Helvetica,sans-serif;
+    font-size: small;
+    text-shadow: none;
+}
+
+
 .board {
     background-image: url(~img/board.jpg);
     background-size: contain;
@@ -245,6 +267,15 @@ body {
         white-space: nowrap;
         text-align: center;
     }
+
+
+    .tooltiptext {
+        @include tooltip;
+    }
+
+    &:hover .tooltiptext {
+        visibility: visible;
+    }
 }
 .player-dashboard {
     flex: 1 1 25%;
@@ -299,7 +330,16 @@ body {
     }
 
     .flash.inactive {
-       background-position-x: 300%;
+        background-position-x: 300%;
+    }
+
+
+    .tooltiptext {
+        @include tooltip;
+    }
+
+    &:hover .tooltiptext {
+        visibility: visible;
     }
 }
 
@@ -318,6 +358,19 @@ body {
 
     .moves {
         margin-left: 3.5em;
+
+
+    }
+
+    .card-info {
+
+        .tooltiptext {
+            @include tooltip;
+        }
+
+        &:hover .tooltiptext {
+            visibility: visible;
+        }
     }
 
     .card-count {
@@ -326,6 +379,7 @@ body {
         width: 3em;
         justify-self: end;
         margin-right: 0.5em;
+
 
         &:before {
             content: "";
@@ -378,14 +432,15 @@ body {
         }
 
         & > div:hover .tooltiptext {
-                visibility: visible;
-
+            visibility: visible;
         }
     }
 
     .common-goal, .individual-goal {
         font-size: 110%;
         align-self: flex-end;
+
+
     }
 }
 
@@ -587,7 +642,15 @@ body {
         margin-left: -2.2em;
         margin-top: 0.8em;
         display: inline-block;
-        
+    }
+
+
+    .tooltiptext {
+        @include tooltip;
+    }
+
+    &:hover .tooltiptext {
+        visibility: visible;
     }
 }
 
@@ -754,7 +817,7 @@ div.back {
 }
 
 .bribe {
-    background-position-x: -1000%;
+    background-position-x: 100%;
 }
 
 
