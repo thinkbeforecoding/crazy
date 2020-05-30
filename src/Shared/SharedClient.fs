@@ -144,7 +144,7 @@ let parcel (Parcel pos) attr =
         []
 let tile (Parcel pos) f = 
     let x,y = Pix.ofTile pos |> Pix.rotate
-    div ([ ClassName "tile empty"
+    div ([ ClassName "tile empty cf-click"
            Style [ Left (sprintf "%f%%" x)
                    Top (sprintf "%f%%" y)
                    ]
@@ -189,7 +189,7 @@ let player active pos =
 
 let drawcrossroad pos f =
     let x,y = Pix.ofPlayer pos |> Pix.rotate
-    div [ ClassName "crossroad"
+    div [ classBaseList "crossroad" ["cf-click", match f with Ok _ -> true | _ -> false  ]
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y) ]
           match f with
@@ -233,7 +233,7 @@ let haybale p =
 
 let path p f =
     let x,y = Pix.ofFence p |> Pix.translate (0.2,-0.8) |> Pix.rotate
-    div [ ClassName "path"
+    div [ ClassName "path cf-click"
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y) ]
           OnClick f

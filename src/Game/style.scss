@@ -116,16 +116,20 @@ body {
         left: 20px;
         z-index: 30;
     }
-}
 
-.tile:hover {
-    .tooltiptext {
-        visibility: visible;
+    &:hover {
+        .tooltiptext {
+            visibility: visible;
+        }
     }
-}
 
-.tile.empty {
-    background: none;
+    &.empty {
+        background: none;
+    }
+
+    &.cf-click {
+        cursor: pointer;
+    }
 }
 
 .fallow {
@@ -144,15 +148,14 @@ body {
     background-position: -500% 0;
 }
 
-
-
-
 .crossroad {
     width: 2.5%;
     height: 2.5%;
     position: absolute;
     z-index: 30;
-
+    background-color: #00000000;
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    -webkit-tap-highlight-color: transparent;
     /* Tooltip text */
     .tooltiptext {
         visibility: hidden;
@@ -169,14 +172,19 @@ body {
         z-index: 30;
     }
 
+    &:hover {
+        .tooltiptext {
+            visibility: visible;
+        }
+    }
 
-}
 
-.crossroad:hover {
-    .tooltiptext {
-        visibility: visible;
+    &.cf-click {
+        cursor: pointer;
     }
 }
+
+
 .hay-bale {
     background-image: url(~img/markers.png);
     background-size: 800% 100%;
@@ -205,13 +213,19 @@ body {
         left: 20px;
         z-index: 30;
     }
-}
 
-.path:hover {
-    .tooltiptext {
-        visibility: visible;
+    &:hover {
+        .tooltiptext {
+            visibility: visible;
+        }
+    }
+
+    &.cf-click {
+        cursor: pointer;
     }
 }
+
+
 
 .header {
     position: fixed;
@@ -236,6 +250,7 @@ body {
         height: 1em;
     }
 }
+
 .common-goal {
     margin-left: auto;
     flex: 0 0 auto;
@@ -276,6 +291,8 @@ body {
     &:hover .tooltiptext {
         visibility: visible;
     }
+
+
 }
 .player-dashboard {
     flex: 1 1 25%;
@@ -391,7 +408,7 @@ body {
             @include hover-count;
             font-size: large;
             background-image: url(~img/cards.jpg);
-            background-size: 1100% 100%;
+            background-size: 600% 200%;
             background-position: 0 0;
             border-radius: 10%;
             position: absolute;
@@ -515,9 +532,7 @@ body {
         width: 4em;
         padding-top: 144%;
         position: relative;
-        background-image: url(~img/cards.jpg);
-        background-position-y: 0;
-        background-size: 1100% 100%;
+        cursor: pointer;
     }
 
     .played-card {
@@ -555,8 +570,6 @@ body {
 
     .card {
         width: auto;
-        background-image: url(~img/cards.jpg);
-        background-size: 1100% 100%;
         background-position-y: 0 ;
     }
 }
@@ -769,55 +782,54 @@ div.card {
     box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
     /*display: inline-block;*/
     background-image: url(~img/cards.jpg);
-    background-position-y: 0;
-    background-size: 1100% 100%;
+    background-size: 600% 200%;
 }
 
 
 
 div.back {
     position: relative;
-    background-position-x: 0;
+    background-position: 0 0;
 }
 
 .nitro-1 {
-    background-position-x: -100%;
+    background-position: -100% 0;
 }
 
 .nitro-2 {
-    background-position-x: -200%;
+    background-position: -200% 0;
 }
 
 .rut {
-    background-position-x: -300%;
+    background-position: -300% 0;
 }
 
 .hay-bale-1 {
-    background-position-x: -400%;
+    background-position: -400% 0;
 }
 
 .hay-bale-2 {
-    background-position-x: -500%;
+    background-position: -500% 0;
 }
 
 .dynamite {
-    background-position-x: -600%;
+    background-position: -100% 0;
 }
 
 .high-voltage {
-    background-position-x: -700%;
+    background-position: -100% -100%;
 }
 
 .watchdog {
-    background-position-x: -800%;
+    background-position: -200% -100%;
 }
 
 .helicopter {
-    background-position-x: -900%;
+    background-position: -300% -100%;
 }
 
 .bribe {
-    background-position-x: 100%;
+    background-position: -400% -100%;
 }
 
 
