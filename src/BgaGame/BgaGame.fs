@@ -87,6 +87,8 @@ type Bridge(dispatch: ClientMsg -> unit) =
 
         | Player.EndTurn ->
             send ("endTurn", createObj [ "value" ==> true; "lock" ==> true ])
+        | Player.Undo ->
+            send ("undo", createObj [ "value" ==> true; "lock" ==> true ])
 
         | Player.PlayCard c ->
             match c with
@@ -239,7 +241,7 @@ let handleCommand (model : Model) command =
             { model with 
                 Board = newState
                 LocalVersion = model.LocalVersion + 1
-                Moves = Board.possibleMoves model.PlayerId newState
+                Moves = Board.possibleMoves model.PlayerId newState.Board
                 CardAction = None
             } , Cmd.bridgeSend(command)
     | None -> model,  Cmd.none
@@ -251,6 +253,9 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | SelectFirstCrossroad c ->
         Player.SelectFirstCrossroad { Crossroad = c }
         |> handleCommand  currentModel
+    | Undo ->
+        Player.Undo
+        |> handleCommand currentModel
     | Move(dir,crossroad) ->
         Player.Move { Direction = dir; Destination = crossroad }
         |> handleCommand currentModel
@@ -262,7 +267,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
             CardAction = Some { Index = i; Card = card; Hidden = false
                                 Ext = match card with
                                       | HayBale _ -> 
-                                            if HayBales.maxReached (Board.hayBales currentModel.Board) then
+                                            if HayBales.maxReached (Board.hayBales currentModel.Board.Board) then
                                                 HayBales(Remove,[],[])
                                             else
                                                 HayBales(Place, [], [])
@@ -293,7 +298,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                     { c with Ext = 
                                 
                                 let action =
-                                    let hb = Board.hayBales currentModel.Board |> Set.add bale
+                                    let hb = Board.hayBales currentModel.Board.Board |> Set.add bale
                                     let currentHb =
                                         match c.Ext with
                                         | NoExt -> hb
@@ -328,14 +333,14 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         { currentModel with PlayerId = Some playerid }, Cmd.none
         
     | Remote (Sync (s, v, _)) ->
-        let state = Board.ofState s
+        let state = Board.ofUndoState s
         let newState =
             { currentModel with
                   Board = state
                   LocalVersion = v
                   Synched = state
                   Version = v
-                  Moves =  Board.possibleMoves currentModel.PlayerId state
+                  Moves =  Board.possibleMoves currentModel.PlayerId state.Board
                   }
         newState, Cmd.none// cmd
 
@@ -359,7 +364,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                   Synched = newState
                   Version = version + 1
                   Error = currentModel.Error + "\n" + string version
-                  Moves = Board.possibleMoves currentModel.PlayerId newState
+                  Moves = Board.possibleMoves currentModel.PlayerId newState.Board
                   Message = "Event"
                   PlayedCard = newCard
             }, Cmd.none
@@ -406,7 +411,7 @@ let score  player =
     str (string (Player.principalFieldSize player))
 
 let playersboard model dispatch =
-    match model.Board with
+    match model.Board.Board with
     | Board b
     | Won(_,b) ->
         for pid, player in Map.toSeq b.Players do
@@ -429,7 +434,7 @@ let playersboard model dispatch =
 let playersHand model dispatch =
     match model.PlayerId with
     | Some playerId ->
-        match model.Board with
+        match model.Board.Board with
         | Board board 
         | Won(_,board) ->
             
@@ -453,7 +458,7 @@ let playedCard dispatch card =
       null
 
 let view (model : Model) (dispatch : Msg -> unit) =
-    match model.Board with
+    match model.Board.Board with
     | InitialState -> 
         div [ ClassName "crazy-box" ]
             [ div [ClassName "board-box"]

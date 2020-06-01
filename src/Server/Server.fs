@@ -92,7 +92,7 @@ let connections =
 
 
 type GameRunnerCmd =
-    | GetState of ((Board * int * ChatEntry list) option -> unit)
+    | GetState of ((UndoableBoard * int * ChatEntry list) option -> unit)
     | Exec of Board.Command * (Board.Event list -> unit)
     | WriteChat of string*string*(unit->unit)
 
@@ -189,7 +189,21 @@ module Dto =
           DrawPile: string[];
           CommonGoal: bool
           Goal: int
+          Undo: string
          }
+
+    let ofUndoType =
+        function
+        | FullUndo -> "FullUndo"
+        | DontUndoCards -> "DontUndoCards"
+        | NoUndo -> "NoUndo"
+
+
+    let toUndoType =
+        function
+        | "DontUndoCards" -> DontUndoCards
+        | "NoUndo" -> NoUndo
+        | _  -> FullUndo
 
     let ofDirection =
         function
@@ -348,7 +362,9 @@ let serialize =
                          Dto.Barns = List.toArray e.Barns
                          Dto.DrawPile = e.DrawPile |> Seq.map Dto.ofCard |> Seq.toArray
                          Dto.CommonGoal = match e.Goal with | Common _ -> true | Individual _ -> false
-                         Dto.Goal = match e.Goal with | Common n -> n |Individual n -> n }
+                         Dto.Goal = match e.Goal with | Common n -> n |Individual n -> n
+                         Dto.Undo = Dto.ofUndoType e.Undo
+                         }
     | Board.Event.Played (playerid, Player.Event.MovedInField e ) -> 
         "MovedInField", box { Player = playerid
                               Event = Dto.ofMoved e }
@@ -389,6 +405,7 @@ let serialize =
     | Board.Event.Played (playerid, Player.Event.Bribed e  ) -> "Bribed" , box { Player = playerid; Event = { Dto.BribedDto.Parcel = Dto.ofParcel e.Parcel; Dto.BribedDto.Victim = e.Victim} }
     | Board.Event.Played (playerid, Player.Event.BonusDiscarded e  ) -> "BonusDiscarded" , box { Player = playerid; Event = Dto.ofCard e }
     | Board.Event.Played (playerid, Player.Event.Eliminated  ) -> "Eliminated" , box { Player = playerid; Event = null }
+    | Board.Event.Played (playerid, Player.Event.Undone  ) -> "Undone" , box { Player = playerid; Event = null }
     | Board.Event.Next  -> "Next" , null
     | Board.Event.PlayerDrewCards e  -> 
         "PlayerDrewCards" , box { Dto.PlayerDrewCardsDto.Player = e.Player
@@ -398,6 +415,7 @@ let serialize =
                                   Dto.HayBalesDto.Removed = removed |> Seq.map Dto.ofPath |> Seq.toArray } )
     | Board.Event.HayBaleDynamited e  -> "HayBaleDynamited" , box (Dto.ofPath e)
     | Board.Event.DiscardPileShuffled e  -> "DiscardPileShuffled" , box (e |> Seq.map Dto.ofCard |> Seq.toArray) 
+    | Board.Event.DrawPileShuffled e  -> "DrawPileShuffled" , box (e |> Seq.map Dto.ofCard |> Seq.toArray) 
     | Board.Event.GameWon e  -> "GameWon" , box e
 
 
@@ -408,7 +426,8 @@ let deserialize data =
             [Board.Started { Players = e.Players |> Seq.map Dto.toPlayer |> Seq.toList
                              Barns = List.ofArray e.Barns
                              DrawPile = e.DrawPile |> Seq.map Dto.toCard |> Seq.toList
-                             Goal = if e.CommonGoal then Common e.Goal else Individual e.Goal } ]
+                             Goal = if e.CommonGoal then Common e.Goal else Individual e.Goal
+                             Undo = Dto.toUndoType e.Undo } ]
         | "MovedInField", JObj { Player = p; Event = JObj(e: Dto.MovedDto) } -> 
             [Board.Played(p, Player.MovedInField (Dto.toMoved e))]
         | "FirstCrossroadSelected", JObj { Player = p; Event = JObj (e: Dto.FirstCrossroadSelectedDto) } -> 
@@ -445,6 +464,7 @@ let deserialize data =
         | "Bribed", JObj { Player = p; Event = JObj (e: Dto.BribedDto) } -> [Board.Played(p, Player.Bribed { Parcel = Dto.toParcel e.Parcel; Victim = e.Victim })]
         | "BonusDiscarded", JObj { Player = p; Event = JObj (e: string) } -> [Board.Played(p, Player.BonusDiscarded (Dto.toCard e) )]
         | "Eliminated", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Eliminated )]
+        | "Undone", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Undone )]
         | "Next", _ -> [ Board.Next]
         | "PlayerDrewCards", JObj (e: Dto.PlayerDrewCardsDto) -> [ Board.PlayerDrewCards { Player = e.Player; Cards = Dto.toHand e.Cards } ]
         | "HayBalesPlaced",  (e: obj) ->
@@ -459,6 +479,7 @@ let deserialize data =
 
         | "HayBaleDynamited", JObj (e: Dto.PathDto) -> [ Board.HayBaleDynamited (Dto.toPath e) ]
         | "DiscardPileShuffled", JObj (e: string[]) -> [ Board.DiscardPileShuffled (e |> Seq.map Dto.toCard |> Seq.toList) ]
+        | "DrawPileShuffled", JObj (e: string[]) -> [ Board.DrawPileShuffled (e |> Seq.map Dto.toCard |> Seq.toList) ]
         | "GameWon", JObj e -> [ Board.GameWon e ]
         | _ -> []
     with
@@ -476,6 +497,7 @@ let serializeCmd =
     | Board.Play (p, Player.PlayCard c) -> "PlayCard", box { Player = p; Command = box c }
     | Board.Play (p, Player.Discard c) -> "Discard", box { Player = p; Command = box c }
     | Board.Play (p, Player.SelectFirstCrossroad c) -> "SelectFirstCrossroad", box { Player = p; Command = box c }
+    | Board.Play (p, Player.Undo) -> "Undo", box { Player = p; Command = null }
 
 
 
@@ -621,15 +643,15 @@ let update claim clientDispatch msg (model: PlayerState) =
         
         let! state = runner.PostAndAsyncReply(fun c -> gameid, GetState c.Reply)
         match state with 
-        | Some (Board game as s, version, chat)
-        | Some (Won(_, game) as s, version, chat) ->
+        | Some ({ Board = Board game} as s, version, chat)
+        | Some ({ Board = Won(_, game)} as s, version, chat) ->
             let color = 
                 Map.tryFind claim.sub game.Players
                 |> Option.map Player.color
 
-            let pboard = privateBoard claim.sub s
+            let pboard = privateUndoableBoard claim.sub s
 
-            clientDispatch (Sync (Board.toState pboard, version, chat))
+            clientDispatch (Sync (Board.toUndoState pboard, version, chat))
             return  Connected {GameId = gameid; Color = color; Player = claim.sub } ,  Cmd.none
         | _ ->
             return model, Cmd.none
@@ -1247,7 +1269,7 @@ module Join =
             for event in events do
                 match event with
                 | SharedJoin.Event.Started e ->
-                    do! runner.PostAndAsyncReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e.Players -> p.Color, p.PlayerId, p.Name ]; Goal = e.Goal }, c.Reply))
+                    do! runner.PostAndAsyncReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e.Players -> p.Color, p.PlayerId, p.Name ]; Goal = e.Goal; Undo = DontUndoCards }, c.Reply))
                          |> Async.Ignore
                 | _ -> ()
             //connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events(events, version))

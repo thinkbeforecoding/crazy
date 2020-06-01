@@ -17,6 +17,10 @@ type GoalType =
     | Regular
     | Expert
 
+type UndoType =
+    | FullUndo
+    | DontUndoCards
+    | NoUndo
 
 module Goal =
     let fromType playerCount goal =

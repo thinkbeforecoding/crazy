@@ -682,6 +682,19 @@ body {
     padding-top: 0.25em;
     padding-bottom: 0.25em;
     padding-left: 2em;
+    display: flex;
+    flex-flow: row;
+
+    span {
+        flex: 1 0 auto;
+    }
+
+
+    .undo {
+        flex: 0 1 auto;
+        justify-self: flex-end;
+    }
+
 }
 
 .blue {

@@ -22,6 +22,12 @@ let privateBoard playerId board =
     | Won(p,b) -> Won(p, (privateGame playerId b))
     | InitialState -> InitialState
 
+let privateUndoableBoard playerId undoboard =
+    { undoboard with
+        Board = privateBoard playerId undoboard.Board
+        UndoPoint = privateBoard playerId undoboard.UndoPoint
+    }
+
 
 let privateEvents playerId events =
     events
@@ -33,6 +39,7 @@ let privateEvents playerId events =
             Board.PlayerDrewCards { Player = p.Player; Cards = Hand.toPrivate p.Cards }
             
     | Board.DiscardPileShuffled _ -> Board.DiscardPileShuffled []
+    | Board.DrawPileShuffled _ -> Board.DrawPileShuffled []
     | e -> e )
 
 let bgaUpdateState events board state changeState =
@@ -160,6 +167,13 @@ let textAction b e =
     | _ ->
         null, Map.empty
 
+type Stats =
+    {
+        TableStats: Map<string, int>
+        PlayerStats: Map<string, Map<string,int>> }
+
+
+
 
 module Stats =
     let turns_number = "turns_number"
@@ -183,6 +197,138 @@ module Stats =
     let nitro2_number = "nitro2_number"
     let ruts_number = "ruts_number"
     let rutted_number = "rutted_number"
+
+
+    let diff x y =
+        let sx = x |> Map.toSeq |> set
+        let sy = y |> Map.toSeq |> set
+
+        sy - sx
+
+    let inc n name stats =
+        match Map.tryFind name stats with
+        | Some v -> stats |> Map.add name (v+n)
+        | None -> stats |> Map.add name n
+
+    let up f name stats =
+        match Map.tryFind name stats with
+        | Some v -> stats |> Map.add name (f v stats)
+        | None -> stats |> Map.add name (f 0 stats)
+
+    let getStat name stats =
+        match Map.tryFind name stats with
+        | Some v -> v
+        | None -> 0
+
+    let incStat n name player stats =
+        match player with
+        | None -> { stats with TableStats = stats.TableStats |> inc n name  }
+        | Some p ->
+            match Map.tryFind p stats.PlayerStats with
+            | Some ps ->
+
+                let newStats = ps |> inc n name
+                { stats with
+                    PlayerStats = stats.PlayerStats |> Map.add p newStats }
+            | None -> stats
+
+    let updateStat f name player stats =
+        match player with
+        | None -> { stats with TableStats = stats.TableStats |> up f name  }
+        | Some p ->
+            match Map.tryFind p stats.PlayerStats with
+            | Some ps ->
+
+                let newStats = ps |> up f name
+                { stats with
+                    PlayerStats = stats.PlayerStats |> Map.add p newStats }
+            | None -> stats
+
+
+    let update stats e =
+        match e with
+        | Board.Next ->
+            stats |> incStat 1 turns_number None
+        | Board.Played(p, Player.CutFence e) ->
+            stats 
+            |> incStat 1 fences_cut None
+            |> incStat 1 fences_cut (Some p)
+            |> incStat 1 cut_number (Some e.Player)
+        | Board.Played(p, Player.FenceDrawn _) ->
+            stats 
+            |> incStat 1 fences_drawn None
+            |> incStat 1 fences_drawn (Some p)
+        | Board.Played(p, Player.Annexed e) ->
+            let size = List.length e.NewField
+            let freeBarns = List.length e.FreeBarns
+            let occupiedBarns = List.length e.OccupiedBarns
+            stats
+            |> incStat 1 takeovers_number None
+            |> incStat 1 takeovers_number (Some p)
+            |> updateStat (fun current _ -> max current size) biggest_takeover (Some p)
+            |> updateStat (fun current _ -> max current size) biggest_takeover None
+            |> incStat freeBarns freebarns_number None
+            |> incStat freeBarns freebarns_number (Some p)
+            |> incStat occupiedBarns occupiedbarns_number None
+            |> incStat occupiedBarns occupiedbarns_number (Some p)
+        | Board.Played(p, Player.CardPlayed cp )->
+            let stats = 
+                stats
+                |> incStat 1 cardsplayed_number None
+                |> incStat 1 cardsplayed_number (Some p)
+            match cp with
+            | PlayHayBale(hb,rm) ->
+                let hayBales = List.length hb
+                let moved = List.length rm
+                stats
+                |> incStat hayBales haybales_number None
+                |> incStat hayBales haybales_number (Some p)
+                |> incStat moved haybales_moved_number None
+                |> updateStat (fun current stats ->
+                    let totalHayBales = getStat haybales_number stats - getStat dynamites_number stats - getStat haybales_moved_number stats
+                    max current totalHayBales
+                    ) haybales_max_number None
+            | PlayDynamite _ ->
+                stats
+                |> incStat 1 dynamites_number None
+                |> incStat 1 dynamites_number (Some p)
+                |> updateStat (fun current stats ->
+                                  let totalHayBales = getStat haybales_number stats - getStat dynamites_number stats  - getStat haybales_moved_number stats
+                                  max current totalHayBales
+                              ) haybales_max_number None
+            | PlayHelicopter _ ->
+                stats
+                |> incStat 1 helicopters_number None
+                |> incStat 1 helicopters_number (Some p)
+            | PlayHighVoltage ->
+                stats
+                |> incStat 1 highvoltages_number None
+                |> incStat 1 highvoltages_number (Some p)
+            | PlayWatchdog ->
+                stats
+                |> incStat 1 watchdogs_number None
+                |> incStat 1 watchdogs_number (Some p)
+            | PlayBribe _ ->
+                stats
+                |> incStat 1 bribes_number None
+                |> incStat 1 bribes_number (Some p)
+            | PlayNitro One ->
+                stats
+                |> incStat 1 nitro1_number None
+                |> incStat 1 nitro1_number (Some p)
+            | PlayNitro Two ->
+                stats
+                |> incStat 1 nitro2_number None
+                |> incStat 1 nitro2_number (Some p)
+            | PlayRut victim ->
+                stats
+                |> incStat 1 ruts_number None
+                |> incStat 1 ruts_number (Some p)
+                |> incStat 1 rutted_number (Some victim)
+        | _ -> stats
+
+
+
 
 let updateStats es (incStat: int -> string -> string option -> unit) (updateStat:  (int -> int) -> string -> string option -> unit) (getStat: string -> string option -> int ) =
     for e in es do

@@ -53,13 +53,23 @@ $game_options = array(
     100 => array(
         'name' => totranslate('Game mode'),    
         'values' => array(
-                    2 => array( 'name' => totranslate('Regular'), 'description' => totranslate('25-50min')),
+                    2 => array( 'name' => totranslate('Regular'), 'description' => totranslate('25-50min'), 'tmdisplay' => totranslate ('Regular')),
 
                     1 => array( 'name' => totranslate('Fast'), 'description' => totranslate('15-30min'), 'tmdisplay' => totranslate('Fast') ),
 
                     3 => array( 'name' => totranslate('Expert'), 'description' => totranslate('40-90min'), 'nobeginner' => true, 'tmdisplay' => totranslate('Expert') )
                 )
-    )
+        ),
+    101 => array(
+            'name' => totranslate('Undo mode'),    
+            'values' => array(
+                        2 => array( 'name' => totranslate('Full Undo'), 'description' => totranslate('Undo to the start of the turn.')),
+    
+                        1 => array( 'name' => totranslate('Limited Undo'), 'description' => totranslate('Undo to the start of the turn, or just after cards were drawn'), 'tmdisplay' => totranslate('Limited Undo') ),
+    
+                        3 => array( 'name' => totranslate('No Undo'), 'description' => totranslate('No Undo at all'), 'nobeginner' => true, 'tmdisplay' => totranslate('No Undo') )
+                    )
+        )
 );
 
 

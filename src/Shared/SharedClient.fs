@@ -29,9 +29,9 @@ type Chat =
 // we mark it as optional, because initially it will not be available from the client
 // the initial value will be requested from server
 type Model =
-  { Board: Board
+  { Board: UndoableBoard
     LocalVersion: int
-    Synched: Board
+    Synched: UndoableBoard
     Version: int
     PlayerId: string option
     CardAction: CardAction option
@@ -66,6 +66,7 @@ type Msg =
     | ToggleChat
     | HidePop
     | HideVictory
+    | Undo
 
 
 
@@ -705,7 +706,7 @@ let playerInfo info (cards: ReactElement) dispatch =
       
 
 let playersDashboard model dispatch =
-    match model.Board with
+    match model.Board.Board with
     | InitialState -> null
     | Board board
     | Won(_,board) ->
@@ -746,39 +747,48 @@ let playersDashboard model dispatch =
                     if isActive then
                         match player with
                         | Starting p ->
-                            str (sprintf "Let's go ! Select a crossroad around your %s field to start." (translatedColorName p.Color) )
+                            span [] [
+                                str (sprintf "Let's go ! Select a crossroad around your %s field to start." (translatedColorName p.Color) )
+                            ]
                         | Playing p ->
-                            if Moves.canMove p.Moves then
-                                if p.Power = PowerDown then
-                                    str "You're fence has been cut. Go back to your field to draw a new one. "
-                                    match p.Bonus.Rutted with
-                                    | 0 -> ()
-                                    | 1 ->
-                                        str "You're victime of a rut, you lost 2 moves. "
-                                    | n ->
-                                        str (sprintf "You're victime of %d ruts, you lost %d moves. " n (n*2))
-                                elif p.Moves.Done = 0 then
-                                    match p.Bonus.Rutted with
-                                    | 0 ->
-                                        if p.Moves.Acceleration then
-                                            str "You started the turn with at least 4 fences, you get an extra move. "
-                                        else
-                                            str "You have 3 moves this turn. "
-                                    | 1 ->
-                                        str "You're victime of a rut, you lost 2 moves. "
-                                    | n ->
-                                        str (sprintf "You're victime of %d ruts, you lost %d moves. " n (n*2))
+                            span [] [
+                                if Moves.canMove p.Moves then
+                                    if p.Power = PowerDown then
+                                        str "You're fence has been cut. Go back to your field to draw a new one. "
+                                        match p.Bonus.Rutted with
+                                        | 0 -> ()
+                                        | 1 ->
+                                            str "You're victime of a rut, you lost 2 moves. "
+                                        | n ->
+                                            str (sprintf "You're victime of %d ruts, you lost %d moves. " n (n*2))
+                                    elif p.Moves.Done = 0 then
+                                        match p.Bonus.Rutted with
+                                        | 0 ->
+                                            if p.Moves.Acceleration then
+                                                str "You started the turn with at least 4 fences, you get an extra move. "
+                                            else
+                                                str "You have 3 moves this turn. "
+                                        | 1 ->
+                                            str "You're victime of a rut, you lost 2 moves. "
+                                        | n ->
+                                            str (sprintf "You're victime of %d ruts, you lost %d moves. " n (n*2))
 
-                                     
-                                str "Select a crossroad around you to move. "
-                                if not (Hand.isEmpty p.Hand) then
-                                    str "You can also play a card."
-                            else
-                                str "Play a card, or click on your character to end your turn."
+                                         
+                                    str "Select a crossroad around you to move. "
+                                    if not (Hand.isEmpty p.Hand) then
+                                        str "You can also play a card."
+                                else
+                                    str "Play a card, or click on your character to end your turn."
+                                ]
+
+                            if model.Board.UndoType <> NoUndo then
+                                button [ ClassName "undo"; OnClick (fun _ -> dispatch Undo) ] [ str "Undo" ]
                         | Ko _ ->
-                            str (sprintf "You're eliminated. Take your revenge in the next game !")
+                            span [] [
+                                str (sprintf "You're eliminated. Take your revenge in the next game !")
+                            ]
                     else
-                        str "Wait for your turn"
+                        span [] [ str "Wait for your turn" ]
                 
                 ]
         ]

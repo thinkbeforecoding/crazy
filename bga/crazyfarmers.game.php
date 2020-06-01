@@ -36,7 +36,8 @@ class CrazyFarmers extends Table
         
         self::initGameStateLabels( array( 
             "board" => 10,
-            "game_mode" => 100
+            "game_mode" => 100,
+            "undo_mode" => 101
             //    "my_second_global_variable" => 11,
             //      ...
             //    "my_first_game_variant" => 100,
@@ -163,6 +164,18 @@ class CrazyFarmers extends Table
                 $goalType = new GoalType_Regular();
         }
 
+        switch ($this->gamestate->table_globals[101])
+        {
+            case 2:
+                $undoType = new UndoType_DontUndoCards();
+            break;
+            case 3:
+                $undoType = new UndoType_NoUndo();
+            break;
+            default:
+                $undoType = new UndoType_FullUndo();
+        }
+
 
 
 
@@ -171,7 +184,8 @@ class CrazyFarmers extends Table
         $cmd = new BoardCommand_Start(
                 new BoardStart(
                         FSharpList::ofArray($crazyPlayers),
-                        $goal));
+                        $goal,
+                        $undoType));
         $board = new Board_InitialState();
         $es = Shared_002EBoardModule___decide($cmd, $board);
         
@@ -212,11 +226,11 @@ class CrazyFarmers extends Table
   
         $r = self::loadState();
         $board = $r[1];
-        $pboard = SharedServer___privateBoard($current_player_id, $board);
+        $pboard = SharedServer___privateUndoableBoard($current_player_id, $board);
 
 
 
-        $result['board'] = convertToSimpleJson(Shared_002EBoardModule___toState($pboard));
+        $result['board'] = convertToSimpleJson(Shared_002EBoardModule___toUndoState($pboard));
         $result['version'] = $r[0];
 
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
@@ -287,7 +301,7 @@ class CrazyFarmers extends Table
 
     function loadState()
     {
-        $s = new Board_InitialState();
+        $s = $GLOBALS['Shared_002EBoardModule___initialState'];
         $v = 0;
         foreach(self::loadEvents() as $r)
         {
@@ -443,11 +457,20 @@ class CrazyFarmers extends Table
 
         self::playCommand($cmd);
     }
+
     function endTurn()
     {
         self::checkAction('next');
         $player_id = self::getActivePlayerId();
         $cmd = new Command_EndTurn();
+
+        self::playCommand($cmd);
+    }
+
+    function undo()
+    {
+        $player_id = self::getActivePlayerId();
+        $cmd = new Command_Undo();
 
         self::playCommand($cmd);
     }
