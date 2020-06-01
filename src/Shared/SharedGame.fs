@@ -1630,6 +1630,7 @@ module Board =
         | HayBaleDynamited of Path
         | DiscardPileShuffled of Card list
         | DrawPileShuffled of Card list
+        | UndoCheckPointed
     and 
         [<CompiledName("BoardStarted")>]
         Started =
@@ -1895,7 +1896,8 @@ module Board =
             let won = Won(player, board)
             { state with
                 Board = won 
-                UndoPoint = won }
+                UndoPoint = won
+                AtUndoPoint = true }
                 
 
         | Board board, Played (_, Player.CutFence { Player = playerid }) ->
@@ -1908,7 +1910,8 @@ module Board =
                 { state with 
                     Board = 
                         Board { board with
-                                    Players = Map.add playerid cutPlayer board.Players } }
+                                    Players = Map.add playerid cutPlayer board.Players }
+                    AtUndoPoint = false }
             | _ -> state
 
         | Board board, Played (playerid, Player.Annexed e ) ->
@@ -1916,7 +1919,8 @@ module Board =
                 annexed playerid e board
                 |> Board
 
-            { state with Board = newBoard }
+            { state with Board = newBoard
+                         AtUndoPoint = false }
         |  Board board, PlayerDrewCards e ->
             let newDrawPile = board.DrawPile |> DrawPile.remove e.Cards
             let player = board.Players.[e.Player] |> Player.takeCards e.Cards
@@ -1924,39 +1928,45 @@ module Board =
                 Board {
                     board with
                         Players = Map.add e.Player player board.Players
-                        DrawPile = newDrawPile }
+                        DrawPile = newDrawPile
+                         }
             match state.UndoType with
-            | DontUndoCards ->
-                { state with Board = newBoard; UndoPoint = newBoard; ShouldShuffle = false; AtUndoPoint = true  }
             | FullUndo ->
-                { state with Board = newBoard; ShouldShuffle = true }
+                { state with Board = newBoard; ShouldShuffle = true; AtUndoPoint = false }
             | _ -> { state with Board = newBoard }
+        | Board _, UndoCheckPointed ->
+                { state with UndoPoint = state.Board; ShouldShuffle = false; AtUndoPoint = true  }
+            
 
         | Board board, HayBalesPlaced (added, removed) ->
             let newBoard = 
                 Board {
                     board with
                         HayBales = board.HayBales - set removed + set added }
-            { state with Board = newBoard }
+            { state with Board = newBoard
+                         AtUndoPoint = false }
         | Board board, HayBaleDynamited p ->
             let newBoard = 
                 Board {
                     board with
                         HayBales = board.HayBales |> Set.remove p }
-            { state with Board = newBoard }
+            { state with Board = newBoard
+                         AtUndoPoint = false }
         | Board board, DiscardPileShuffled cards ->
             let newBoard = 
                 Board {
                     board with
                         DrawPile = board.DrawPile @ cards
                         DiscardPile = [] }
-            { state with Board = newBoard }
+            { state with Board = newBoard
+                         AtUndoPoint = false }
         | Board board, DrawPileShuffled cards ->
             let newBoard =
                 Board {
                     board with
                         DrawPile = cards }
-            { state with Board = newBoard }
+            { state with Board = newBoard
+                         AtUndoPoint = false }
 
 
         | Board board, Played(playerid,(Player.Bribed p as e)) ->
@@ -1974,7 +1984,8 @@ module Board =
                             |> Map.add playerid newPlayer
                             |> Map.add p.Victim newVictim 
                 }
-            { state with Board = newBoard }
+            { state with Board = newBoard 
+                         AtUndoPoint = false }
         | Board board, Played(playerid,(Player.Eliminated as e)) ->
             let newPlayer = Player.evolve board.Players.[playerid] e
             let newTable = Table.eliminate playerid board.Table
@@ -1983,9 +1994,11 @@ module Board =
                             Players = Map.add playerid newPlayer board.Players
                             Table = newTable
                         }
-            { state with Board = newBoard }
+            { state with Board = newBoard 
+                         AtUndoPoint = false}
         | _, Played (_, Player.Undone) -> 
-            { state with Board = state.UndoPoint; AtUndoPoint = true }
+            { state with Board = state.UndoPoint
+                         AtUndoPoint = true }
 
         | Board board, Played (playerid,e) ->
             let player = Player.evolve board.Players.[playerid] e
@@ -2000,7 +2013,8 @@ module Board =
                 Board { board with
                            Players = Map.add playerid player board.Players
                            DiscardPile = newDiscardPile }
-            { state with Board = newBoard }
+            { state with Board = newBoard
+                         AtUndoPoint = false }
         
         | Board board, Next ->
             let nextTable = board.Table.Next
@@ -2013,7 +2027,8 @@ module Board =
             { state with
                 Board = newBoard
                 UndoPoint = newBoard
-                ShouldShuffle = false }
+                ShouldShuffle = false
+                AtUndoPoint = true }
         | Won _, _ -> state
 
 
@@ -2183,6 +2198,8 @@ module Board =
                                     PlayerDrewCards 
                                         { Player = playerid
                                           Cards = PublicHand (drawPile |> DrawPile.take cardsToTake) }
+                                    if state.UndoType = DontUndoCards then
+                                        UndoCheckPointed
                                 else
                                     match nextState with
                                     | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) && state.UndoType = NoUndo ->
@@ -2323,6 +2340,7 @@ module Board =
             | Some (Ko _)
             | None -> []
         | _ -> []
+
 
 module Client =
     let cardName =

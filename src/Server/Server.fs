@@ -407,6 +407,7 @@ let serialize =
     | Board.Event.Played (playerid, Player.Event.Eliminated  ) -> "Eliminated" , box { Player = playerid; Event = null }
     | Board.Event.Played (playerid, Player.Event.Undone  ) -> "Undone" , box { Player = playerid; Event = null }
     | Board.Event.Next  -> "Next" , null
+    | Board.Event.UndoCheckPointed  -> "UndoCheckPointed" , null
     | Board.Event.PlayerDrewCards e  -> 
         "PlayerDrewCards" , box { Dto.PlayerDrewCardsDto.Player = e.Player
                                   Dto.PlayerDrewCardsDto.Cards = Dto.ofHand e.Cards }
@@ -466,6 +467,7 @@ let deserialize data =
         | "Eliminated", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Eliminated )]
         | "Undone", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Undone )]
         | "Next", _ -> [ Board.Next]
+        | "UndoCheckPointed", _ -> [ Board.UndoCheckPointed ]
         | "PlayerDrewCards", JObj (e: Dto.PlayerDrewCardsDto) -> [ Board.PlayerDrewCards { Player = e.Player; Cards = Dto.toHand e.Cards } ]
         | "HayBalesPlaced",  (e: obj) ->
             match e with
@@ -1269,7 +1271,7 @@ module Join =
             for event in events do
                 match event with
                 | SharedJoin.Event.Started e ->
-                    do! runner.PostAndAsyncReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e.Players -> p.Color, p.PlayerId, p.Name ]; Goal = e.Goal; Undo = DontUndoCards }, c.Reply))
+                    do! runner.PostAndAsyncReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e.Players -> p.Color, p.PlayerId, p.Name ]; Goal = e.Goal; Undo = FullUndo }, c.Reply))
                          |> Async.Ignore
                 | _ -> ()
             //connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events(events, version))

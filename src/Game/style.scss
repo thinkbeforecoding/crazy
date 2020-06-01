@@ -235,20 +235,29 @@ body {
     display: flex;
     flex-flow: column;
     align-content: stretch;
+
+    .dash {
+        background-color: $crazy-green;
+        display: flex;
+        flex-flow: row;
+
+        i.fa-bars {
+            display: inline-block;
+            margin: 5px;
+            color: $crazy-tree;
+            width: 1em;
+            height: 1em;
+        }
+
+    }
 }
 
 .dashboard {
+    justify-self: stretch;
+    flex: 1 0 auto;
     background-color: $crazy-green;
     display: flex;
     flex-flow: row wrap;
-
-    i.fa-bars {
-        display: inline-block;
-        margin: 5px;
-        color: $crazy-tree;
-        width: 1em;
-        height: 1em;
-    }
 }
 
 .common-goal {
@@ -838,7 +847,7 @@ div.back {
 }
 
 .dynamite {
-    background-position: -100% 0;
+    background-position: 0 -100%;
 }
 
 .high-voltage {

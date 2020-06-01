@@ -410,6 +410,16 @@ let playerBoard board playerid (player: CrazyPlayer) dispatch =
 let score  player =
     str (string (Player.principalFieldSize player))
 
+let undoView (model: UndoableBoard) dispatch =
+    if model.UndoType <> NoUndo then
+        match model.Board with
+        | Board _ ->
+            a [ Href "#"; OnClick(fun e -> dispatch Undo; e.preventDefault()) ] [ str (Globalization.translate "Undo")]
+        | _ -> null
+    else
+        null
+
+
 let playersboard model dispatch =
     match model.Board.Board with
     | Board b
@@ -427,6 +437,14 @@ let playersboard model dispatch =
 
 
             ReactDom.render( score player,  document.getElementById("player_score_" + pid))
+
+        let undobtn = document.getElementById("crazy_undo")
+        if undobtn = null then
+            let parent = document.getElementById("generalactions")
+            let bdiv = document.createElement "div" :?> Browser.Types.HTMLDivElement
+            bdiv.id <- "crazy_undo"
+            parent.appendChild(bdiv) |> ignore
+            ReactDom.render(undoView model.Board dispatch, document.getElementById ("crazy_undo"))
 
     | _ -> ()
 

@@ -186,7 +186,7 @@ class CrazyFarmers extends Table
                         FSharpList::ofArray($crazyPlayers),
                         $goal,
                         $undoType));
-        $board = new Board_InitialState();
+        $board = $GLOBALS['Shared_002EBoardModule___initialState'];
         $es = Shared_002EBoardModule___decide($cmd, $board);
         
         self::saveEvents($es);
@@ -303,14 +303,16 @@ class CrazyFarmers extends Table
     {
         $s = $GLOBALS['Shared_002EBoardModule___initialState'];
         $v = 0;
+        $stats = $GLOBALS['SharedServer_002EStatsModule___empty'];
         foreach(self::loadEvents() as $r)
         {
             $v = $r[0];
             $e = $r[1];
             $s = Shared_002EBoardModule___evolve($s,$e);
+            $stats = SharedServer_002EStatsModule___update($stats, $e);
         }
 
-        return [$v,$s];
+        return [$v,$s,$stats];
     }
 
 
@@ -355,6 +357,7 @@ class CrazyFarmers extends Table
         $state = self::loadState();
         $version = $state[0];
         $board = $state[1];
+        $stats = $state[2];
      
         $cmd = new BoardCommand_Play($player_id, $playerCmd);
         $es = Shared_002EBoardModule___decide($cmd, $board);
@@ -364,15 +367,7 @@ class CrazyFarmers extends Table
         $board = self::fold($board, $es);
 
         self::updateScore($es,$board);
-        SharedServer___updateStats($es, function($d,$n,$p) { self::incStat($d,$n,$p); }, 
-            function($f,$n,$p) {
-                $current = self::getStat($n,$p);
-                $newValue = $f($current);
-                self::setStat($newValue,$n,$p); },
-            function($n,$p) {
-                return self::getStat($n,$p);
-            }
-    );
+        SharedServer___updateStats($es, $stats, function($v,$n,$p) { self::incStat($v,$n,$p); });
 
         if (!empty($es))
         {
@@ -411,7 +406,6 @@ class CrazyFarmers extends Table
     }
 
     function updateScore($es, $board)
-
     {
         SharedServer___bgaScore($es, $board, function ($args) 
         {
@@ -469,6 +463,7 @@ class CrazyFarmers extends Table
 
     function undo()
     {
+        self::checkAction('undo');
         $player_id = self::getActivePlayerId();
         $cmd = new Command_Undo();
 

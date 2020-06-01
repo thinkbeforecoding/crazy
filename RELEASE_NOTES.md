@@ -1,3 +1,7 @@
+### 0.5.00  - 2020-06-01
+* Undo
+* Fix dynamite display
+
 ### 0.4.14  - 2020-05-28
 * moves tooltip
 * cardcount tooltip

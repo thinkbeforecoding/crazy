@@ -726,33 +726,34 @@ let playersDashboard model dispatch =
     | Won(_,board) ->
 
         div [ ClassName "header"] [
+            div [ ClassName "dash"] [
+                span [ OnClick (fun _ -> dispatch SwitchDashboard)]
+                    [ bars ]
+                div [ classBaseList "dashboard" [ "closed",not model.DashboardOpen  ] ]
+                    [  
 
-            div [ classBaseList "dashboard" [ "closed",not model.DashboardOpen  ] ]
-                [  
-                    span [ OnClick (fun _ -> dispatch SwitchDashboard)]
-                        [ bars ]
 
-                    let currentPlayer = board.Table.Player
-                    for playerid in board.Table.AllPlayers do
-                        let player = board.Players.[playerid]
-                        div[ classBaseList "player-dashboard" [ "local", Some playerid = model.PlayerId ]] [
-                            playerInfo { Name = Some(board.Table.Names.[playerid])
-                                         Player = player 
-                                         IsActive = currentPlayer = playerid
-                                         Goal = match board.Goal with | Individual _ as g -> Some g | _ -> None 
-                                         PlayingBoard = board } null dispatch
+                        let currentPlayer = board.Table.Player
+                        for playerid in board.Table.AllPlayers do
+                            let player = board.Players.[playerid]
+                            div[ classBaseList "player-dashboard" [ "local", Some playerid = model.PlayerId ]] [
+                                playerInfo { Name = Some(board.Table.Names.[playerid])
+                                             Player = player 
+                                             IsActive = currentPlayer = playerid
+                                             Goal = match board.Goal with | Individual _ as g -> Some g | _ -> None 
+                                             PlayingBoard = board } null dispatch
 
-                            if model.DashboardOpen then
-                                handView dispatch false model.PlayerId board model.CardAction (Player.hand player)
+                                if model.DashboardOpen then
+                                    handView dispatch false model.PlayerId board model.CardAction (Player.hand player)
 
-                            //goalView board
-    
-                        ]
-                    match board.Goal with
-                    | Common goal ->
-                        commonGoal board goal
-                    | _ -> () ]
-
+                                //goalView board
+        
+                            ]
+                        match board.Goal with
+                        | Common goal ->
+                            commonGoal board goal
+                        | _ -> () ]
+                ]
             if model.DashboardOpen then
                 div [ ClassName "help"] [ 
                     let currentPlayer = board.Table.Player
@@ -796,7 +797,7 @@ let playersDashboard model dispatch =
                                 ]
 
                             if model.Board.UndoType <> NoUndo then
-                                button [ ClassName "undo"; OnClick (fun _ -> dispatch Undo) ] [ str "Undo" ]
+                                button [ ClassName "undo"; Disabled model.Board.AtUndoPoint; OnClick (fun _ -> dispatch Undo) ] [ str "Undo" ]
                         | Ko _ ->
                             span [] [
                                 str (sprintf "You're eliminated. Take your revenge in the next game !")
@@ -805,6 +806,7 @@ let playersDashboard model dispatch =
                         span [] [ str "Wait for your turn" ]
                 
                 ]
+           
         ]
 
 

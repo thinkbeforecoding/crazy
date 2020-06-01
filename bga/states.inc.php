@@ -67,7 +67,7 @@ $machinestates = array(
         "description" => clienttranslate('${actplayer} must select a crossroad around his field from where to start' ),
         "descriptionmyturn" => clienttranslate('${you} must select a crossroad around your field from where to start' ),
         "type" => "activeplayer",
-        "possibleactions" => array("selectFirstCrossroad"),
+        "possibleactions" => array("selectFirstCrossroad", "undo"),
         "transitions" => ["selectFirstCrossroad" => 3 ]
  
 
@@ -78,7 +78,7 @@ $machinestates = array(
     		"description" => clienttranslate('${actplayer} must move or play a card'),
     		"descriptionmyturn" => clienttranslate('${you} must move or play a card'),
     		"type" => "activeplayer",
-    		"possibleactions" => [ "move", "playCard", "next",  "discard", "endGame" ],
+    		"possibleactions" => [ "move", "playCard", "next",  "undo", "discard", "endGame" ],
             "updateGameProgression" => true,
     		"transitions" => [ "canMove" => 3, "next" => 10 , "endTurn" => 4, "shouldDiscard" => 5, "endGame" => 99 ]
     ], 
@@ -88,7 +88,7 @@ $machinestates = array(
     	"description" => clienttranslate('${actplayer} must play a card or end turn'),
     	"descriptionmyturn" => clienttranslate('${you} must play a card or end turn'),
     	"type" => "activeplayer",
-        "possibleactions" => [ "playCard", "next", "move", "discard", "move" ],
+        "possibleactions" => [ "playCard", "next", "move", "discard", "undo" ],
         "updateGameProgression" => true,
     	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10, "endTurn" => 4,  "endGame" => 99 ]
     ],
@@ -97,7 +97,7 @@ $machinestates = array(
     	"description" => clienttranslate('${actplayer} must play or discard a card to have max 6 cards'),
     	"descriptionmyturn" => clienttranslate('${you} must play or discard a card to have max 6 cards'),
     	"type" => "activeplayer",
-        "possibleactions" => [ "playCard", "next", "move", "discard", "move" ],
+        "possibleactions" => [ "playCard", "next", "move", "discard", "undo" ],
         "updateGameProgression" => true,
     	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10,  "endTurn" => 4, "endGame" => 99 ]
     ],

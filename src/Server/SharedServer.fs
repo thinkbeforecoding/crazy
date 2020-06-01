@@ -42,7 +42,7 @@ let privateEvents playerId events =
     | Board.DrawPileShuffled _ -> Board.DrawPileShuffled []
     | e -> e )
 
-let bgaUpdateState events board state changeState =
+let bgaUpdateState events board (state: UndoableBoard) changeState =
     for e in events do
         match e with
         | Board.Next -> changeState "next"
@@ -163,6 +163,9 @@ let textAction b e =
             Php.clienttranslate "${icon} ${player} dynamites 1 hay bale", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Dynamite ]
         | Board.Played(p, Player.CardPlayed(PlayNitro power)) ->
             Php.clienttranslate "${icon} ${player} get ${nitro} extra move(s)", Map.ofList ["player" ==> playerName p; "nitro" ==> (match power with One -> 1 | Two -> 2); "icon" ==> cardIcon (Nitro power) ]
+        | Board.Played(p, Player.Undone) ->
+            Php.clienttranslate "${player} undo last moves", Map.ofList ["player" ==> playerName p ]
+
         | _ -> null, Map.empty
     | _ ->
         null, Map.empty
@@ -171,6 +174,10 @@ type Stats =
     {
         TableStats: Map<string, int>
         PlayerStats: Map<string, Map<string,int>> }
+
+type UndoableStats =
+    { Stats: Stats
+      UndoPoint: Stats }
 
 
 
@@ -198,6 +205,15 @@ module Stats =
     let ruts_number = "ruts_number"
     let rutted_number = "rutted_number"
 
+    let empty =
+        let stats =
+            { TableStats = Map.ofList [ turns_number, 1 ]
+              PlayerStats = Map.empty }
+        { Stats = stats
+          UndoPoint = stats
+           }
+
+
 
     let diff x y =
         let sx = x |> Map.toSeq |> set
@@ -224,180 +240,157 @@ module Stats =
         match player with
         | None -> { stats with TableStats = stats.TableStats |> inc n name  }
         | Some p ->
-            match Map.tryFind p stats.PlayerStats with
-            | Some ps ->
-
-                let newStats = ps |> inc n name
-                { stats with
-                    PlayerStats = stats.PlayerStats |> Map.add p newStats }
-            | None -> stats
+            let ps = 
+                match Map.tryFind p stats.PlayerStats with
+                | Some ps -> ps
+                | None -> Map.empty
+            let newStats = ps |> inc n name
+            { stats with
+                PlayerStats = stats.PlayerStats |> Map.add p newStats }
 
     let updateStat f name player stats =
         match player with
         | None -> { stats with TableStats = stats.TableStats |> up f name  }
         | Some p ->
-            match Map.tryFind p stats.PlayerStats with
-            | Some ps ->
-
-                let newStats = ps |> up f name
-                { stats with
-                    PlayerStats = stats.PlayerStats |> Map.add p newStats }
-            | None -> stats
-
+            let ps =
+                match Map.tryFind p stats.PlayerStats with
+                | Some ps -> ps
+                | None -> Map.empty
+            let newStats = ps |> up f name
+            { stats with
+                PlayerStats = stats.PlayerStats |> Map.add p newStats }
 
     let update stats e =
         match e with
         | Board.Next ->
-            stats |> incStat 1 turns_number None
+            let newStats =
+                stats.Stats 
+                |> incStat 1 turns_number None
+            { Stats = newStats; UndoPoint = newStats }
+        | Board.Played(_, Player.Undone) ->
+            { stats with Stats = stats.UndoPoint }
         | Board.Played(p, Player.CutFence e) ->
-            stats 
-            |> incStat 1 fences_cut None
-            |> incStat 1 fences_cut (Some p)
-            |> incStat 1 cut_number (Some e.Player)
+            let newStats = 
+                stats.Stats
+                |> incStat 1 fences_cut None
+                |> incStat 1 fences_cut (Some p)
+                |> incStat 1 cut_number (Some e.Player)
+            { stats with Stats = newStats}
         | Board.Played(p, Player.FenceDrawn _) ->
-            stats 
-            |> incStat 1 fences_drawn None
-            |> incStat 1 fences_drawn (Some p)
+            let newStats =
+                stats.Stats
+                |> incStat 1 fences_drawn None
+                |> incStat 1 fences_drawn (Some p)
+            { stats with Stats = newStats}
         | Board.Played(p, Player.Annexed e) ->
             let size = List.length e.NewField
             let freeBarns = List.length e.FreeBarns
             let occupiedBarns = List.length e.OccupiedBarns
-            stats
-            |> incStat 1 takeovers_number None
-            |> incStat 1 takeovers_number (Some p)
-            |> updateStat (fun current _ -> max current size) biggest_takeover (Some p)
-            |> updateStat (fun current _ -> max current size) biggest_takeover None
-            |> incStat freeBarns freebarns_number None
-            |> incStat freeBarns freebarns_number (Some p)
-            |> incStat occupiedBarns occupiedbarns_number None
-            |> incStat occupiedBarns occupiedbarns_number (Some p)
+            let newStats =
+                stats.Stats
+                |> incStat 1 takeovers_number None
+                |> incStat 1 takeovers_number (Some p)
+                |> updateStat (fun current _ -> max current size) biggest_takeover (Some p)
+                |> updateStat (fun current _ -> max current size) biggest_takeover None
+                |> incStat freeBarns freebarns_number None
+                |> incStat freeBarns freebarns_number (Some p)
+                |> incStat occupiedBarns occupiedbarns_number None
+                |> incStat occupiedBarns occupiedbarns_number (Some p)
+            { stats with Stats = newStats}
         | Board.Played(p, Player.CardPlayed cp )->
-            let stats = 
-                stats
+            let statsNew = 
+                stats.Stats
                 |> incStat 1 cardsplayed_number None
                 |> incStat 1 cardsplayed_number (Some p)
             match cp with
             | PlayHayBale(hb,rm) ->
                 let hayBales = List.length hb
                 let moved = List.length rm
-                stats
-                |> incStat hayBales haybales_number None
-                |> incStat hayBales haybales_number (Some p)
-                |> incStat moved haybales_moved_number None
-                |> updateStat (fun current stats ->
-                    let totalHayBales = getStat haybales_number stats - getStat dynamites_number stats - getStat haybales_moved_number stats
-                    max current totalHayBales
-                    ) haybales_max_number None
+                let newStats = 
+                    statsNew
+                    |> incStat hayBales haybales_number None
+                    |> incStat hayBales haybales_number (Some p)
+                    |> incStat moved haybales_moved_number None
+                    |> updateStat (fun current stats ->
+                        let totalHayBales = getStat haybales_number stats - getStat dynamites_number stats - getStat haybales_moved_number stats
+                        max current totalHayBales
+                        ) haybales_max_number None
+                { stats with Stats = newStats}
             | PlayDynamite _ ->
-                stats
-                |> incStat 1 dynamites_number None
-                |> incStat 1 dynamites_number (Some p)
-                |> updateStat (fun current stats ->
-                                  let totalHayBales = getStat haybales_number stats - getStat dynamites_number stats  - getStat haybales_moved_number stats
-                                  max current totalHayBales
-                              ) haybales_max_number None
+                let newStats =
+                    statsNew
+                    |> incStat 1 dynamites_number None
+                    |> incStat 1 dynamites_number (Some p)
+                    |> updateStat (fun current stats ->
+                                      let totalHayBales = getStat haybales_number stats - getStat dynamites_number stats  - getStat haybales_moved_number stats
+                                      max current totalHayBales
+                                  ) haybales_max_number None
+                { stats with Stats = newStats}
             | PlayHelicopter _ ->
-                stats
-                |> incStat 1 helicopters_number None
-                |> incStat 1 helicopters_number (Some p)
+                let newStats = 
+                    stats.Stats
+                    |> incStat 1 helicopters_number None
+                    |> incStat 1 helicopters_number (Some p)
+                { stats with Stats = newStats}
             | PlayHighVoltage ->
-                stats
-                |> incStat 1 highvoltages_number None
-                |> incStat 1 highvoltages_number (Some p)
+                let newStats =
+                    stats.Stats
+                    |> incStat 1 highvoltages_number None
+                    |> incStat 1 highvoltages_number (Some p)
+                { stats with Stats = newStats}
             | PlayWatchdog ->
-                stats
-                |> incStat 1 watchdogs_number None
-                |> incStat 1 watchdogs_number (Some p)
+                let newStats =
+                    stats.Stats
+                    |> incStat 1 watchdogs_number None
+                    |> incStat 1 watchdogs_number (Some p)
+                { stats with Stats = newStats}
             | PlayBribe _ ->
-                stats
-                |> incStat 1 bribes_number None
-                |> incStat 1 bribes_number (Some p)
+                let newStats =
+                    stats.Stats
+                    |> incStat 1 bribes_number None
+                    |> incStat 1 bribes_number (Some p)
+                { stats with Stats = newStats}
             | PlayNitro One ->
-                stats
-                |> incStat 1 nitro1_number None
-                |> incStat 1 nitro1_number (Some p)
+                let newStats =
+                    stats.Stats
+                    |> incStat 1 nitro1_number None
+                    |> incStat 1 nitro1_number (Some p)
+                { stats with Stats = newStats}
             | PlayNitro Two ->
-                stats
-                |> incStat 1 nitro2_number None
-                |> incStat 1 nitro2_number (Some p)
+                let newStats =
+                    stats.Stats
+                    |> incStat 1 nitro2_number None
+                    |> incStat 1 nitro2_number (Some p)
+                { stats with Stats = newStats}
             | PlayRut victim ->
-                stats
-                |> incStat 1 ruts_number None
-                |> incStat 1 ruts_number (Some p)
-                |> incStat 1 rutted_number (Some victim)
+                let newStats =
+                    stats.Stats
+                    |> incStat 1 ruts_number None
+                    |> incStat 1 ruts_number (Some p)
+                    |> incStat 1 rutted_number (Some victim)
+                { stats with Stats = newStats}
+        | Board.UndoCheckPointed ->
+            { stats with UndoPoint = stats.Stats }
         | _ -> stats
 
 
 
 
-let updateStats es (incStat: int -> string -> string option -> unit) (updateStat:  (int -> int) -> string -> string option -> unit) (getStat: string -> string option -> int ) =
-    for e in es do
-        match e with
-        | Board.Next ->
-            incStat 1 Stats.turns_number None
-        | Board.Played(p, Player.CutFence e) ->
-            incStat 1 Stats.fences_cut None
-            incStat 1 Stats.fences_cut (Some p)
-            incStat 1 Stats.cut_number (Some e.Player)
-        | Board.Played(p, Player.FenceDrawn _) ->
-            incStat 1 Stats.fences_drawn None
-            incStat 1 Stats.fences_drawn (Some p)
-        | Board.Played(p, Player.Annexed e) ->
-            incStat 1 Stats.takeovers_number None
-            incStat 1 Stats.takeovers_number (Some p)
-            let size = List.length e.NewField
-            updateStat (fun current -> max current size) Stats.biggest_takeover (Some p)
-            updateStat (fun current -> max current size) Stats.biggest_takeover None
-            let freeBarns = List.length e.FreeBarns
-            incStat freeBarns Stats.freebarns_number None
-            incStat freeBarns Stats.freebarns_number (Some p)
-            let occupiedBarns = List.length e.OccupiedBarns
-            incStat occupiedBarns Stats.occupiedbarns_number None
-            incStat occupiedBarns Stats.occupiedbarns_number (Some p)
-        | Board.Played(p, Player.CardPlayed cp )->
-            incStat 1 Stats.cardsplayed_number None
-            incStat 1 Stats.cardsplayed_number (Some p)
-            match cp with
-            | PlayHayBale(hb,rm) ->
-                let hayBales = List.length hb
-                let moved = List.length rm
-                incStat hayBales Stats.haybales_number None
-                incStat hayBales Stats.haybales_number (Some p)
-                incStat moved Stats.haybales_moved_number None
+let updateStats es stats (setStat: int -> string -> string option -> unit) =
+    let newStats = 
+        es
+        |> List.fold Stats.update stats
 
-                updateStat (fun current ->
-                    let totalHayBales = getStat Stats.haybales_number None - getStat Stats.dynamites_number None - getStat Stats.haybales_moved_number None
-                    max current totalHayBales
-                ) Stats.haybales_max_number None
-            | PlayDynamite _ ->
-                incStat 1 Stats.dynamites_number None
-                incStat 1 Stats.dynamites_number (Some p)
-                updateStat (fun current ->
-                                  let totalHayBales = getStat Stats.haybales_number None - getStat Stats.dynamites_number None  - getStat Stats.haybales_moved_number None
-                                  max current totalHayBales
-                              ) Stats.haybales_max_number None
-            | PlayHelicopter _ ->
-                incStat 1 Stats.helicopters_number None
-                incStat 1 Stats.helicopters_number (Some p)
-            | PlayHighVoltage ->
-                incStat 1 Stats.highvoltages_number None
-                incStat 1 Stats.highvoltages_number (Some p)
-            | PlayWatchdog ->
-                incStat 1 Stats.watchdogs_number None
-                incStat 1 Stats.watchdogs_number (Some p)
-            | PlayBribe _ ->
-                incStat 1 Stats.bribes_number None
-                incStat 1 Stats.bribes_number (Some p)
-            | PlayNitro One ->
-                incStat 1 Stats.nitro1_number None
-                incStat 1 Stats.nitro1_number (Some p)
-            | PlayNitro Two ->
-                incStat 1 Stats.nitro2_number None
-                incStat 1 Stats.nitro2_number (Some p)
-            | PlayRut victim ->
-                incStat 1 Stats.ruts_number None
-                incStat 1 Stats.ruts_number (Some p)
-                incStat 1 Stats.rutted_number (Some victim)
+    let tableDiffs = Stats.diff stats.Stats.TableStats newStats.Stats.TableStats
+    for n,v in tableDiffs do
+        setStat v n None
 
-        | _ -> ()
+    for player, pstats in Map.toSeq newStats.Stats.PlayerStats do
+        let existing =
+            match Map.tryFind player stats.Stats.PlayerStats with
+            | Some s -> s
+            | None -> Map.empty
 
+        let playerDiff = Stats.diff existing pstats 
+        for n,v in playerDiff do
+           setStat v n (Some player)
