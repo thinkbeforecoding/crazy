@@ -364,7 +364,21 @@ let handView dispatch title playerId board cardAction hand =
                                   match cardAction with
                                   | Some { Index = index } when index = i -> 
                                         OnClick (fun _ -> dispatch CancelCard)
-                                  | _ -> OnClick (fun _ -> dispatch (SelectCard(c,i))) ] []
+                                  | _ -> OnClick (fun _ -> dispatch (SelectCard(c,i))) ] [
+                                    div [ ClassName "tooltiptext" ]
+                                        [ p [] [ str
+                                              (match c with
+                                               | Nitro One -> translate "Nitro +1"
+                                               | Nitro Two -> translate  "Nitro +2"
+                                               | Rut -> translate "Rut"
+                                               | HayBale One -> translate  "1 Hay Bale"
+                                               | HayBale Two -> translate "2 Hay Bales"
+                                               | Dynamite -> translate "Dynamite"
+                                               | HighVoltage -> translate "High Voltage"
+                                               | Watchdog -> translate "Watchdog" 
+                                               | Helicopter -> translate "Helicopter"
+                                               | Bribe -> translate "Bribe") ]
+                                          p [] [ str (translate " (click for full description)")] ] ]
 
                             match cardAction with
                             | Some { Index = index; Card = Nitro power; Hidden = false} when index = i ->

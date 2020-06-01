@@ -783,6 +783,18 @@ div.card {
     /*display: inline-block;*/
     background-image: url(~img/cards.jpg);
     background-size: 600% 200%;
+
+    .tooltiptext {
+        @include tooltip;
+        top: 6em;
+        width:8em;
+        left: -2em;
+        right: auto;
+    }
+
+    &:hover .tooltiptext {
+        visibility: visible;
+    }
 }
 
 
