@@ -117,7 +117,7 @@ let cardIcon card =
     "<div class=\"cardicon\"><div class=\"" + cardName + "\"></div></div>"
 
 
-let textAction b e = 
+let textAction (previous: Board) (b: Board)  e = 
     match b with
     | Board board
     | Won (_,board) ->
@@ -156,6 +156,15 @@ let textAction b e =
             Php.clienttranslate "${icon} ${player} dynamites 1 hay bale", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Dynamite ]
         | Board.Played(p, Player.CardPlayed(PlayNitro power)) ->
             Php.clienttranslate "${icon} ${player} get ${nitro} extra move(s)", Map.ofList ["player" ==> playerName p; "nitro" ==> (match power with One -> 1 | Two -> 2); "icon" ==> cardIcon (Nitro power) ]
+        | Board.Next ->
+            let player = 
+                match previous with
+                | Board b -> b.Table.Player
+                | _ -> ""
+            match Map.tryFind player board.Players with
+            | Some (Playing p) -> Php.clienttranslate "${player} ends turn after ${moves} moves", Map.ofList ["player" ==> playerName player; "moves" ==> p.Moves.Done ] 
+            | _ -> null, Map.empty
+
         | _ -> null, Map.empty
     | _ ->
         null, Map.empty
