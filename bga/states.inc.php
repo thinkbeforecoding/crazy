@@ -80,7 +80,7 @@ $machinestates = array(
     		"type" => "activeplayer",
     		"possibleactions" => [ "move", "playCard", "next",  "undo", "discard", "endGame" ],
             "updateGameProgression" => true,
-    		"transitions" => [ "canMove" => 3, "next" => 10 , "endTurn" => 4, "shouldDiscard" => 5, "endGame" => 99 ]
+    		"transitions" => [ "canMove" => 3, "next" => 10 , "endTurn" => 4, "shouldDiscard" => 5, "restart" => 2, "endGame" => 99 ]
     ], 
 
     4 => [
@@ -90,7 +90,7 @@ $machinestates = array(
     	"type" => "activeplayer",
         "possibleactions" => [ "playCard", "next", "move", "discard", "undo" ],
         "updateGameProgression" => true,
-    	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10, "endTurn" => 4,  "endGame" => 99 ]
+    	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10, "endTurn" => 4, "restart" => 2, "endGame" => 99 ]
     ],
     5 => [
         "name" => "discard",
@@ -99,7 +99,7 @@ $machinestates = array(
     	"type" => "activeplayer",
         "possibleactions" => [ "playCard", "next", "move", "discard", "undo" ],
         "updateGameProgression" => true,
-    	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10,  "endTurn" => 4, "endGame" => 99 ]
+    	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10,  "endTurn" => 4, "restart" => 2, "endGame" => 99 ]
     ],
     10 => [
         "name" => "next",

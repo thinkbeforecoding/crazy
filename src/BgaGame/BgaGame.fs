@@ -410,11 +410,11 @@ let playerBoard board playerid (player: CrazyPlayer) dispatch =
 let score  player =
     str (string (Player.principalFieldSize player))
 
-let undoView (model: UndoableBoard) dispatch =
-    if model.UndoType <> NoUndo then
-        match model.Board with
-        | Board _ ->
-            a [ Href "#"; OnClick(fun e -> dispatch Undo; e.preventDefault()) ] [ str (Globalization.translate "Undo")]
+let undoView (model: Model) dispatch =
+    if model.Board.UndoType <> NoUndo then
+        match model.Board.Board with
+        | Board b when model.PlayerId = Some b.Table.Player && not model.Board.AtUndoPoint  ->
+            a [ Id "crazy-undo"; ClassName "action-button bgabutton bgabutton_blue"; Href "#"; OnClick(fun e -> dispatch Undo; e.preventDefault()) ] [ str (Globalization.translate "Undo")]
         | _ -> null
     else
         null
@@ -441,10 +441,10 @@ let playersboard model dispatch =
         let undobtn = document.getElementById("crazy_undo")
         if undobtn = null then
             let parent = document.getElementById("generalactions")
-            let bdiv = document.createElement "div" :?> Browser.Types.HTMLDivElement
+            let bdiv = document.createElement "span" :?> Browser.Types.HTMLSpanElement
             bdiv.id <- "crazy_undo"
             parent.appendChild(bdiv) |> ignore
-            ReactDom.render(undoView model.Board dispatch, document.getElementById ("crazy_undo"))
+            ReactDom.render(undoView model dispatch, document.getElementById ("crazy_undo"))
 
     | _ -> ()
 

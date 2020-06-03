@@ -358,7 +358,7 @@ class CrazyFarmers extends Table
         $version = $state[0];
         $board = $state[1];
         $stats = $state[2];
-     
+        $previousBoard = $board;
         $cmd = new BoardCommand_Play($player_id, $playerCmd);
         $es = Shared_002EBoardModule___decide($cmd, $board);
 
@@ -367,12 +367,10 @@ class CrazyFarmers extends Table
         $board = self::fold($board, $es);
 
         self::updateScore($es,$board);
-        SharedServer___updateStats($es, $stats, function($v,$n,$p) { self::incStat($v,$n,$p); });
+        SharedServer___updateStats($es, $stats, function($v,$n,$p) { self::setStat($v,$n,$p); });
 
         if (!empty($es))
         {
-
-
             $args = [];
             $args['version'] = $newVersion;
             foreach(self::loadPlayersBasicInfos() as $id => $p)
@@ -388,7 +386,7 @@ class CrazyFarmers extends Table
 
             foreach ($es as $e)
             {
-                $result = SharedServer___textAction($board, $e);
+                $result = SharedServer___textAction($previousBoard, $board, $e);
                 $text = $result[0];
                 if (!is_null($text))
                 {

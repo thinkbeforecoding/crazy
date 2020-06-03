@@ -42,17 +42,18 @@ let privateEvents playerId events =
     | Board.DrawPileShuffled _ -> Board.DrawPileShuffled []
     | e -> e )
 
-let bgaUpdateState events board (state: UndoableBoard) changeState =
+let bgaUpdateState events (board: UndoableBoard) (state: string) changeState =
     for e in events do
         match e with
         | Board.Next -> changeState "next"
         | Board.GameWon _ -> changeState "endGame"
         | Board.Played(_,Player.FirstCrossroadSelected _) ->
             changeState "selectFirstCrossroad"
-        | Board.Played(p, _) ->
-            match board with
+        |Board.Played(p, Player.Undone) ->
+            match board.Board with
             | Board.Board b ->
                 match b.Players.[p] with
+                | Starting _ -> changeState "restart"
                 | Playing player ->
                     if Moves.canMove player.Moves then
                         changeState "canMove"
@@ -63,11 +64,27 @@ let bgaUpdateState events board (state: UndoableBoard) changeState =
                             changeState "endTurn"
                 | _ -> ()
             | _ -> ()
+        | Board.Played(p, _) ->
+            match board.Board with
+            | Board.Board b ->
+                match b.Players.[p] with
+                | Playing player ->
+                    if Moves.canMove player.Moves then
+                        changeState "canMove"
+                    elif Hand.canPlay player.Hand then
+                        if Hand.shouldDiscard player.Hand then
+                            changeState "shouldDiscard"
+                        else
+                            changeState "endTurn"
+                    elif board.UndoType <> NoUndo then
+                         changeState "endTurn"
+                | _ -> ()
+            | _ -> ()
         | _ -> ()
 
 
-let bgaNextPlayer board =
-    match board with
+let bgaNextPlayer (board: UndoableBoard) =
+    match board.Board with
     | Board b ->
         match Board.currentPlayer b with
         | Starting _ -> "nextStarting"
@@ -75,8 +92,8 @@ let bgaNextPlayer board =
     | InitialState _ 
     | Won _ -> ""
 
-let bgaProgression board =
-    match board with
+let bgaProgression (board: UndoableBoard) =
+    match board.Board with
     | InitialState _ -> 0.
     | Won _ -> 100.
     | Board b ->
@@ -93,9 +110,10 @@ let bgaProgression board =
             float (min g maxSize) * 100. / float g
                 
 
-let bgaScore events board updateScore =
-    match board with
-    | Board b ->
+let bgaScore events (board: UndoableBoard) updateScore =
+    match board.Board with
+    | Board b
+    | Won(_,b)->
         for e in events do
             match e with
             | Board.Played(_, Player.Annexed(_))
@@ -124,8 +142,8 @@ let cardIcon card =
     "<div class=\"cardicon\"><div class=\"" + cardName + "\"></div></div>"
 
 
-let textAction b e = 
-    match b with
+let textAction (previous: UndoableBoard) (b: UndoableBoard)  e = 
+    match b.Board with
     | Board board
     | Won (_,board) ->
         let playerName p =
@@ -165,6 +183,14 @@ let textAction b e =
             Php.clienttranslate "${icon} ${player} get ${nitro} extra move(s)", Map.ofList ["player" ==> playerName p; "nitro" ==> (match power with One -> 1 | Two -> 2); "icon" ==> cardIcon (Nitro power) ]
         | Board.Played(p, Player.Undone) ->
             Php.clienttranslate "${player} undo last moves", Map.ofList ["player" ==> playerName p ]
+        | Board.Next ->
+            let player = 
+                match previous.Board with
+                | Board b -> b.Table.Player
+                | _ -> ""
+            match Map.tryFind player board.Players with
+            | Some (Playing p) -> Php.clienttranslate "${player} ends turn after ${moves} moves", Map.ofList ["player" ==> playerName player; "moves" ==> p.Moves.Done ] 
+            | _ -> null, Map.empty
 
         | _ -> null, Map.empty
     | _ ->
@@ -207,7 +233,27 @@ module Stats =
 
     let empty =
         let stats =
-            { TableStats = Map.ofList [ turns_number, 1 ]
+            { TableStats = Map.ofList [ 
+                turns_number, 1
+                fences_drawn, 0
+                fences_cut, 0
+                takeovers_number, 0
+                biggest_takeover, 0
+                freebarns_number, 0
+                occupiedbarns_number, 0
+                cardsplayed_number, 0
+                haybales_number, 0
+                dynamites_number, 0
+                haybales_max_number, 0
+                haybales_moved_number, 0
+                helicopters_number, 0
+                highvoltages_number, 0
+                watchdogs_number, 0
+                bribes_number, 0
+                nitro1_number, 0
+                nitro2_number, 0
+                ruts_number, 0
+                ]
               PlayerStats = Map.empty }
         { Stats = stats
           UndoPoint = stats
@@ -243,7 +289,27 @@ module Stats =
             let ps = 
                 match Map.tryFind p stats.PlayerStats with
                 | Some ps -> ps
-                | None -> Map.empty
+                | None -> Map.ofList 
+                            [
+                                fences_drawn, 0
+                                fences_cut, 0
+                                cut_number, 0
+                                takeovers_number, 0
+                                biggest_takeover, 0
+                                freebarns_number, 0
+                                occupiedbarns_number, 0
+                                cardsplayed_number, 0
+                                haybales_number, 0
+                                dynamites_number, 0
+                                helicopters_number, 0
+                                highvoltages_number, 0
+                                watchdogs_number, 0
+                                bribes_number, 0
+                                nitro1_number, 0
+                                nitro2_number, 0
+                                ruts_number, 0
+                                rutted_number, 0
+                            ]
             let newStats = ps |> inc n name
             { stats with
                 PlayerStats = stats.PlayerStats |> Map.add p newStats }
@@ -269,6 +335,7 @@ module Stats =
             { Stats = newStats; UndoPoint = newStats }
         | Board.Played(_, Player.Undone) ->
             { stats with Stats = stats.UndoPoint }
+            
         | Board.Played(p, Player.CutFence e) ->
             let newStats = 
                 stats.Stats

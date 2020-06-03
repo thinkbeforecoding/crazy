@@ -63,9 +63,9 @@ $game_options = array(
     101 => array(
             'name' => totranslate('Undo mode'),    
             'values' => array(
-                        2 => array( 'name' => totranslate('Full Undo'), 'description' => totranslate('Undo to the start of the turn.')),
+                        1 => array( 'name' => totranslate('Full Undo'), 'description' => totranslate('Undo to the start of the turn.')),
     
-                        1 => array( 'name' => totranslate('Limited Undo'), 'description' => totranslate('Undo to the start of the turn, or just after cards were drawn'), 'tmdisplay' => totranslate('Limited Undo') ),
+                        2 => array( 'name' => totranslate('Limited Undo'), 'description' => totranslate('Undo to the start of the turn, or just after cards were drawn'), 'tmdisplay' => totranslate('Limited Undo') ),
     
                         3 => array( 'name' => totranslate('No Undo'), 'description' => totranslate('No Undo at all'), 'nobeginner' => true, 'tmdisplay' => totranslate('No Undo') )
                     )
