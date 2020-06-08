@@ -630,7 +630,7 @@ module PhpList =
 
 module PhpResult =
     let result = { Name = "Result"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
-    let okValue = { Name = "OkValue"; Type = ""}
+    let okValue = { Name = "ResultValue"; Type = ""}
     let ok = { Name = "Ok"; Fields = [okValue]; Methods = []; Abstract = true; BaseType = Some result; Interfaces = [] }
     let errorValue = { Name = "ErrorValue"; Type = ""}
     let error = { Name = "ResultError"; Fields = [errorValue] ; Methods = []; Abstract = true; BaseType = Some result; Interfaces = [] }
@@ -655,7 +655,7 @@ type PhpCompiler =
                                "Nil", PhpList.nil
                                "Result", PhpResult.result
                                "Ok", PhpResult.ok
-                               "Error", PhpResult.error
+                               "ResultError", PhpResult.error
                                ]  
           DecisionTargets = []
           LocalVars = Set.empty
@@ -714,8 +714,14 @@ let fixName (name: string) =
 
 let caseName (case: FSharpUnionCase) =
     let entity = case.ReturnType.TypeDefinition
-    if entity.UnionCases.Count = 1 || entity.CompiledName = "FSharpResult`2" then
+    if entity.UnionCases.Count = 1 then
         case.Name
+    elif entity.CompiledName = "FSharpResult`2" then
+        if case.Name = "Ok" then
+            case.Name
+        else
+            "ResultError"
+
     else
         entity.CompiledName + "_" + case.Name
 
@@ -984,8 +990,11 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
 
 
         
-    | Fable.Operation(Fable.Call(Fable.InstanceCall( Some (Fable.Value(Fable.StringConstant s, _ ))),{ Args = args; ThisArg = Some this}), _, _) ->
-        PhpMethod(convertExpr ctx this,fixName s, [for arg in args -> convertExpr ctx arg ] )
+    | Fable.Operation(Fable.Call(Fable.InstanceCall( Some (Fable.Value(Fable.StringConstant s, _ ))),({ Args = args; ThisArg = Some this} as argInfo)), typ, _) ->
+        match s, typ with
+        | "filter", Fable.Type.Array _  -> PhpCall(PhpConst(PhpConstString ("FSharpArray::" + fixName s)), convertArgsThisLast ctx argInfo)
+        
+        | _ -> PhpMethod(convertExpr ctx this,fixName s, [for arg in args -> convertExpr ctx arg ] )
     | Fable.Operation(Fable.CurriedApply(expr, args),_,_) ->
         PhpCall(convertExpr ctx expr, [for arg in args -> convertExpr ctx arg]) 
 
@@ -1109,7 +1118,17 @@ and convertArgs ctx (args: Fable.ArgInfo) =
         | Fable.IdentExpr({ Name = "Array"; Kind = Fable.CompilerGenerated }) -> ()
         | _ -> convertExpr ctx arg
     ]
-        
+and convertArgsThisLast ctx (args: Fable.ArgInfo) =
+       [ 
+         for arg in args.Args do 
+           match arg with
+           | Fable.IdentExpr({ Name = "Array"; Kind = Fable.CompilerGenerated }) -> ()
+           | _ -> convertExpr ctx arg
+         match args.ThisArg with
+         | Some arg -> convertExpr ctx arg
+         | None -> ()
+       ]
+            
         
 and convertFunction (ctx: PhpCompiler) kind body =
     let scope = ctx.NewScope()
@@ -1418,8 +1437,7 @@ let fs =
             for d in convertDecl phpComp decl do
                 i,d
     ]
-
-convertDecl phpComp asts.[1].Declarations.[167]
+convertDecl phpComp asts.[1].Declarations.[132]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w
@@ -1427,7 +1445,11 @@ let file = { Decls = fs }
 Output.writeFile ctx file
 w.ToString()
 
-IO.File.WriteAllText(@"C:\development\crazy\bga\modules\crazyfarmers.php", string w)
-IO.File.WriteAllText(@"C:\development\crazy\php\lib.php", string w)
+
+let fix =  
+    (string w).Replace("$Barns, $Goal, $Undo)", "$Barns, $Goal, $Undo=NULL)")
+              .Replace("$this->Undo = $Undo;", "$this->Undo = $Undo ?? new UndoType_FullUndo();")
+IO.File.WriteAllText(@"C:\development\crazy\bga\modules\crazyfarmers.php", fix)
+IO.File.WriteAllText(@"C:\development\crazy\php\lib.php", fix)
         
 

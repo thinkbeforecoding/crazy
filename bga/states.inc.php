@@ -80,7 +80,7 @@ $machinestates = array(
     		"type" => "activeplayer",
     		"possibleactions" => [ "move", "playCard", "next",  "undo", "discard", "endGame" ],
             "updateGameProgression" => true,
-    		"transitions" => [ "canMove" => 3, "next" => 10 , "endTurn" => 4, "shouldDiscard" => 5, "restart" => 2, "endGame" => 99 ]
+    		"transitions" => [ "canMove" => 3, "next" => 10 , "endTurn" => 4, "restart" => 2, "shouldDiscard" => 5, "zombiepass" => 11, "endGame" => 99 ]
     ], 
 
     4 => [
@@ -90,16 +90,16 @@ $machinestates = array(
     	"type" => "activeplayer",
         "possibleactions" => [ "playCard", "next", "move", "discard", "undo" ],
         "updateGameProgression" => true,
-    	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10, "endTurn" => 4, "restart" => 2, "endGame" => 99 ]
+    	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10, "restart" => 2, "endTurn" => 4, "zombiepass" => 11,  "endGame" => 99 ]
     ],
     5 => [
         "name" => "discard",
     	"description" => clienttranslate('${actplayer} must play or discard a card to have max 6 cards'),
     	"descriptionmyturn" => clienttranslate('${you} must play or discard a card to have max 6 cards'),
     	"type" => "activeplayer",
-        "possibleactions" => [ "playCard", "next", "move", "discard", "undo" ],
+        "possibleactions" => [ "playCard", "next", "move", "discard", "undo", ],
         "updateGameProgression" => true,
-    	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10,  "endTurn" => 4, "restart" => 2, "endGame" => 99 ]
+    	"transitions" => [ "canMove" => 3, "shouldDiscard" => 5, "next" => 10,  "endTurn" => 4, "zombiepass" => 11, "endGame" => 99 ]
     ],
     10 => [
         "name" => "next",
@@ -107,7 +107,16 @@ $machinestates = array(
         "type" => "game",
         "action" => "stNextPlayer",
         "updateGameProgression" => true,   
-        "transitions" => ["nextPlayer" => 3, "nextStarting" => 2 ]
+        "transitions" => ["nextPlayer" => 3, "nextStarting" => 2, "nextEndTurn" => 4 ]
+    ],
+    11 => [
+        "name" => "zombie",
+        "description" => '',
+        "type" => "game",
+        "action" => "stZombie",
+        "updateGameProgression" => true,   
+        "transitions" => ["nextPlayer" => 3, "nextStarting" => 2, "nextEndTurn" => 4 ]
+
     ],
     
 /*

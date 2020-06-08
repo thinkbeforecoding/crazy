@@ -53,7 +53,9 @@ function (dojo, declare,ui,c,v,crazy) {
             console.log( "Starting game setup" );
             self = this;
 
-            this.crazy.setup( (this.isSpectator ? null : this.player_id.toString()), gamedatas.board,gamedatas.version, function(command,args) { return self.onCommand(command[0], command[1]); });
+            this.crazy.setup( (this.isSpectator ? null : this.player_id.toString()),
+                              gamedatas.board,gamedatas.version, 
+                              function(command) { return self.onCommand(command[0], command[1], command[2], command[3]); });
             //this.cf.setup(gamedatas);
             // Setting up player boards
             for( var player_id in gamedatas.players )
@@ -189,20 +191,21 @@ function (dojo, declare,ui,c,v,crazy) {
         
         */
         
-        onCommand: function(cmd, args)
+        onCommand: function(cmd, args, cont, err)
         {
             this.ajaxcall( "/crazyfarmers/crazyfarmers/"+cmd+".html", args, 
             this, function( result ) {
 
             // What to do after the server call if it succeeded
             // (most of the time: nothing)
+                cont.call(this,result);
 
             }, function( is_error) {
 
             // What to do after the server call in anyway (success or failure)
             // (most of the time: nothing)
-
-
+                if (is_error)
+                    err.call(this,is_error);   
             } );      
                 // this.ajaxcall( "/crazyfarmers/crazyfarmers/sendCommand.html", { 
                 //                                             lock: true, 
@@ -223,7 +226,7 @@ function (dojo, declare,ui,c,v,crazy) {
 
         onEndTurn: function()
         {
-            this.onCommand("endTurn", { value: true, lock: true });
+            this.onCommand("endTurn", { value: true, lock: true }, function() {}, function() {} );
         },
 
         /* Example:

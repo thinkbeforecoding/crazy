@@ -80,8 +80,8 @@ interface FSharpUnion {
     public function get_FSharpCase();
 }
 
-function void($x) {}
 
+function void($x) {}
 
 class Result {
 
@@ -96,10 +96,10 @@ class Ok extends Result {
 
 }
 
-class Error extends Result {
-    public $ResultValue;
+class ResultError extends Result {
+    public $ErrorValue;
     function __construct($value)
     {
-        $this->ResultValue = $value;
+        $this->ErrorValue = $value;
     }
 }

@@ -37,11 +37,11 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
-@media screen and (max-width: 800px) {
+/*@media screen and (max-width: 800px) {
     body {
         font-size: small;
     }
-}
+}*/
 
 @mixin hover-count {
     font-family: BigSlabHammer;
@@ -436,8 +436,10 @@ body {
     }
 
     .markers {
-        margin-left: 3em;
         align-self: flex-end;
+        display: flex;
+        align-items: flex-end;
+        margin-top: 1.5em;
 
         & > div {
             .tooltiptext {
@@ -896,7 +898,9 @@ div.back {
             padding-right: 1em;
             display: flex;
             flex-flow: row wrap;
+            justify-content: flex-end;
             justify-items: flex-start;
+            align-items: baseline;
 
             button {
                 flex: 0 0 auto; 
@@ -1050,6 +1054,14 @@ div.back {
     align-items: stretch;
     border: 1px solid $crazy-tree;
     background-color: $crazy-lightgreen;
+
+    i.fa-bars {
+        display: inline-block;
+        margin: 5px;
+        color: $crazy-tree;
+        width: 1em;
+        height: 1em;
+    }
 
     &.show {
         height: 20em;

@@ -28,4 +28,16 @@ class FSharpArray {
         }
     }
 
+    public static function filter($filter,$array)
+    {
+        $result = [];
+        foreach($array as $item)
+        {
+            if ($filter($item))
+            {
+                $result[] = $item;
+            }
+        }
+        return $result;
+    }
 }

@@ -67,6 +67,7 @@ type Msg =
     | HidePop
     | HideVictory
     | Undo
+    | CommandNotSent of int * UndoableBoard
 
 
 
@@ -117,7 +118,15 @@ module Pix =
     let translate (dx: float,dy: float) (x: float,y: float) =
         x+dx, y+dy
 
-
+let (==>) x y = x, box y
+module String =
+    open System.Text.RegularExpressions
+    let fmtRx = Regex("{(\w+)}")
+    let format fmt args =
+        fmtRx.Replace(fmt, MatchEvaluator (fun m ->
+            match Map.tryFind m.Groups.[1].Value args with
+            | Some v -> string v
+            | None -> m.Value ) )
 
 
 let colorName color = 
@@ -320,7 +329,6 @@ let moveView dispatch move =
     | Move.Move (dir,c) -> crossroad c (fun _ -> dispatch (Move (dir, c)))
     | Move.ImpossibleMove (_,c,e) -> blockedCrossroad   c e
     | Move.SelectCrossroad(c) -> crossroad c (fun _ -> dispatch (SelectFirstCrossroad c))
-
        
 
 let handView dispatch title playerId board cardAction hand =
@@ -338,12 +346,13 @@ let handView dispatch title playerId board cardAction hand =
               for t in texts do
                 p [] [ t ]
 
+
               if active then
                   div [ ClassName "buttons" ] [ yield! buttons; yield cancel ] 
               else
+                  p [] [ str (translate ("You can only play cards during your turn")) ]
                   div [ ClassName "buttons" ]
-                    [ str (translate ("You can only play cards during your turn"))
-                      cancel ]
+                    [ cancel ]
             ]
 
     match hand with 
@@ -384,7 +393,7 @@ let handView dispatch title playerId board cardAction hand =
                             match cardAction with
                             | Some { Index = index; Card = Nitro power; Hidden = false} when index = i ->
                                 action ( match power with One -> translate "Nitro +1" | Two -> translate  "Nitro +2") 
-                                    [ str (sprintf (translate "Gives you %d extra move(s) during this turn.") (match power with One -> 1 | Two -> 2 ))
+                                    [ str (String.format (translate "Gives you {moves} extra move(s) during this turn.") (Map.ofList [ "moves" ==> match power with One -> 1 | Two -> 2  ]))
                                       Standard.i [] [str (translate "(Reminder: max. 5 moves per turn)") ] ]
                                      [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str (translate "Play") ] 
                                        yield! discard (Nitro power)]
@@ -497,18 +506,18 @@ let goalView board =
     match board.Goal with
     | Common c ->
         div []
-            [ str (sprintf (translate "%d parcels left") (c - Board.totalSize board)) ]
+            [ str (String.format (translate "{parcels} parcels left") (Map.ofList [ "parcels" ==> c - Board.totalSize board])) ]
     | Individual c ->
         div []
             [ for playerid, player in Map.toSeq board.Players do
-                p [] [ str (sprintf (translate "%s: %d parcels left") board.Table.Names.[playerid] (c - Player.fieldTotalSize player)) ]
+                p [] [ str (String.format (translate "{player}: {parcels} parcels left") (Map.ofList [ "player" ==> board.Table.Names.[playerid]; "parcels" ==> (c - Player.fieldTotalSize player)])) ]
             ]
 
 let endTurnView dispatch playerId board =
     if playerId = Some board.Table.Player then
         match  board.Players.[board.Table.Player] with
         | Playing player when 
-             not (Moves.canMove player.Moves) && Hand.canPlay player.Hand || List.isEmpty (Board.possibleMoves playerId (Board board)) ->
+             not (Moves.canMove player.Moves) && Hand.canPlay player.Hand || not (Player.canMove playerId (Board board)) ->
                [ crossroad player.Tractor (fun _ -> dispatch EndTurn) ]
                 
         | _ -> []
@@ -635,7 +644,7 @@ let commonGoal board goal =
          div [ClassName "tile-count"]
            [ let totalSize = Board.totalSize board
              str (sprintf "x%d" (goal - totalSize))
-             tooltip (sprintf  (translate "Common goal: %d parcels / Remaining: %d parcels") goal (goal - totalSize) ) ]
+             tooltip (String.format (translate "Common goal: {goal} parcels / Remaining: {parcels} parcels") (Map.ofList [ "goal" ==> goal; "parcels" ==> (goal - totalSize)]) ) ]
        ]
 
 type PlayerInfo = 
@@ -689,7 +698,7 @@ let playerInfo info (cards: ReactElement) dispatch =
                                     if p.Moves.Capacity = 5 then
                                         translate "(max 5 moves)"
 
-                                    sprintf (translate "/ %d moves done") p.Moves.Done
+                                    String.format (translate "/ {moves} moves done") (Map.ofList [ "moves" ==> p.Moves.Done ])
 
                                 | _ -> ()
 
@@ -708,7 +717,7 @@ let playerInfo info (cards: ReactElement) dispatch =
                      div [ClassName "tile-count"]
                          [ let totalSize = Player.fieldTotalSize info.Player
                            str (sprintf "x %d" (goal - totalSize))
-                           tooltip (sprintf (translate "Individual goal: %d parcels / Remaining: %d parcels") goal (goal - totalSize))
+                           tooltip (String.format (translate "Individual goal: {goal} parcels / Remaining: {parcels} parcels") (Map.ofList [ "goal" ==> goal; "parcels" ==> (goal - totalSize)]))
                            ] 
                    ]
             | _, Some (Common goal) ->

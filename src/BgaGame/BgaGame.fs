@@ -59,7 +59,7 @@ module Serialization =
 [<AllowNullLiteral>]
 type gamegui =
     abstract constructor: unit -> unit
-    abstract setup: string option * obj * int * (string * obj -> unit) -> unit
+    abstract setup: string option * obj * int * (string * obj * (obj -> unit) * (exn -> unit) -> unit) -> unit
     abstract onEnteringState: string ->  obj[] -> unit
     abstract onLeavingState: string -> obj[] -> unit
     abstract onUpdateActionButtons: string -> obj[] -> unit
@@ -67,76 +67,78 @@ type gamegui =
 
 [<AllowNullLiteral>]
 type Bridge(dispatch: ClientMsg -> unit) =
-    let mutable send : string * obj -> unit = fun _ -> ()
+    let mutable send : string * obj * (obj -> unit) * (exn -> unit) -> unit = fun _ -> ()
 
     member _.Send(cmd) =
-        
-        match cmd with
-        | Player.SelectFirstCrossroad( { Crossroad = Crossroad(Axe(q,r), side) } ) ->
-            send ("selectFirstCrossroad", createObj [ "q" ==> q
-                                                      "r" ==> r
-                                                      "side" ==> string side
-                                                      "lock" ==> true ])
+        async { 
+        let cmdName, args = 
+            match cmd with
+            | Player.SelectFirstCrossroad( { Crossroad = Crossroad(Axe(q,r), side) } ) ->
+                "selectFirstCrossroad", createObj [ "q" ==> q
+                                                    "r" ==> r
+                                                    "side" ==> string side
+                                                    "lock" ==> true ]
 
-        | Player.Move({ Direction = dir; Destination = Crossroad(Axe(q,r), side)  }) ->
-            send ("move", createObj [ "direction" ==> string dir
-                                      "q" ==> q
-                                      "r" ==> r
-                                      "side" ==> string side
-                                      "lock" ==> true ])
+            | Player.Move({ Direction = dir; Destination = Crossroad(Axe(q,r), side)  }) ->
+                "move", createObj [ "direction" ==> string dir
+                                    "q" ==> q
+                                    "r" ==> r
+                                    "side" ==> string side
+                                    "lock" ==> true ]
 
-        | Player.EndTurn ->
-            send ("endTurn", createObj [ "value" ==> true; "lock" ==> true ])
-        | Player.Undo ->
-            send ("undo", createObj [ "value" ==> true; "lock" ==> true ])
+            | Player.EndTurn ->
+                "endTurn", createObj [ "value" ==> true; "lock" ==> true ]
+            | Player.Undo ->
+                "undo", createObj [ "value" ==> true; "lock" ==> true ]
 
-        | Player.PlayCard c ->
-            match c with
-            | PlayNitro One -> send ("playNitro", createObj ["power" ==>  "One"; "lock" ==> true ])
-            | PlayNitro Two -> send ("playNitro", createObj ["power" ==>  "Two"; "lock" ==> true ])
-            | PlayRut victim -> send ("playRut", createObj ["victim" ==> victim; "lock" ==> true ])
-            | PlayHayBale ([Path(Axe(q,r), side)], []) -> send ("playOneHayBale", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ])
-            | PlayHayBale ([Path(Axe(q,r), side)], [Path(Axe(rm_q,rm_r), rm_side)]) -> 
-                send ("playOneHayBale", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side;
-                                                   "rm_q" ==> rm_q; "rm_r" ==> rm_r; "rm_side" ==> string rm_side 
-                                                   "lock" ==> true ])
-            | PlayHayBale([Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)], []) -> 
-                            send ("playTwoHayBale", createObj ["q1" ==>  q1; "r1" ==> r1; "side1" ==> string side1
-                                                               "q2" ==> q2; "r2" ==> r2; "side2" ==> string side2
-                                                               "lock" ==> true ]) 
-            | PlayHayBale([Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)], [Path(Axe(rm_q1,rm_r1), rm_side1)]) -> 
-                            send ("playTwoHayBale", createObj ["q1" ==>  q1; "r1" ==> r1; "side1" ==> string side1
-                                                               "q2" ==> q2; "r2" ==> r2; "side2" ==> string side2
-                                                               "rm_q1" ==> rm_q1; "rm_r1" ==> rm_r1; "rm_side1" ==> string rm_side1
-                                                               "lock" ==> true ]) 
-            | PlayHayBale([Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)], [Path(Axe(rm_q1,rm_r1), rm_side1); Path(Axe(rm_q2,rm_r2), rm_side2)]) -> 
-                            send ("playTwoHayBale", createObj ["q1" ==>  q1; "r1" ==> r1; "side1" ==> string side1
-                                                               "q2" ==> q2; "r2" ==> r2; "side2" ==> string side2
-                                                               "rm_q1" ==> rm_q1; "rm_r1" ==> rm_r1; "rm_side1" ==> string rm_side1
-                                                               "rm_q2" ==> rm_q2; "rm_r2" ==> rm_r2; "rm_side2" ==> string rm_side2
-                                                               "lock" ==> true ]) 
-            | PlayDynamite (Path(Axe(q,r),side)) -> send ("playDynamite", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ])
-            | PlayHighVoltage  -> send ("playHighVoltage", createObj ["value" ==> true; "lock" ==> true ])
-            | PlayWatchdog  -> send ("playWatchdog", createObj ["value" ==> true; "lock" ==> true])
-            | PlayHelicopter (Crossroad(Axe(q,r), side)) -> send ("playHelicopter", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ])
-            | PlayBribe (Parcel(Axe(q,r)))  ->  send ("playBribe", createObj ["q" ==>  q; "r" ==> r; "lock" ==> true ])
-            | PlayHayBale _ -> () 
-        | Player.Discard c ->
-            match c with
-            | Nitro One -> send ("discard", createObj [ "card" ==> "Nitro1"; "lock" ==> "true" ])
-            | Nitro Two -> send ("discard", createObj [ "card" ==> "Nitro2"; "lock" ==> "true" ])
-            | Rut -> send ("discard", createObj [ "card" ==> "Rut"; "lock" ==> "true" ])
-            | HayBale One -> send ("discard", createObj [ "card" ==> "HayBale1"; "lock" ==> "true" ])
-            | HayBale Two -> send ("discard", createObj [ "card" ==> "HayBale2"; "lock" ==> "true" ])
-            | Dynamite -> send ("discard", createObj [ "card" ==> "Dynamite"; "lock" ==> "true" ])
-            | HighVoltage -> send ("discard", createObj [ "card" ==> "HighVoltage"; "lock" ==> "true" ])
-            | Watchdog -> send ("discard", createObj [ "card" ==> "Watchdog"; "lock" ==> "true" ])
-            | Helicopter -> send ("discard", createObj [ "card" ==> "Helicopter"; "lock" ==> "true" ])
-            | Bribe -> send ("discard", createObj [ "card" ==> "Bribe"; "lock" ==> "true" ])
-        | Player.Start _ -> ()
-        //send json
+            | Player.PlayCard c ->
+                match c with
+                | PlayNitro One -> "playNitro", createObj ["power" ==>  "One"; "lock" ==> true ]
+                | PlayNitro Two -> "playNitro", createObj ["power" ==>  "Two"; "lock" ==> true ]
+                | PlayRut victim ->"playRut", createObj ["victim" ==> victim; "lock" ==> true ]
+                | PlayHayBale ([Path(Axe(q,r), side)], []) -> "playOneHayBale", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ]
+                | PlayHayBale ([Path(Axe(q,r), side)], [Path(Axe(rm_q,rm_r), rm_side)]) -> 
+                    "playOneHayBale", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side;
+                                                 "rm_q" ==> rm_q; "rm_r" ==> rm_r; "rm_side" ==> string rm_side 
+                                                 "lock" ==> true ]
+                | PlayHayBale([Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)], []) -> 
+                    "playTwoHayBale", createObj ["q1" ==>  q1; "r1" ==> r1; "side1" ==> string side1
+                                                 "q2" ==> q2; "r2" ==> r2; "side2" ==> string side2
+                                                 "lock" ==> true ]
+                | PlayHayBale([Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)], [Path(Axe(rm_q1,rm_r1), rm_side1)]) -> 
+                    "playTwoHayBale", createObj ["q1" ==>  q1; "r1" ==> r1; "side1" ==> string side1
+                                                 "q2" ==> q2; "r2" ==> r2; "side2" ==> string side2
+                                                 "rm_q1" ==> rm_q1; "rm_r1" ==> rm_r1; "rm_side1" ==> string rm_side1
+                                                 "lock" ==> true ]
+                | PlayHayBale([Path(Axe(q1,r1), side1); Path(Axe(q2,r2), side2)], [Path(Axe(rm_q1,rm_r1), rm_side1); Path(Axe(rm_q2,rm_r2), rm_side2)]) -> 
+                    "playTwoHayBale", createObj ["q1" ==>  q1; "r1" ==> r1; "side1" ==> string side1
+                                                 "q2" ==> q2; "r2" ==> r2; "side2" ==> string side2
+                                                 "rm_q1" ==> rm_q1; "rm_r1" ==> rm_r1; "rm_side1" ==> string rm_side1
+                                                 "rm_q2" ==> rm_q2; "rm_r2" ==> rm_r2; "rm_side2" ==> string rm_side2
+                                                 "lock" ==> true ]
+                | PlayDynamite (Path(Axe(q,r),side)) -> "playDynamite", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ]
+                | PlayHighVoltage  -> "playHighVoltage", createObj ["value" ==> true; "lock" ==> true ]
+                | PlayWatchdog  -> "playWatchdog", createObj ["value" ==> true; "lock" ==> true]
+                | PlayHelicopter (Crossroad(Axe(q,r), side)) -> "playHelicopter", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ]
+                | PlayBribe (Parcel(Axe(q,r)))  ->  "playBribe", createObj ["q" ==>  q; "r" ==> r; "lock" ==> true ]
+                | PlayHayBale _ -> null, null
+            | Player.Discard c ->
+                match c with
+                | Nitro One -> "discard", createObj [ "card" ==> "Nitro1"; "lock" ==> "true" ]
+                | Nitro Two -> "discard", createObj [ "card" ==> "Nitro2"; "lock" ==> "true" ]
+                | Rut -> "discard", createObj [ "card" ==> "Rut"; "lock" ==> "true" ]
+                | HayBale One -> "discard", createObj [ "card" ==> "HayBale1"; "lock" ==> "true" ]
+                | HayBale Two -> "discard", createObj [ "card" ==> "HayBale2"; "lock" ==> "true" ]
+                | Dynamite -> "discard", createObj [ "card" ==> "Dynamite"; "lock" ==> "true" ]
+                | HighVoltage -> "discard", createObj [ "card" ==> "HighVoltage"; "lock" ==> "true" ]
+                | Watchdog -> "discard", createObj [ "card" ==> "Watchdog"; "lock" ==> "true" ]
+                | Helicopter -> "discard", createObj [ "card" ==> "Helicopter"; "lock" ==> "true" ]
+                | Bribe -> "discard", createObj [ "card" ==> "Bribe"; "lock" ==> "true" ]
+            | Player.Start _ -> null, null
 
-        
+        if not (isNull cmdName) then
+            do! Async.FromContinuations(fun (c,r,_) -> send(cmdName, args, c,r)) |> Async.Ignore
+        }
 
 
     interface gamegui with
@@ -200,8 +202,22 @@ module Program =
         program
         |> Program.withSetState setState
 module Cmd =
-    let bridgeSend msg : Cmd<'msg> =
-        [ fun _ -> bridge.Send(msg) ]
+    let sender =
+        MailboxProcessor.Start <| fun mailbox ->
+            async {
+                while true do
+                    let! cmd, version, model, reply = mailbox.Receive()
+                    try
+                        do! bridge.Send(cmd)
+                    with
+                    | ex -> 
+                        console.error(ex)
+                        reply (CommandNotSent(version, model))
+            }
+
+
+    let bridgeSend (msg, version, model) : Cmd<Msg> =
+        [ fun dispatch -> sender.Post(msg, version, model, dispatch) ]
 
 
 
@@ -232,18 +248,21 @@ let handleCommand (model : Model) command =
             Board.decide (Board.Play(playerid, command)) model.Board 
             // fitler out PlayerDrewCard since randomness cannot be computed locally
             // the actual card will be sent by the server
-            |> List.filter (function Board.PlayerDrewCards e when e.Player = playerid -> false | _ -> true )
+            
+        let filteredEvent =
+            events |> List.filter (function Board.PlayerDrewCards e when e.Player = playerid -> false | _ -> true )
 
         if List.isEmpty events then
             model, Cmd.none
         else
-            let newState = List.fold Board.evolve model.Board events
+            let newState = List.fold Board.evolve model.Board filteredEvent
+            console.log(sprintf "handleCommand version %d" (model.LocalVersion + 1))
             { model with 
                 Board = newState
                 LocalVersion = model.LocalVersion + 1
-                Moves = Board.possibleMoves model.PlayerId newState.Board
+                Moves = Player.possibleMoves model.PlayerId newState.Board
                 CardAction = None
-            } , Cmd.bridgeSend(command)
+            } , Cmd.bridgeSend(command, model.Version, model.Synched)
     | None -> model,  Cmd.none
 
 
@@ -340,14 +359,15 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                   LocalVersion = v
                   Synched = state
                   Version = v
-                  Moves =  Board.possibleMoves currentModel.PlayerId state.Board
+                  Moves =  Player.possibleMoves currentModel.PlayerId state.Board
                   }
         newState, Cmd.none// cmd
 
     | Remote (Events (e, version)) ->
         if version >= currentModel.Version then
+            console.log (sprintf "version: %d localVersion %d currentVersion %d" version currentModel.LocalVersion currentModel.Version)
             let newState = List.fold Board.evolve currentModel.Synched e
-            let newVersion = version + 1
+            let newVersion = version 
             let newCard = 
                 e |> List.fold (fun card e ->
                     match e with
@@ -362,14 +382,12 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                         currentModel.Board
                   LocalVersion = max newVersion currentModel.LocalVersion
                   Synched = newState
-                  Version = version + 1
-                  Error = currentModel.Error + "\n" + string version
-                  Moves = Board.possibleMoves currentModel.PlayerId newState.Board
-                  Message = "Event"
+                  Version = newVersion
+                  Moves = Player.possibleMoves currentModel.PlayerId newState.Board
                   PlayedCard = newCard
             }, Cmd.none
         else
-          { currentModel with Error = currentModel.Error + sprintf "\nskipped %d (<%d)" version currentModel.Version }, Cmd.none
+          currentModel, Cmd.none
     | Remote (Message m) ->
         { currentModel with
               Message = m
@@ -382,6 +400,14 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
         currentModel, Cmd.none
     | HideVictory ->
          {currentModel with ShowVictory = false}, Cmd.none
+    | CommandNotSent(version, board) ->
+        console.log(sprintf "Command not sent")
+        { currentModel with
+            LocalVersion = version
+            Board = board
+            Version = version
+            Synched = board
+        }, Cmd.none
 
 let playerBoard board playerid (player: CrazyPlayer) dispatch =
     div [] [
@@ -393,7 +419,7 @@ let playerBoard board playerid (player: CrazyPlayer) dispatch =
                     [ 
                       div [] [span [][str (string (cardCount))]] 
                        ]
-                tooltip (sprintf (Globalization.translate "%d cards in hand") cardCount) ]
+                tooltip (String.format (Globalization.translate "{cards} cards in hand") (Map.ofList [ "cards" ==> cardCount])) ]
 
 
         playerInfo { Name = None

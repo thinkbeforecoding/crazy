@@ -154,7 +154,13 @@ opponents will try to stop you by cutting your electric fences or playing event 
 // circuit : A plays and choose the next player C, C plays and choose the next player D, ...
 // complex : A+B+C plays and says that the next player is A+B
 'is_sandbox' => false,
-'turnControl' => 'simple'
+'turnControl' => 'simple',
 
 ////////
+
+'custom_buy_button' => array(
+    'url' => 'https://www.kickstarter.com/projects/1486112993/crazy-farmers-and-the-clotures-electriques?ref=discovery',
+    'label' => totranslate('KickStarter June 18th')
+ )
+
 );

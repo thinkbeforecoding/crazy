@@ -42,20 +42,23 @@ let privateEvents playerId events =
     | Board.DrawPileShuffled _ -> Board.DrawPileShuffled []
     | e -> e )
 
-let bgaUpdateState events (board: UndoableBoard) (state: string) changeState =
+let bgaUpdateState events (board: UndoableBoard) (state: string) changeState eliminatePlayer =
     for e in events do
         match e with
         | Board.Next -> changeState "next"
         | Board.GameWon _ -> changeState "endGame"
         | Board.Played(_,Player.FirstCrossroadSelected _) ->
             changeState "selectFirstCrossroad"
+        | Board.Played(p, Player.Eliminated) ->
+             eliminatePlayer p;
+
         |Board.Played(p, Player.Undone) ->
             match board.Board with
             | Board.Board b ->
                 match b.Players.[p] with
                 | Starting _ -> changeState "restart"
                 | Playing player ->
-                    if Moves.canMove player.Moves then
+                    if Player.canMove (Some p) board.Board then
                         changeState "canMove"
                     elif Hand.canPlay player.Hand then
                         if Hand.shouldDiscard player.Hand then
@@ -69,7 +72,7 @@ let bgaUpdateState events (board: UndoableBoard) (state: string) changeState =
             | Board.Board b ->
                 match b.Players.[p] with
                 | Playing player ->
-                    if Moves.canMove player.Moves then
+                    if Player.canMove (Some p) board.Board then
                         changeState "canMove"
                     elif Hand.canPlay player.Hand then
                         if Hand.shouldDiscard player.Hand then
@@ -88,7 +91,11 @@ let bgaNextPlayer (board: UndoableBoard) =
     | Board b ->
         match Board.currentPlayer b with
         | Starting _ -> "nextStarting"
-        | _ -> "nextPlayer"
+        | _ -> 
+            if Player.canMove (Some b.Table.Player) board.Board then
+                "nextPlayer"
+            else
+                "nextEndTurn"
     | InitialState _ 
     | Won _ -> ""
 

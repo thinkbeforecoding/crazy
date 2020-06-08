@@ -371,7 +371,7 @@ class CrazyFarmers extends Table
 
         if (!empty($es))
         {
-            $args = [];
+            $args = []; 
             $args['version'] = $newVersion;
             foreach(self::loadPlayersBasicInfos() as $id => $p)
             {
@@ -470,7 +470,11 @@ class CrazyFarmers extends Table
 
     function updateState($es,$board)
     {
-        SharedServer___bgaUpdateState($es,$board, $this->gamestate->state()['name'], function($state) {$this->gamestate->nextState($state);});
+        SharedServer___bgaUpdateState($es,$board,
+            $this->gamestate->state()['name'], 
+            function($state) {$this->gamestate->nextState($state);},
+            function($player) {  self::eliminatePlayer($player); }
+        );
     }
     
     function stNextPlayer()
@@ -480,12 +484,23 @@ class CrazyFarmers extends Table
         $version = $state[0];
         $board = $state[1];
 
-
+        self::giveExtraTime($player_id);
 
         $s = SharedServer___bgaNextPlayer($board);
 
         $this->gamestate->nextState($s);
     }
+
+    function stZombie()
+    {
+        $player_id = self::activeNextPlayer();
+        self::giveExtraTime($player_id);
+
+        $this->gamestate->nextState("nextPlayer");
+    }
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
 ////////////
@@ -559,7 +574,7 @@ class CrazyFarmers extends Table
         if ($state['type'] === "activeplayer") {
             switch ($statename) {
                 default:
-                    $this->gamestate->nextState( "zombiePass" );
+                    $this->gamestate->nextState( "zombiepass" );
                 	break;
             }
 

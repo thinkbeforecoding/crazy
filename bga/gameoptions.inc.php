@@ -53,11 +53,11 @@ $game_options = array(
     100 => array(
         'name' => totranslate('Game mode'),    
         'values' => array(
-                    2 => array( 'name' => totranslate('Regular'), 'description' => totranslate('25-50min'), 'tmdisplay' => totranslate ('Regular')),
+                    2 => array( 'name' => totranslate('Regular (27/11/9)'), 'description' => totranslate('25-50min (2P/3P/4P)'), 'tmdisplay' => totranslate ('Regular (27/11/9)')),
 
-                    1 => array( 'name' => totranslate('Fast'), 'description' => totranslate('15-30min'), 'tmdisplay' => totranslate('Fast') ),
+                    1 => array( 'name' => totranslate('Fast (23/9/8)'), 'description' => totranslate('15-30min (2P/3P/4P)'), 'tmdisplay' => totranslate('Fast (23/9/8)') ),
 
-                    3 => array( 'name' => totranslate('Expert'), 'description' => totranslate('40-90min'), 'nobeginner' => true, 'tmdisplay' => totranslate('Expert') )
+                    3 => array( 'name' => totranslate('Expert (31/13/11)'), 'description' => totranslate('40-90min (2P/3P/4P)'), 'nobeginner' => true, 'tmdisplay' => totranslate('Expert (31/13/11)') )
                 )
         ),
     101 => array(

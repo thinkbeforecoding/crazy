@@ -75,8 +75,9 @@ class Seq {
 
     public static function delay($f) 
     {
-        return $f(NULL);
+        return new DelayedSeq($f);
     }
+
 
     public static function append($x,$y)
     {
@@ -152,4 +153,20 @@ class Seq {
         }
     }
 
+}
+
+
+class DelayedSeq implements IteratorAggregate {
+    public $f;
+    function __construct($f) {
+        $this->f = $f;
+    }
+
+    public function getIterator() {
+        $f = $this->f;
+        $seq = $f(NULL);
+        foreach($seq as $item)
+            yield $item;
+    } 
+    
 }

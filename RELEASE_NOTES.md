@@ -1,3 +1,15 @@
+### 0.5.3   -
+* Fix: When player cannot move, they should be able to end turn
+* Fix: Error on each turn due to missing callbacks
+
+### 0.5.2   - 2020-06-03
+* Fix: Undoing a turn where a Watchdog or Highvoltage just finished reactive them
+* Fix: 3 path in the SWO part are incorrectly marked as border for Hay Bales
+
+### 0.5.1   - 2020-06-03
+* Serialize commands to server
+* Fix chat
+
 ### 0.5.00  - 2020-06-01
 * Undo
 * Fix dynamite display

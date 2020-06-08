@@ -56,7 +56,7 @@ let handleCommand (model : Model) command =
             { model with 
                 Board = newState
                 LocalVersion = model.LocalVersion + 1
-                Moves = Board.possibleMoves model.PlayerId newState.Board
+                Moves = Player.possibleMoves model.PlayerId newState.Board
                 CardAction = None
             } , Cmd.bridgeSend(Command command)
     | None -> model,  Cmd.none
@@ -158,7 +158,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                   LocalVersion = v
                   Synched = state
                   Version = v
-                  Moves =  Board.possibleMoves currentModel.PlayerId state.Board
+                  Moves =  Player.possibleMoves currentModel.PlayerId state.Board
                   Chat = { Entries = chat; Show = false; Pop = not (List.isEmpty chat) }
                   }
         newState, Cmd.none// cmd
@@ -183,7 +183,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                   Synched = newState
                   Version = version + 1
                   Error = currentModel.Error + "\n" + string version
-                  Moves = Board.possibleMoves currentModel.PlayerId newState.Board
+                  Moves = Player.possibleMoves currentModel.PlayerId newState.Board
                   Message = "Event"
                   PlayedCard = newCard
             }, Cmd.none
@@ -209,6 +209,8 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
             Chat = { currentModel.Chat with Pop = false }}, Cmd.none
     | HideVictory ->
         currentModel, Cmd.none
+    | CommandNotSent _ ->
+        currentModel, Cmd.none
         
 let chatView dispatch playerId (board: PlayingBoard) chat =
     div [ classBaseList "chat" ["show", chat.Show]  ]
@@ -223,14 +225,21 @@ let chatView dispatch playerId (board: PlayingBoard) chat =
                        if entry.Player = playerId then
                            div [ ClassName "entry you"] [ p [] [str entry.Text] ; div [ ClassName "time" ] [ str (entry.Date.ToShortTimeString())] ]
                        else
-                           let name = board.Table.Names.[entry.Player]
-                           let color = board.Players.[entry.Player] |> Player.color
-                           div [ ClassName "entry other"] [ 
-                                   div [ ClassName "author"] [
-                                       div [ ClassName (colorName color)] [ div [ ClassName "player" ] []] 
-                                       div [ ClassName "name"] [ str name ]
-                                   ]
-                                   p [] [str entry.Text] ; div [ ClassName "time" ] [ str (entry.Date.ToShortTimeString())] ]
+                            match Map.tryFind entry.Player  board.Table.Names with
+                            | None -> 
+                               div [ ClassName "entry other"] [ 
+                                       div [ ClassName "author"] [
+                                           div [ ClassName "name"] [ str "Visitor" ]
+                                       ]
+                                       p [] [str entry.Text] ; div [ ClassName "time" ] [ str (entry.Date.ToShortTimeString())] ]
+                            | Some name ->
+                               let color = board.Players.[entry.Player] |> Player.color
+                               div [ ClassName "entry other"] [ 
+                                       div [ ClassName "author"] [
+                                           div [ ClassName (colorName color)] [ div [ ClassName "player" ] []] 
+                                           div [ ClassName "name"] [ str name ]
+                                       ]
+                                       p [] [str entry.Text] ; div [ ClassName "time" ] [ str (entry.Date.ToShortTimeString())] ]
                     ]
                ]
              input [ Type "text"; Id "chat-input"; OnKeyUp (fun e -> 

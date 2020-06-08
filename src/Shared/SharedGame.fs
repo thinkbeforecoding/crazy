@@ -493,7 +493,6 @@ module Path =
             for q in -3..0 do
                 Path(Axe(q,-q-3), BNW)
                 Path(Axe(q,-q-3), BN)
-                Path(Axe(q,3), BNW)
                 Path(Axe(q,3)+Axe.SW, BNE)
                 Path(Axe(q,3)+Axe.S, BN)
 
@@ -1258,12 +1257,12 @@ module Player =
                                 for playerid, p in otherPlayers do
                                     match p with
                                     | Playing p ->
+                                        let remainingField = p.Field - annexed
                                         if not (Fence.isEmpty p.Fence) then
                                             let start = Fence.start p.Tractor p.Fence
-                                            if Crossroad.isInField annexed start then
+                                            if not (Crossroad.isInField remainingField start) then
                                                 CutFence { Player = playerid }
                                         else
-                                            let remainingField = p.Field - annexed
                                             if Crossroad.isInField annexed p.Tractor && not (Crossroad.isInField remainingField p.Tractor) then
                                                 CutFence { Player = playerid }
                                     | _ -> ()
@@ -1343,6 +1342,7 @@ module Player =
                               Bribed { Parcel = parcel; Victim = playerId }
                           BonusDiscarded (Card.ofPlayCard card)
 
+
                           match Fence.bribeAnnexation parcel p.Tractor p.Fence with
                           | None -> ()
                           | Some(remaining, _, [] ) ->
@@ -1377,14 +1377,9 @@ module Player =
                                     OccupiedBarns = annexedBarns.Occupied |> Field.parcels
                                     FenceLength = remaining }
 
-
-
-
-
-                          
-                          
-                          
-                          
+                          if p.Power = PowerDown && Parcel.contains p.Tractor parcel then
+                                // The player has been reconnected
+                                PoweredUp
                           ]
                     | _ -> []
 
@@ -1477,7 +1472,7 @@ module Player =
         else
             []
 
-    let possibleMoves player =
+    let basicMoves player =
         match player with
         | Playing player when Moves.canMove player.Moves ->
             [ Up;Down;Horizontal]
@@ -1533,6 +1528,49 @@ module Player =
             >>= checkHeliported moverbonus player
            
         | _ -> Ok c
+
+    let otherPlayers playerid (board: PlayingBoard) =
+        board.Players
+        |> Map.toSeq
+        |> Seq.filter (fun (id,_) -> id <> playerid)
+        |> Seq.toList
+
+
+    let possibleMoves playerid (board: Board) =
+        match board, playerid with
+        | Board board, Some playerid ->
+            match Map.tryFind playerid board.Players with
+            | Some ((Playing p) as player) when Moves.canMove p.Moves->
+                let otherPlayers =
+                    otherPlayers playerid board
+                    |> List.map snd
+                let check = 
+                    checkMove (bonus player)
+                [ 
+                    for dir,m in basicMoves player do
+                        let path = Path.neighbor dir p.Tractor
+                        if Set.contains path board.HayBales then
+                            let c = Crossroad.neighbor dir p.Tractor
+                            ImpossibleMove(dir, c, MoveBlocker.HayBaleOnPath)
+                        else
+                            match Seq.fold (fun c p -> bindMove (check p) c) m otherPlayers with
+                            | Ok c -> Move.Move(dir, c)
+                            | Error (c,e) -> ImpossibleMove(dir, c, e) ]
+            | Some (Starting { Parcel = Parcel p}) ->
+                [ SelectCrossroad (Crossroad (p, CLeft))
+                  SelectCrossroad (Crossroad (p,CRight))
+                  SelectCrossroad (Crossroad (p+Axe.NW, CRight))
+                  SelectCrossroad (Crossroad (p+Axe.NE, CLeft))
+                  SelectCrossroad (Crossroad (p+Axe.SW, CRight))
+                  SelectCrossroad (Crossroad (p+Axe.SE, CLeft)) ]
+            | Some (Ko _)
+            | Some (Playing _)
+            | None -> []
+        | _ -> []
+
+    let canMove playerid (board: Board) =
+        possibleMoves playerid board
+        |> List.exists (function ImpossibleMove _ -> false | _ -> true)
 
     let takeCards cards player =
         match player with
@@ -1647,14 +1685,8 @@ module Board =
     let currentPlayer (board: PlayingBoard) =
         board.Players.[board.Table.Player]
 
-    let otherPlayers playerid (board: PlayingBoard) =
-        board.Players
-        |> Map.toSeq
-        |> Seq.filter (fun (id,_) -> id <> playerid)
-        |> Seq.toList
-
     let currentOtherPlayers board =
-        otherPlayers board.Table.Player board
+        Player.otherPlayers board.Table.Player board
 
     let totalSize (board: PlayingBoard) = 
        let players = board.Players
@@ -1716,7 +1748,7 @@ module Board =
           yield! 
            Bonus.startTurn (Player.bonus nextPlayer)
            |> List.map (fun c -> Played(nextPlayerId, Player.BonusDiscarded c))
-                       ]
+          yield UndoCheckPointed ]
     type BribeBlocker =
         | InstantVictory
         | NoParcelsToBribe
@@ -2106,7 +2138,7 @@ module Board =
             if board.Table.Player = playerId then
                 let player = board.Players.[playerId]
                 match player with
-                | Playing p when not (Moves.canMove p.Moves || Hand.shouldDiscard p.Hand ) -> 
+                | Playing p when not (Player.canMove (Some playerId) state.Board || Hand.shouldDiscard p.Hand ) -> 
                     next state.ShouldShuffle board
                 | _ -> []
             else
@@ -2119,7 +2151,7 @@ module Board =
         | Board board, Play(playerId,(Player.Discard card as cmd))  ->
             if board.Table.Player = playerId then
                 let player = board.Players.[playerId]
-                let others = otherPlayers playerId board
+                let others = Player.otherPlayers playerId board
                 let events =
                     Player.decide others board.Barns board.HayBales (fun() -> bribeParcels board) cmd player
 
@@ -2134,7 +2166,7 @@ module Board =
                 []
         | Board board,Play (playerid, cmd) ->
             let player = board.Players.[playerid]
-            let others = otherPlayers playerid board
+            let others = Player.otherPlayers playerid board
 
             if playerid = board.Table.Player then
                 let events = 
@@ -2172,7 +2204,9 @@ module Board =
                                 eliminated <- eliminated + 1
                                 Played(pid, Player.Eliminated)
 
-                        if eliminated >= Map.count nextBoard.Players - 1 then
+                        eliminated <- eliminated + 1 // we test if one more elimination would make no player left.
+                                                     // this is a trick for peeble to catche the byref capture
+                        if eliminated >= Map.count nextBoard.Players  then
                             // winner by ko
                             GameWon playerid
 
@@ -2307,39 +2341,7 @@ module Board =
           ShouldShuffle = s.SShouldShuffle
           AtUndoPoint = s.SAtUndoPoint}
 
-    let possibleMoves playerid (board: Board) =
-        match board, playerid with
-        | Board board, Some playerid ->
-            match Map.tryFind playerid board.Players with
-            | Some ((Playing p) as player)->
-                let otherPlayers =
-                    otherPlayers playerid board
-                    |> List.map snd
-                let check = 
-                    Player.checkMove (Player.bonus player)
 
-
-                    
-                [ 
-                    for dir,m in Player.possibleMoves player do
-                        let path = Path.neighbor dir p.Tractor
-                        if Set.contains path board.HayBales then
-                            let c = Crossroad.neighbor dir p.Tractor
-                            ImpossibleMove(dir, c, MoveBlocker.HayBaleOnPath)
-                        else
-                            match Seq.fold (fun c p -> Player.bindMove (check p) c) m otherPlayers with
-                            | Ok c -> Move(dir, c)
-                            | Error (c,e) -> ImpossibleMove(dir, c, e) ]
-            | Some (Starting { Parcel = Parcel p}) ->
-                [ SelectCrossroad (Crossroad (p, CLeft))
-                  SelectCrossroad (Crossroad (p,CRight))
-                  SelectCrossroad (Crossroad (p+Axe.NW, CRight))
-                  SelectCrossroad (Crossroad (p+Axe.NE, CLeft))
-                  SelectCrossroad (Crossroad (p+Axe.SW, CRight))
-                  SelectCrossroad (Crossroad (p+Axe.SE, CLeft)) ]
-            | Some (Ko _)
-            | None -> []
-        | _ -> []
 
 
 module Client =
