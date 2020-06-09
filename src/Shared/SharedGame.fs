@@ -1377,6 +1377,10 @@ module Player =
                                     OccupiedBarns = annexedBarns.Occupied |> Field.parcels
                                     FenceLength = remaining }
 
+                                        
+
+
+
                           if p.Power = PowerDown && Parcel.contains p.Tractor parcel then
                                 // The player has been reconnected
                                 PoweredUp
@@ -1888,19 +1892,43 @@ module Board =
         let annexedPlayer = Player.evolve board.Players.[playerid] (Player.Annexed e)
         let newMap = Map.add playerid annexedPlayer board.Players
         e.LostFields
-        |> List.fold (fun map (playerid, parcels) ->
+        |> List.fold (fun (board: PlayingBoard) (playerid, parcels) ->
             match board.Players.[playerid] with
             | Playing p ->
                 let newP = Playing { p with Field = p.Field - Field.ofParcels parcels }
                 { board with
-                            Players = Map.add playerid newP map.Players }
-            | _ -> map
+                            Players = Map.add playerid newP board.Players }
+            | _ -> board
         ) { board with Players = newMap
                        Barns =
                            let annexedBarns =
                                { Free = e.FreeBarns |> Field.ofParcels
                                  Occupied = e.OccupiedBarns |> Field.ofParcels }
                            Barns.annex annexedBarns board.Barns }
+
+    let bribed playerid p (board: PlayingBoard) =
+        let newPlayer = Player.evolve board.Players.[playerid] (Player.Bribed p)
+
+        let newVictim = 
+            match board.Players.[p.Victim] with
+            | Starting p -> Starting p
+            | Playing victim -> Playing { victim with Field = victim.Field - Field.ofParcels [p.Parcel] }
+            | Ko _ as p -> p
+        { board with
+            Players =
+                board.Players
+                |> Map.add playerid newPlayer
+                |> Map.add p.Victim newVictim 
+        }
+
+    let bribedevents playerid events (board: PlayingBoard) =
+        events
+        |> List.fold (fun board event ->
+            match event with
+            | Player.Bribed p -> bribed playerid p board
+            | _ -> board
+        ) board
+
 
 
     let evolve (state: UndoableBoard) event =
@@ -2001,22 +2029,10 @@ module Board =
                          AtUndoPoint = false }
 
 
-        | Board board, Played(playerid,(Player.Bribed p as e)) ->
-            let newPlayer = Player.evolve board.Players.[playerid] e
-            let newVictim = 
-                match board.Players.[p.Victim] with
-                | Starting p -> Starting p
-                | Playing victim -> Playing { victim with Field = victim.Field - Field.ofParcels [p.Parcel] }
-                | Ko _ as p -> p
-            let newBoard = 
-                Board {
-                    board with
-                        Players =
-                            board.Players
-                            |> Map.add playerid newPlayer
-                            |> Map.add p.Victim newVictim 
-                }
-            { state with Board = newBoard 
+        | Board board, Played(playerid,(Player.Bribed p)) ->
+            let newBoard = bribed playerid p board
+            
+            { state with Board = Board newBoard 
                          AtUndoPoint = false }
         | Board board, Played(playerid,(Player.Eliminated as e)) ->
             let newPlayer = Player.evolve board.Players.[playerid] e
@@ -2194,6 +2210,7 @@ module Board =
                         let nextBoard = 
                             { board with Players = Map.add playerid nextState board.Players }
                             |> annexed playerid e
+                            |> bribedevents playerid events
 
                         let mutable eliminated = 0
                         for KeyValue(pid, p) in nextBoard.Players do

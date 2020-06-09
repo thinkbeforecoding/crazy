@@ -1,6 +1,7 @@
 ### 0.5.3   -
 * Fix: When player cannot move, they should be able to end turn
 * Fix: Error on each turn due to missing callbacks
+* Fix 18923: End game with bribe
 
 ### 0.5.2   - 2020-06-03
 * Fix: Undoing a turn where a Watchdog or Highvoltage just finished reactive them
