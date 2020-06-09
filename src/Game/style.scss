@@ -30,6 +30,7 @@ $crazy-tree: #9DAA52;
 $crazy-green: #CBDE9C;
 $crazy-lightgreen: #D7E5AA;
 $crazy-hay: #FEEBA2;
+$card-ratio: 167.7%;
 
 body {
     margin: 0;
@@ -410,13 +411,13 @@ body {
         &:before {
             content: "";
             display: block;
-            padding-top: 142%;
+            padding-top: $card-ratio;
         }
 
         div {
             @include hover-count;
             font-size: large;
-            background-image: url(~img/cards.jpg);
+            background-image: url(~img/cards-2.jpg);
             background-size: 600% 200%;
             background-position: 0 0;
             border-radius: 10%;
@@ -545,7 +546,7 @@ body {
     .card {
         flex: 0 1 auto;
         width: 4em;
-        padding-top: 144%;
+        padding-top: $card-ratio;
         position: relative;
         cursor: pointer;
     }
@@ -556,7 +557,7 @@ body {
 
         .card {
             width: 100%;
-            padding-top: 144%;
+            padding-top: $card-ratio;
             height: auto;
         }
     }
@@ -803,12 +804,12 @@ $back-y: 0.15vw;
 div.card {
     /*margin-top: 3em;*/
     width: 5vw;
-    padding-top: 144%;
+    padding-top: $card-ratio; 
     border-radius: 0.5vw;
     background-clip: padding-box;
     box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
     /*display: inline-block;*/
-    background-image: url(~img/cards.jpg);
+    background-image: url(~img/cards-2.jpg);
     background-size: 600% 200%;
 
     .tooltiptext {
@@ -987,7 +988,7 @@ div.back {
     transition-property: opacity;
     .card {
         width: 2*5vw;
-        padding-top: 144%;
+        padding-top: $card-ratio;
     }
 }
 
