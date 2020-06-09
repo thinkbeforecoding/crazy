@@ -97,8 +97,8 @@ body {
 }
 
 .tile {
-    background-image: url(~img/tiles.png);
-    background-size: 600% 100%;
+    background-image: url(~img/tiles-2.png);
+    background-size: 500% 800%;
     width: 9%;
     height: 9%;
     position: absolute;
@@ -141,12 +141,12 @@ body {
     width: 9%;
     height: 9%;
     position: absolute;
-    background-image: url(~img/tiles.png);
-    background-size: 600% 100%;
+    background-image: url(~img/tiles-2.png);
+    background-size: 500% 800%;
     background-position: -400% 0;
 }
 .barn.occupied {
-    background-position: -500% 0;
+    background-position: -400% -100%;
 }
 
 .crossroad {
@@ -795,6 +795,15 @@ body {
         background-position: -300% 0%;
     }
 }
+
+.tile.t0 { background-position-y: 0; }
+.tile.t1 { background-position-y: -100%; }
+.tile.t2 { background-position-y: -200%; }
+.tile.t3 { background-position-y: -300%; }
+.tile.t4 { background-position-y: -400%; }
+.tile.t5 { background-position-y: -500%; }
+.tile.t6 { background-position-y: -600%; }
+.tile.t7 { background-position-y: -700%; }
 
 
 $back-x: -4.8vw;

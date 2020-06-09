@@ -142,11 +142,15 @@ let translatedColorName color =
     | Yellow -> translate "yellow"
     | Purple -> translate "purple"
     | Red -> translate "red"
-    
+   
+let (%%) x y =
+    let m = x % y
+    if m >= 0 then m else m + y
 
 let parcel (Parcel pos) attr = 
     let x,y = Pix.ofTile pos |> Pix.rotate
-    div ([ ClassName "tile"
+    let (Axe(q,r)) = pos
+    div ([ Class (sprintf "tile t%d" ((q + r * 3) %% 8 ))
            Style [ Left (sprintf "%f%%" x)
                    Top (sprintf "%f%%" y)
                    ]]  @ attr)
