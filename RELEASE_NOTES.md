@@ -1,4 +1,12 @@
-### 0.5.3   -
+### 0.5.5	- 2020-06-11
+* Change font for consistency with rules leaflet + better translation support
+* Better size/position of the victory flash screen + more visible "hide" button
+
+### 0.5.4   - 2020-06-09
+* New tiles
+* New cards
+
+### 0.5.3   - 2020-06-08
 * Fix: When player cannot move, they should be able to end turn
 * Fix: Error on each turn due to missing callbacks
 * Fix 18923: End game with bribe

@@ -310,15 +310,17 @@ let view (model : Model) (dispatch : Msg -> unit) =
         
                     let player = board.Players.[winner]
 
-                    div [ ClassName "victory" ]
-                        [ p [] [ str "And the winner is"]
-                          div [ ClassName ("winner " + colorName (Player.color player)) ]
-                              [ div [ ClassName "player"] [] ]
-                          p [] [ str board.Table.Names.[winner] ] 
+                    div [ ClassName "victory-box" ]
+                        [ div [ ClassName "victory" ]
+                            [ p [] [ str "And the winner is"]
+                              div [ ClassName ("winner " + colorName (Player.color player)) ]
+                                  [ div [ ClassName "player"] [] ]
+                              p [] [ str board.Table.Names.[winner] ] 
 
-                          p [ ClassName "back"] [ a [ Href "/" ] [ str "back to home" ]]
+                              p [ ClassName "back"] [ a [ Href "/" ] [ str "back to home" ]]
 
-                          ]  
+                              ]  
+                        ]
                     match model.PlayerId with
                     | Some playerId ->
                         chatView dispatch playerId board model.Chat

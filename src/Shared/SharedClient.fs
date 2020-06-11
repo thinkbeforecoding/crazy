@@ -168,7 +168,7 @@ let tile (Parcel pos) f =
         []
 
 let tooltip txt =
-    div [ ClassName "tooltiptext"] [ str txt ]
+    div [ ClassName "tooltiptext" ] [ str txt ]
 
 let tileWithTooltip (Parcel pos) text = 
     let x,y = Pix.ofTile pos |> Pix.rotate
@@ -203,7 +203,9 @@ let player active pos =
 
 let drawcrossroad pos f =
     let x,y = Pix.ofPlayer pos |> Pix.rotate
+    let (Crossroad(Axe(q,r),s)) = pos
     div [ classBaseList "crossroad" ["cf-click", match f with Ok _ -> true | _ -> false  ]
+          Key (sprintf "c-%d-%d-%s" q r (match s with CLeft -> "l" | CRight -> "r") )
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y) ]
           match f with
@@ -647,7 +649,7 @@ let commonGoal board goal =
                [ div [ ClassName ("tile")] [] ]
          div [ClassName "tile-count"]
            [ let totalSize = Board.totalSize board
-             str (sprintf "x%d" (goal - totalSize))
+             str (string (goal - totalSize))
              tooltip (String.format (translate "Common goal: {goal} parcels / Remaining: {parcels} parcels") (Map.ofList [ "goal" ==> goal; "parcels" ==> (goal - totalSize)]) ) ]
        ]
 
@@ -720,7 +722,7 @@ let playerInfo info (cards: ReactElement) dispatch =
                          [ div [ ClassName ("tile")] []  ]
                      div [ClassName "tile-count"]
                          [ let totalSize = Player.fieldTotalSize info.Player
-                           str (sprintf "x %d" (goal - totalSize))
+                           str (string (goal - totalSize))
                            tooltip (String.format (translate "Individual goal: {goal} parcels / Remaining: {parcels} parcels") (Map.ofList [ "goal" ==> goal; "parcels" ==> (goal - totalSize)]))
                            ] 
                    ]

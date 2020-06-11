@@ -340,6 +340,9 @@ module Stats =
                 stats.Stats 
                 |> incStat 1 turns_number None
             { Stats = newStats; UndoPoint = newStats }
+        | Board.UndoCheckPointed ->
+            { stats with UndoPoint = stats.Stats }
+            
         | Board.Played(_, Player.Undone) ->
             { stats with Stats = stats.UndoPoint }
             
@@ -402,43 +405,43 @@ module Stats =
                 { stats with Stats = newStats}
             | PlayHelicopter _ ->
                 let newStats = 
-                    stats.Stats
+                    statsNew
                     |> incStat 1 helicopters_number None
                     |> incStat 1 helicopters_number (Some p)
                 { stats with Stats = newStats}
             | PlayHighVoltage ->
                 let newStats =
-                    stats.Stats
+                    statsNew
                     |> incStat 1 highvoltages_number None
                     |> incStat 1 highvoltages_number (Some p)
                 { stats with Stats = newStats}
             | PlayWatchdog ->
                 let newStats =
-                    stats.Stats
+                    statsNew
                     |> incStat 1 watchdogs_number None
                     |> incStat 1 watchdogs_number (Some p)
                 { stats with Stats = newStats}
             | PlayBribe _ ->
                 let newStats =
-                    stats.Stats
+                    statsNew
                     |> incStat 1 bribes_number None
                     |> incStat 1 bribes_number (Some p)
                 { stats with Stats = newStats}
             | PlayNitro One ->
                 let newStats =
-                    stats.Stats
+                    statsNew
                     |> incStat 1 nitro1_number None
                     |> incStat 1 nitro1_number (Some p)
                 { stats with Stats = newStats}
             | PlayNitro Two ->
                 let newStats =
-                    stats.Stats
+                    statsNew
                     |> incStat 1 nitro2_number None
                     |> incStat 1 nitro2_number (Some p)
                 { stats with Stats = newStats}
             | PlayRut victim ->
                 let newStats =
-                    stats.Stats
+                    statsNew
                     |> incStat 1 ruts_number None
                     |> incStat 1 ruts_number (Some p)
                     |> incStat 1 rutted_number (Some victim)

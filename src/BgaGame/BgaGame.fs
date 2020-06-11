@@ -539,15 +539,17 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         if model.ShowVictory then
                             let player = board.Players.[winner]
 
-                            div [ ClassName "victory" ]
-                                [ p [] [ str (Globalization.translate "And the winner is")]
-                                  div [ ClassName ("winner " + colorName (Player.color player)) ]
-                                      [ div [ ClassName "player"] [] ]
-                                  p [] [ str board.Table.Names.[winner] ] 
+                            div [ ClassName "victory-box"]
+                                [ div [ ClassName "victory" ]
+                                    [ p [] [ str (Globalization.translate "And the winner is")]
+                                      div [ ClassName ("winner " + colorName (Player.color player)) ]
+                                          [ div [ ClassName "player"] [] ]
+                                      p [] [ str board.Table.Names.[winner] ] 
 
-                                  p [ ClassName "back"] [ a [ Href "#"; OnClick(fun _ -> dispatch HideVictory) ] [ str (Globalization.translate "Hide") ]]
+                                      p [ ClassName "back"] [ a [ Href "#"; OnClick(fun e -> dispatch HideVictory; e.preventDefault()) ] [ str (Globalization.translate "Hide") ]]
 
-                                  ] ]
+                                      ] ]
+                                ]
                       ]
             ]
 

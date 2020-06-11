@@ -17,13 +17,21 @@
 
 @use "sass:color";
 
+//@font-face {
+//    font-family: 'BigSlabHammer';
+//    /*src: url(webfont.eot');  IE9+ Compat Modes */
+//    /*src: url('webfont.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
+//    /*url('webfont.woff2') format('woff2'), Super modern browsers */
+//    //src: url('webfont.woff') format('woff'), /* Modern browsers */
+//    src: url('~fonts/BigSlabHammer.ttf') format('truetype'); /* Safari, Android, iOS */
+//}
+//@import '~fonts/brush-crush.css';
 @font-face {
-    font-family: 'BigSlabHammer';
-    /*src: url(webfont.eot');  IE9+ Compat Modes */
-    /*src: url('webfont.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
-    /*url('webfont.woff2') format('woff2'), Super modern browsers */
-    //src: url('webfont.woff') format('woff'), /* Modern browsers */
-    src: url('~fonts/BigSlabHammer.ttf') format('truetype'); /* Safari, Android, iOS */
+    font-family: 'BrushCrush';
+    src: url(~fonts/brush-crush.eot);
+    src: url(~fonts/brush-crush.eot?#iefix) format('embedded-opentype'), url(~fonts/brush-crush.woff2) format('woff2'), url(~fonts/brush-crush.woff) format('woff'), url(~fonts/brush-crush.ttf) format('truetype'), url(~fonts/brush-crush.svg#youworkforthem) format('svg');
+    font-weight: normal;
+    font-style: normal;
 }
 
 $crazy-tree: #9DAA52;
@@ -45,7 +53,7 @@ body {
 }*/
 
 @mixin hover-count {
-    font-family: BigSlabHammer;
+    font-family: BrushCrush;
     color: white;
     text-shadow: 2px 0.2em 0.2em #333;
     white-space: nowrap;
@@ -133,6 +141,7 @@ body {
     }
 }
 
+
 .fallow {
     opacity: 0.5;
 }
@@ -155,8 +164,6 @@ body {
     position: absolute;
     z-index: 30;
     background-color: #00000000;
-    -webkit-tap-highlight-color: rgba(0,0,0,0);
-    -webkit-tap-highlight-color: transparent;
     /* Tooltip text */
     .tooltiptext {
         visibility: hidden;
@@ -282,12 +289,14 @@ body {
 
 
     .tile-count {
-        font-family: BigSlabHammer;
+        font-family: BrushCrush;
+        font-size: 1.5em;
         color: white;
         text-shadow: 2px 0.2em 0.2em #333;
         vertical-align: top;
-        margin-left: -1.9em;
-        margin-top: 0.8em;
+        margin-left: -1.3em;
+        width: 1.3em;
+        margin-top: 0.2em;
         display: inline-block;
         white-space: nowrap;
         text-align: center;
@@ -301,8 +310,6 @@ body {
     &:hover .tooltiptext {
         visibility: visible;
     }
-
-
 }
 .player-dashboard {
     flex: 1 1 25%;
@@ -416,7 +423,7 @@ body {
 
         div {
             @include hover-count;
-            font-size: large;
+            font-size: 1.5em;
             background-image: url(~img/cards-2.jpg);
             background-size: 600% 200%;
             background-position: 0 0;
@@ -518,7 +525,7 @@ body {
         position: absolute;
         top: 0.3em;
         left: 0.3em;
-        font-family: 'BigSlabHammer';
+        font-family: 'BrushCrush';
         color: white;
         font-size: 120%;
         text-shadow: 2px 0.2em 0.2em #333;
@@ -712,6 +719,7 @@ body {
 
 }
 
+
 .blue {
     .fence {
         background-position: 0 0;
@@ -723,6 +731,7 @@ body {
 
     .player.selected {
         background-position: 0 -100%;
+        
     }
 
     .player.ko {
@@ -899,7 +908,7 @@ div.back {
         z-index: 200;
 
         h2 {
-            font-family: BigSlabHammer;
+            font-family: BrushCrush;
         }
 
         .buttons {
@@ -913,7 +922,7 @@ div.back {
             align-items: baseline;
 
             button {
-                flex: 0 0 auto; 
+                flex: 0 0 auto;
             }
 
             span {
@@ -1001,54 +1010,90 @@ div.back {
     }
 }
 
-.victory {
-    position: fixed;
+@function proportional-text($font-size, $viewport-size) {
+    @return ($font-size*100/$viewport-size)+vw;
+}
+
+.victory-box {
+    position: absolute;
     width: 60%;
-    height: 30%;
-    top: 20%;
+    top: 40%;
     left: 20%;
-    background-image: url(~img/victory.png);
-    background-size: contain;
-    background-repeat: no-repeat;
 
-    font-family: BigSlabHammer;
-    color: white;
-    font-size: 200%;
-    text-align: center;
-    padding-top: 0.5em;
 
-    text-shadow: 0.1em 0.1em 0.1em #333;
 
-    p { margin-top: 0.05em;
-       margin-bottom: 0.05em;
-    }
+    /*&:before {
+        content: '';
+        display: block;
+        padding-top: 80%;
+    }*/
 
-    .winner {
-        margin-left: auto;
-        width: 2em;
-        height: 2em;
-        margin-right: auto;
-    }
-
-    .player {
-        width: 2em;
-        height: 2em;
-
-    }
-
-    .back {
-        margin-top: 2.3%;
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: large;
-
+    .victory {
+        left: 20%;
+        height: 100%;
+        font-family: BrushCrush;
+        background-image: url(~img/victory.png);
+        background-repeat: no-repeat;
+        background-size: contain;
         color: white;
-        font-weight: bold;
+        font-size: proportional-text(40px, 1040px);
+        text-align: center;
+        text-shadow: 0.1em 0.1em 0.1em #333;
+        padding-top: 5%;
+        display: flex;
+        flex-flow: column;
+        align-items: center;
 
-        *:visited {
+        p {
+            margin-top: 0.05em;
+            margin-bottom: 0.05em;
+            display: block;
+        }
+
+        .winner {
+            margin-left: auto;
+            width: 2em;
+            height: 2em;
+            margin-right: auto;
+        }
+
+        .player {
+            width: 2em;
+            height: 2em;
+        }
+
+        .back {
+            margin-top: 2.3%;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: small;
+            text-shadow: 1px 1px 1px #333;
             color: white;
+            font-weight: bold;
+            padding: 0.5em;
+            border: 1px solid #444;
+            background-color: #4065a3;
+            border-bottom-width: 2px;
+            border-radius: 0.5em;
+
+            &:hover {
+                background-color: #4871b6;
+            }
+
+            a {
+                text-decoration: none;
+                color: white;
+            }
+
+            a:hover {
+                color: white;
+            }
+
+
+            a:visited {
+                color: white;
+            }
         }
     }
-
 }
 
 .chat {
