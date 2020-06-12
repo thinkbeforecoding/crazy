@@ -341,10 +341,10 @@ let handView dispatch title playerId board cardAction hand =
     let player = Board.currentPlayer board
     let active =  Option.exists (fun p -> p = board.Table.Player) playerId
     let otherPlayers = Board.currentOtherPlayers board
-    let cancel = a [ ClassName "cancel"; Href "#"; OnClick (fun _ -> dispatch CancelCard)] [ str (translate "Cancel") ]
+    let cancel = a [ ClassName "cancel"; Href "#"; OnClick (fun e -> dispatch CancelCard; e.preventDefault())] [ str (translate "Cancel") ]
     let discard card =  
         [ span [] []
-          a [ ClassName "discard"; Href "#"; OnClick (fun _ -> dispatch (DiscardCard card))] [ str (translate "Discard") ] ]
+          a [ ClassName "discard"; Href "#"; OnClick (fun e -> dispatch (DiscardCard card); e.preventDefault())] [ str (translate "Discard") ] ]
     let go = button [ OnClick (fun _ -> dispatch Go )]  [str (translate "Go") ]
     let action title texts buttons =
         div [ClassName "action" ]
@@ -393,7 +393,8 @@ let handView dispatch title playerId board cardAction hand =
                                                | HighVoltage -> translate "High Voltage"
                                                | Watchdog -> translate "Watchdog" 
                                                | Helicopter -> translate "Helicopter"
-                                               | Bribe -> translate "Bribe") ]
+                                               | Bribe -> translate "Bribe"
+                                               | GameOver -> translate "Game over")]
                                           p [] [ str (translate " (click for full description)")] ] ]
 
                             match cardAction with
@@ -812,7 +813,7 @@ let playersDashboard model dispatch =
                                 ]
 
                             if model.Board.UndoType <> NoUndo then
-                                button [ ClassName "undo"; Disabled model.Board.AtUndoPoint; OnClick (fun _ -> dispatch Undo) ] [ str "Undo" ]
+                                button [ ClassName "undo"; Disabled model.Board.AtUndoPoint; OnClick (fun e -> dispatch Undo; e.preventDefault()) ] [ str "Undo" ]
                         | Ko _ ->
                             span [] [
                                 str (sprintf "You're eliminated. Take your revenge in the next game !")

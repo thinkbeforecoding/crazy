@@ -1,6 +1,5 @@
 open System
 open System.IO
-open System.Threading.Tasks
 
 open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
@@ -118,6 +117,7 @@ module Dto =
         | Watchdog -> "Watchdog"
         | Helicopter -> "Helicopter"
         | Bribe -> "Bribe"
+        | GameOver -> "GameOver"
 
     let toCard =
         function
@@ -131,6 +131,7 @@ module Dto =
         | "Watchdog" -> Watchdog
         | "Helicopter" -> Helicopter
         | "Bribe" -> Bribe
+        | "GameOver" -> GameOver
         | _ -> failwith "Unknown card"
         
     type ParcelDto = { q: int; r: int }
@@ -322,6 +323,7 @@ module Dto =
         | Watchdog -> PlayWatchdog
         | Helicopter -> PlayHelicopter(toCrossroad ((cp.Effect :?> JObject).ToObject()))
         | Bribe -> PlayBribe(toParcel ((cp.Effect :?> JObject).ToObject()))
+        | GameOver -> failwith "Cannot be played"
         
     type SpedUpDto = { Speed: int }
 
@@ -418,6 +420,7 @@ let serialize =
     | Board.Event.DiscardPileShuffled e  -> "DiscardPileShuffled" , box (e |> Seq.map Dto.ofCard |> Seq.toArray) 
     | Board.Event.DrawPileShuffled e  -> "DrawPileShuffled" , box (e |> Seq.map Dto.ofCard |> Seq.toArray) 
     | Board.Event.GameWon e  -> "GameWon" , box e
+    | Board.Event.GameEnded e  -> "GameWon" , box (List.toArray e)
 
 
 let deserialize data =
@@ -483,6 +486,7 @@ let deserialize data =
         | "DiscardPileShuffled", JObj (e: string[]) -> [ Board.DiscardPileShuffled (e |> Seq.map Dto.toCard |> Seq.toList) ]
         | "DrawPileShuffled", JObj (e: string[]) -> [ Board.DrawPileShuffled (e |> Seq.map Dto.toCard |> Seq.toList) ]
         | "GameWon", JObj e -> [ Board.GameWon e ]
+        | "GameEnded", JObj e -> [ Board.GameEnded (Array.toList e) ]
         | _ -> []
     with
     | _ -> []

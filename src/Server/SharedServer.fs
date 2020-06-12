@@ -47,6 +47,7 @@ let bgaUpdateState events (board: UndoableBoard) (state: string) changeState eli
         match e with
         | Board.Next -> changeState "next"
         | Board.GameWon _ -> changeState "endGame"
+        | Board.GameEnded _ -> changeState "endGame"
         | Board.Played(_,Player.FirstCrossroadSelected _) ->
             changeState "selectFirstCrossroad"
         | Board.Played(p, Player.Eliminated) ->
@@ -169,7 +170,10 @@ let textAction (previous: UndoableBoard) (b: UndoableBoard)  e =
         | Board.Played(p, Player.Event.CutFence e) ->
             Php.clienttranslate "${player} cut ${cut}'s fence",  Map.ofList [ "player" ==> playerName p; "cut" ==> playerName e.Player ]
         | Board.PlayerDrewCards e ->
-            Php.clienttranslate "${player} draws ${cardcount} card(s)", Map.ofList [  "player" ==> playerName e.Player; "cardcount" ==> Hand.count e.Cards]
+            if Hand.contains GameOver e.Cards then
+                Php.clienttranslate "${player} draws the Game Over card. The game ends now !", Map.ofList ["player" ==> playerName e.Player ]
+            else
+                Php.clienttranslate "${player} draws ${cardcount} card(s)", Map.ofList [  "player" ==> playerName e.Player; "cardcount" ==> Hand.count e.Cards]
         | Board.Played(p, Player.Event.Bribed e) ->
             Php.clienttranslate "${icon} ${player} takes one of ${bribed}'s parcel", Map.ofList ["player" ==> playerName p; "bribed" ==> playerName e.Victim;  "icon" ==> cardIcon Bribe  ]
         | Board.Played(p, Player.Event.Eliminated) ->
@@ -198,6 +202,11 @@ let textAction (previous: UndoableBoard) (b: UndoableBoard)  e =
             match Map.tryFind player board.Players with
             | Some (Playing p) -> Php.clienttranslate "${player} ends turn after ${moves} moves", Map.ofList ["player" ==> playerName player; "moves" ==> p.Moves.Done ] 
             | _ -> null, Map.empty
+        | Board.GameWon p ->
+            Php.clienttranslate "${player} wins the game !", Map.ofList ["player" ==> playerName p ]
+        | Board.GameEnded ps ->
+            Php.clienttranslate "${players} end the game in a draw !", Map.ofList ["players" ==> String.concat " / " [| for p in ps ->  playerName p |]  ]
+            
 
         | _ -> null, Map.empty
     | _ ->
@@ -446,8 +455,6 @@ module Stats =
                     |> incStat 1 ruts_number (Some p)
                     |> incStat 1 rutted_number (Some victim)
                 { stats with Stats = newStats}
-        | Board.UndoCheckPointed ->
-            { stats with UndoPoint = stats.Stats }
         | _ -> stats
 
 

@@ -134,6 +134,7 @@ type Bridge(dispatch: ClientMsg -> unit) =
                 | Watchdog -> "discard", createObj [ "card" ==> "Watchdog"; "lock" ==> "true" ]
                 | Helicopter -> "discard", createObj [ "card" ==> "Helicopter"; "lock" ==> "true" ]
                 | Bribe -> "discard", createObj [ "card" ==> "Bribe"; "lock" ==> "true" ]
+                | GameOver -> null, null
             | Player.Start _ -> null, null
 
         if not (isNull cmdName) then
@@ -529,7 +530,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                   lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
                   ]
             ]
-    | Won(winner, board) ->
+    | Won(winners, board) ->
         div [ ClassName "crazy-box" ] 
             [ div [ClassName "board-box"]
                 [ 
@@ -537,20 +538,32 @@ let view (model : Model) (dispatch : Msg -> unit) =
                       [ yield! boardView model.CardAction board
             
                         if model.ShowVictory then
-                            let player = board.Players.[winner]
 
                             div [ ClassName "victory-box"]
-                                [ div [ ClassName "victory" ]
-                                    [ p [] [ str (Globalization.translate "And the winner is")]
-                                      div [ ClassName ("winner " + colorName (Player.color player)) ]
-                                          [ div [ ClassName "player"] [] ]
-                                      p [] [ str board.Table.Names.[winner] ] 
+                                [ div [ ClassName "victory" ] [
+                                    match winners with
+                                    | [ winner ] ->
+                                         let player = board.Players.[winner]
+                                         p [] [ str (Globalization.translate "And the winner is")]
+                                         div [ ClassName ("winner " + colorName (Player.color player)) ]
+                                              [ div [ ClassName "player"] [] ]
+                                         p [] [ str board.Table.Names.[winner] ] 
+                                    | _ -> 
+                                        let players = List.map (fun p -> board.Players.[p]) winners
+                                        p [] [ str (Globalization.translate "Draw game between")]
+                                        div [] [
+                                            for player in players ->
+                                                div [ ClassName ("winner " + colorName (Player.color player)) ]
+                                                    [ div [ ClassName "player"] [] ]
+                                            ]
+                                        p [] [ str (winners |> List.map (fun winner -> board.Table.Names.[winner]) |> String.concat " / " ) ] 
 
-                                      p [ ClassName "back"] [ a [ Href "#"; OnClick(fun e -> dispatch HideVictory; e.preventDefault()) ] [ str (Globalization.translate "Hide") ]]
+                                    p [ ClassName "back"] [ a [ Href "#"; OnClick(fun e -> dispatch HideVictory; e.preventDefault()) ] [ str (Globalization.translate "Hide") ]]
 
-                                      ] ]
+                                    ] 
                                 ]
                       ]
+                ]
             ]
 
 

@@ -65,10 +65,10 @@ class CrazyFarmers extends Table
         if (is_null($colors)) {
             $colors =
                 [ "AEDBDE" => new Color_Blue(),
-                "EFC54C" => new Color_Yellow(),
-                "A87BBE" => new Color_Purple(),
-                "EA222F" => new Color_Red()
-        ]; };
+                  "EFC54C" => new Color_Yellow(),
+                  "A87BBE" => new Color_Purple(),
+                  "EA222F" => new Color_Red() ];
+        }
         return $colors[$color];
     }
 

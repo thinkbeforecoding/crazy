@@ -1071,16 +1071,34 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
 
     | Fable.IfThenElse(guard, thenExpr, elseExpr,_) ->
         PhpTernary(convertExpr ctx guard,
-                convertExpr ctx thenExpr,
-                convertExpr ctx elseExpr )
+                    convertExpr ctx thenExpr,
+                    convertExpr ctx elseExpr )
+            
+
     | Fable.Test(expr, test , _ ) ->
         let phpExpr = convertExpr ctx expr
         convertTest ctx test phpExpr
             
         
-    | Fable.DecisionTreeSuccess(index,_,_) ->
+    | Fable.DecisionTreeSuccess(index,[],_) ->
         let _,target = ctx.DecisionTargets.[index]
         convertExpr ctx target
+    | Fable.DecisionTreeSuccess(index,boundValues,_) ->
+        let bindings,target = ctx.DecisionTargets.[index]
+
+        let args = List.map (convertExpr ctx) boundValues
+
+        let innerCtx = ctx.NewScope()
+        for id in bindings do
+            innerCtx.AddLocalVar(fixName id.Name)
+        let body = convertExprToStatement innerCtx target Return
+        for capturedVar in innerCtx.CapturedVars do
+            ctx.UseVar(capturedVar)
+        PhpCall(
+            PhpAnonymousFunc([ for id in bindings -> fixName id.Name ],
+                Set.toList innerCtx.CapturedVars, body),
+                args )
+
 
     | Fable.ObjectExpr(members, t, baseCall) ->
          PhpArray [
@@ -1437,7 +1455,7 @@ let fs =
             for d in convertDecl phpComp decl do
                 i,d
     ]
-convertDecl phpComp asts.[1].Declarations.[132]
+convertDecl phpComp asts.[1].Declarations.[217]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w

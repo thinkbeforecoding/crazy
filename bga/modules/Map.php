@@ -321,7 +321,7 @@ class Map implements IteratorAggregate
     static function ofList($list)
     {
         $tree = new MapEmpty();
-        $comparer = [ 'Compare' => 'Util::comparePrimitives' ];
+        $comparer = [ 'Compare' => 'Util::compare' ];
 
         while ($list instanceof Cons)
         {
@@ -335,7 +335,7 @@ class Map implements IteratorAggregate
     static function ofSeq($seq)
     {
         $tree = new MapEmpty();
-        $comparer = [ 'Compare' => 'Util::comparePrimitives' ];
+        $comparer = [ 'Compare' => 'Util::compare' ];
 
         foreach ($seq as $item)
         {
@@ -348,7 +348,7 @@ class Map implements IteratorAggregate
     static function ofArray($seq)
     {
         $tree = new MapEmpty();
-        $comparer = [ 'Compare' => 'Util::comparePrimitives' ];
+        $comparer = [ 'Compare' => 'Util::compare' ];
 
         foreach ($seq as $item)
         {

@@ -673,10 +673,13 @@ body {
 
     .tile-count {
         @include hover-count;
+        font-size: 1.5em;
         vertical-align: top;
-        margin-left: -2.2em;
-        margin-top: 0.8em;
+        text-align: center;
+        margin-top: 0.2em;
         display: inline-block;
+        margin-left: -1.3em;
+        width: 1.3em;
     }
 
 
@@ -888,6 +891,10 @@ div.back {
 
 .bribe {
     background-position: -400% -100%;
+}
+
+.gameover {
+    background-position: -500% -100%;
 }
 
 
