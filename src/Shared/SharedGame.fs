@@ -101,6 +101,7 @@ type PlayCard =
     | PlayWatchdog
     | PlayHelicopter of destination:Crossroad
     | PlayBribe of parcel:Parcel
+    | PlayGameOver
 
 module Card =
     let ofPlayCard =
@@ -113,6 +114,7 @@ module Card =
         | PlayWatchdog -> Watchdog
         | PlayHelicopter _ -> Helicopter
         | PlayBribe _ -> Bribe
+        | PlayGameOver -> GameOver
 
 type Hand =
     | PrivateHand of cards:int
@@ -1404,6 +1406,7 @@ module Player =
                                 PoweredUp
                           ]
                     | _ -> []
+                | PlayGameOver -> []
 
 
             else 
@@ -2292,6 +2295,8 @@ module Board =
                                               Cards = PublicHand cardsDrawn }
 
                                         if List.contains GameOver cardsDrawn then
+                                            Played(playerid, Player.CardPlayed PlayCard.PlayGameOver)
+
                                             match leads with
                                             | [ win ] -> GameWon win
                                             |  _ -> GameEnded leads
@@ -2438,7 +2443,7 @@ module Client =
         | Watchdog -> "card watchdog"
         | Helicopter -> "card helicopter"
         | Bribe -> "card bribe"
-        | GameOver -> "gameover"
+        | GameOver -> "card gameover"
 
 /// A type that specifies the messages sent to the server from the client on Elmish.Bridge
 /// to learn more, read about at https://github.com/Nhowka/Elmish.Bridge#shared

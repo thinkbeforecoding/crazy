@@ -1184,6 +1184,25 @@ class PlayCard_PlayBribe extends PlayCard {
     }
 }
 
+#31
+class PlayCard_PlayGameOver extends PlayCard {
+    function __construct() {
+    }
+    function get_Case() {
+        return 'PlayCard_PlayGameOver';
+    }
+    function get_FSharpCase() {
+        return 'PlayGameOver';
+    }
+    function get_Tag() {
+        return 8;
+    }
+    function CompareTo($other) {
+        $_cmp__62 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__62;
+    }
+}
+
 #32
 function Shared_002ECardModule___ofPlayCard($_arg1__5) {
     switch (get_class($_arg1__5))
@@ -1206,6 +1225,8 @@ function Shared_002ECardModule___ofPlayCard($_arg1__5) {
             return new Card_Helicopter();
         case 'PlayCard_PlayBribe':
             return new Card_Bribe();
+        case 'PlayCard_PlayGameOver':
+            return new Card_GameOver();
         default:
             return new Card_Nitro($_arg1__5->power);
     }
@@ -1231,13 +1252,13 @@ class Hand_PrivateHand extends Hand {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__62 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__62 != 0) {
-            return $_cmp__62;
-        }        
-        $_cmp__63 = $this->cards > $other->cards ? 1 : ($this->cards < $other->cards ? -1 : 0);
+        $_cmp__63 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__63 != 0) {
             return $_cmp__63;
+        }        
+        $_cmp__64 = $this->cards > $other->cards ? 1 : ($this->cards < $other->cards ? -1 : 0);
+        if ($_cmp__64 != 0) {
+            return $_cmp__64;
         }        
         return 0;
     }
@@ -1259,13 +1280,13 @@ class Hand_PublicHand extends Hand {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__64 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__64 != 0) {
-            return $_cmp__64;
-        }        
-        $_cmp__65 = $this->cards->CompareTo($other->cards);
+        $_cmp__65 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__65 != 0) {
             return $_cmp__65;
+        }        
+        $_cmp__66 = $this->cards->CompareTo($other->cards);
+        if ($_cmp__66 != 0) {
+            return $_cmp__66;
         }        
         return 0;
     }
@@ -1378,13 +1399,13 @@ class CrazyPlayer_Starting extends CrazyPlayer {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__66 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__66 != 0) {
-            return $_cmp__66;
-        }        
-        $_cmp__67 = $this->Item->CompareTo($other->Item);
+        $_cmp__67 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__67 != 0) {
             return $_cmp__67;
+        }        
+        $_cmp__68 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__68 != 0) {
+            return $_cmp__68;
         }        
         return 0;
     }
@@ -1406,13 +1427,13 @@ class CrazyPlayer_Playing extends CrazyPlayer {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__68 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__68 != 0) {
-            return $_cmp__68;
-        }        
-        $_cmp__69 = $this->Item->CompareTo($other->Item);
+        $_cmp__69 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__69 != 0) {
             return $_cmp__69;
+        }        
+        $_cmp__70 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__70 != 0) {
+            return $_cmp__70;
         }        
         return 0;
     }
@@ -1434,13 +1455,13 @@ class CrazyPlayer_Ko extends CrazyPlayer {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__70 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__70 != 0) {
-            return $_cmp__70;
-        }        
-        $_cmp__71 = $this->Item->CompareTo($other->Item);
+        $_cmp__71 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__71 != 0) {
             return $_cmp__71;
+        }        
+        $_cmp__72 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__72 != 0) {
+            return $_cmp__72;
         }        
         return 0;
     }
@@ -1636,8 +1657,8 @@ class Board_InitialState extends Board {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__72 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__72;
+        $_cmp__73 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__73;
     }
 }
 
@@ -1657,13 +1678,13 @@ class Board_Board extends Board {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__73 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__73 != 0) {
-            return $_cmp__73;
-        }        
-        $_cmp__74 = $this->Item->CompareTo($other->Item);
+        $_cmp__74 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__74 != 0) {
             return $_cmp__74;
+        }        
+        $_cmp__75 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__75 != 0) {
+            return $_cmp__75;
         }        
         return 0;
     }
@@ -1687,17 +1708,17 @@ class Board_Won extends Board {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__75 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__75 != 0) {
-            return $_cmp__75;
-        }        
-        $_cmp__76 = $this->Item1->CompareTo($other->Item1);
+        $_cmp__76 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__76 != 0) {
             return $_cmp__76;
         }        
-        $_cmp__77 = $this->Item2->CompareTo($other->Item2);
+        $_cmp__77 = $this->Item1->CompareTo($other->Item1);
         if ($_cmp__77 != 0) {
             return $_cmp__77;
+        }        
+        $_cmp__78 = $this->Item2->CompareTo($other->Item2);
+        if ($_cmp__78 != 0) {
+            return $_cmp__78;
         }        
         return 0;
     }
@@ -1761,13 +1782,13 @@ class PlayerState_SStarting extends PlayerState {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__78 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__78 != 0) {
-            return $_cmp__78;
-        }        
-        $_cmp__79 = $this->Item->CompareTo($other->Item);
+        $_cmp__79 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__79 != 0) {
             return $_cmp__79;
+        }        
+        $_cmp__80 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__80 != 0) {
+            return $_cmp__80;
         }        
         return 0;
     }
@@ -1789,13 +1810,13 @@ class PlayerState_SPlaying extends PlayerState {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__80 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__80 != 0) {
-            return $_cmp__80;
-        }        
-        $_cmp__81 = $this->Item->CompareTo($other->Item);
+        $_cmp__81 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__81 != 0) {
             return $_cmp__81;
+        }        
+        $_cmp__82 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__82 != 0) {
+            return $_cmp__82;
         }        
         return 0;
     }
@@ -1817,13 +1838,13 @@ class PlayerState_SKo extends PlayerState {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__82 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__82 != 0) {
-            return $_cmp__82;
-        }        
-        $_cmp__83 = $this->Item->CompareTo($other->Item);
+        $_cmp__83 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__83 != 0) {
             return $_cmp__83;
+        }        
+        $_cmp__84 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__84 != 0) {
+            return $_cmp__84;
         }        
         return 0;
     }
@@ -2081,8 +2102,8 @@ class ParcelDir_PN extends ParcelDir {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__84 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__84;
+        $_cmp__85 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__85;
     }
 }
 
@@ -2100,8 +2121,8 @@ class ParcelDir_PNE extends ParcelDir {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__85 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__85;
+        $_cmp__86 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__86;
     }
 }
 
@@ -2119,8 +2140,8 @@ class ParcelDir_PSE extends ParcelDir {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__86 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__86;
+        $_cmp__87 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__87;
     }
 }
 
@@ -2138,8 +2159,8 @@ class ParcelDir_PS extends ParcelDir {
         return 3;
     }
     function CompareTo($other) {
-        $_cmp__87 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__87;
+        $_cmp__88 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__88;
     }
 }
 
@@ -2157,8 +2178,8 @@ class ParcelDir_PSW extends ParcelDir {
         return 4;
     }
     function CompareTo($other) {
-        $_cmp__88 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__88;
+        $_cmp__89 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__89;
     }
 }
 
@@ -2176,8 +2197,8 @@ class ParcelDir_PNW extends ParcelDir {
         return 5;
     }
     function CompareTo($other) {
-        $_cmp__89 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__89;
+        $_cmp__90 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__90;
     }
 }
 
@@ -2351,8 +2372,8 @@ class OrientedPath_DNE extends OrientedPath {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__90 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__90;
+        $_cmp__91 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__91;
     }
 }
 
@@ -2370,8 +2391,8 @@ class OrientedPath_DNW extends OrientedPath {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__91 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__91;
+        $_cmp__92 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__92;
     }
 }
 
@@ -2389,8 +2410,8 @@ class OrientedPath_DW extends OrientedPath {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__92 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__92;
+        $_cmp__93 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__93;
     }
 }
 
@@ -2408,8 +2429,8 @@ class OrientedPath_DSW extends OrientedPath {
         return 3;
     }
     function CompareTo($other) {
-        $_cmp__93 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__93;
+        $_cmp__94 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__94;
     }
 }
 
@@ -2427,8 +2448,8 @@ class OrientedPath_DSE extends OrientedPath {
         return 4;
     }
     function CompareTo($other) {
-        $_cmp__94 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__94;
+        $_cmp__95 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__95;
     }
 }
 
@@ -2446,8 +2467,8 @@ class OrientedPath_DE extends OrientedPath {
         return 5;
     }
     function CompareTo($other) {
-        $_cmp__95 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__95;
+        $_cmp__96 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__96;
     }
 }
 
@@ -3067,8 +3088,8 @@ class Blocker_BorderBlocker extends Blocker {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__96 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__96;
+        $_cmp__97 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__97;
     }
 }
 
@@ -3086,8 +3107,8 @@ class Blocker_FenceBlocker extends Blocker {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__97 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__97;
+        $_cmp__98 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__98;
     }
 }
 
@@ -3105,8 +3126,8 @@ class Blocker_CutPathBlocker extends Blocker {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__98 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__98;
+        $_cmp__99 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__99;
     }
 }
 
@@ -3160,8 +3181,8 @@ class MoveBlocker_Tractor extends MoveBlocker {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__99 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__99;
+        $_cmp__100 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__100;
     }
 }
 
@@ -3179,8 +3200,8 @@ class MoveBlocker_Protection extends MoveBlocker {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__100 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__100;
+        $_cmp__101 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__101;
     }
 }
 
@@ -3198,8 +3219,8 @@ class MoveBlocker_PhytosanitaryProducts extends MoveBlocker {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__101 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__101;
+        $_cmp__102 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__102;
     }
 }
 
@@ -3217,8 +3238,8 @@ class MoveBlocker_HayBaleOnPath extends MoveBlocker {
         return 3;
     }
     function CompareTo($other) {
-        $_cmp__102 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__102;
+        $_cmp__103 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__103;
     }
 }
 
@@ -3236,8 +3257,8 @@ class MoveBlocker_HighVoltageProtection extends MoveBlocker {
         return 4;
     }
     function CompareTo($other) {
-        $_cmp__103 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__103;
+        $_cmp__104 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__104;
     }
 }
 
@@ -3263,17 +3284,17 @@ class Move_Move extends Move {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__104 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__104 != 0) {
-            return $_cmp__104;
-        }        
-        $_cmp__105 = $this->Item1->CompareTo($other->Item1);
+        $_cmp__105 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__105 != 0) {
             return $_cmp__105;
         }        
-        $_cmp__106 = $this->Item2->CompareTo($other->Item2);
+        $_cmp__106 = $this->Item1->CompareTo($other->Item1);
         if ($_cmp__106 != 0) {
             return $_cmp__106;
+        }        
+        $_cmp__107 = $this->Item2->CompareTo($other->Item2);
+        if ($_cmp__107 != 0) {
+            return $_cmp__107;
         }        
         return 0;
     }
@@ -3299,21 +3320,21 @@ class Move_ImpossibleMove extends Move {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__107 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__107 != 0) {
-            return $_cmp__107;
-        }        
-        $_cmp__108 = $this->Item1->CompareTo($other->Item1);
+        $_cmp__108 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__108 != 0) {
             return $_cmp__108;
         }        
-        $_cmp__109 = $this->Item2->CompareTo($other->Item2);
+        $_cmp__109 = $this->Item1->CompareTo($other->Item1);
         if ($_cmp__109 != 0) {
             return $_cmp__109;
         }        
-        $_cmp__110 = $this->Item3->CompareTo($other->Item3);
+        $_cmp__110 = $this->Item2->CompareTo($other->Item2);
         if ($_cmp__110 != 0) {
             return $_cmp__110;
+        }        
+        $_cmp__111 = $this->Item3->CompareTo($other->Item3);
+        if ($_cmp__111 != 0) {
+            return $_cmp__111;
         }        
         return 0;
     }
@@ -3335,13 +3356,13 @@ class Move_SelectCrossroad extends Move {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__111 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__111 != 0) {
-            return $_cmp__111;
-        }        
-        $_cmp__112 = $this->Item->CompareTo($other->Item);
+        $_cmp__112 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__112 != 0) {
             return $_cmp__112;
+        }        
+        $_cmp__113 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__113 != 0) {
+            return $_cmp__113;
         }        
         return 0;
     }
@@ -3443,13 +3464,13 @@ class Command_Start extends Command {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__113 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__113 != 0) {
-            return $_cmp__113;
-        }        
-        $_cmp__114 = $this->Item->CompareTo($other->Item);
+        $_cmp__114 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__114 != 0) {
             return $_cmp__114;
+        }        
+        $_cmp__115 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__115 != 0) {
+            return $_cmp__115;
         }        
         return 0;
     }
@@ -3471,13 +3492,13 @@ class Command_SelectFirstCrossroad extends Command {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__115 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__115 != 0) {
-            return $_cmp__115;
-        }        
-        $_cmp__116 = $this->Item->CompareTo($other->Item);
+        $_cmp__116 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__116 != 0) {
             return $_cmp__116;
+        }        
+        $_cmp__117 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__117 != 0) {
+            return $_cmp__117;
         }        
         return 0;
     }
@@ -3499,13 +3520,13 @@ class Command_Move extends Command {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__117 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__117 != 0) {
-            return $_cmp__117;
-        }        
-        $_cmp__118 = $this->Item->CompareTo($other->Item);
+        $_cmp__118 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__118 != 0) {
             return $_cmp__118;
+        }        
+        $_cmp__119 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__119 != 0) {
+            return $_cmp__119;
         }        
         return 0;
     }
@@ -3527,13 +3548,13 @@ class Command_PlayCard extends Command {
         return 3;
     }
     function CompareTo($other) {
-        $_cmp__119 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__119 != 0) {
-            return $_cmp__119;
-        }        
-        $_cmp__120 = $this->Item->CompareTo($other->Item);
+        $_cmp__120 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__120 != 0) {
             return $_cmp__120;
+        }        
+        $_cmp__121 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__121 != 0) {
+            return $_cmp__121;
         }        
         return 0;
     }
@@ -3555,13 +3576,13 @@ class Command_Discard extends Command {
         return 4;
     }
     function CompareTo($other) {
-        $_cmp__121 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__121 != 0) {
-            return $_cmp__121;
-        }        
-        $_cmp__122 = $this->Item->CompareTo($other->Item);
+        $_cmp__122 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__122 != 0) {
             return $_cmp__122;
+        }        
+        $_cmp__123 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__123 != 0) {
+            return $_cmp__123;
         }        
         return 0;
     }
@@ -3581,8 +3602,8 @@ class Command_EndTurn extends Command {
         return 5;
     }
     function CompareTo($other) {
-        $_cmp__123 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__123;
+        $_cmp__124 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__124;
     }
 }
 
@@ -3600,8 +3621,8 @@ class Command_Undo extends Command {
         return 6;
     }
     function CompareTo($other) {
-        $_cmp__124 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__124;
+        $_cmp__125 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__125;
     }
 }
 
@@ -3651,13 +3672,13 @@ class Event_FirstCrossroadSelected extends Event {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__125 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__125 != 0) {
-            return $_cmp__125;
-        }        
-        $_cmp__126 = $this->Item->CompareTo($other->Item);
+        $_cmp__126 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__126 != 0) {
             return $_cmp__126;
+        }        
+        $_cmp__127 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__127 != 0) {
+            return $_cmp__127;
         }        
         return 0;
     }
@@ -3679,13 +3700,13 @@ class Event_FenceDrawn extends Event {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__127 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__127 != 0) {
-            return $_cmp__127;
-        }        
-        $_cmp__128 = $this->Item->CompareTo($other->Item);
+        $_cmp__128 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__128 != 0) {
             return $_cmp__128;
+        }        
+        $_cmp__129 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__129 != 0) {
+            return $_cmp__129;
         }        
         return 0;
     }
@@ -3707,13 +3728,13 @@ class Event_FenceRemoved extends Event {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__129 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__129 != 0) {
-            return $_cmp__129;
-        }        
-        $_cmp__130 = $this->Item->CompareTo($other->Item);
+        $_cmp__130 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__130 != 0) {
             return $_cmp__130;
+        }        
+        $_cmp__131 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__131 != 0) {
+            return $_cmp__131;
         }        
         return 0;
     }
@@ -3735,13 +3756,13 @@ class Event_FenceLooped extends Event {
         return 3;
     }
     function CompareTo($other) {
-        $_cmp__131 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__131 != 0) {
-            return $_cmp__131;
-        }        
-        $_cmp__132 = $this->Item->CompareTo($other->Item);
+        $_cmp__132 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__132 != 0) {
             return $_cmp__132;
+        }        
+        $_cmp__133 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__133 != 0) {
+            return $_cmp__133;
         }        
         return 0;
     }
@@ -3763,13 +3784,13 @@ class Event_MovedInField extends Event {
         return 4;
     }
     function CompareTo($other) {
-        $_cmp__133 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__133 != 0) {
-            return $_cmp__133;
-        }        
-        $_cmp__134 = $this->Item->CompareTo($other->Item);
+        $_cmp__134 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__134 != 0) {
             return $_cmp__134;
+        }        
+        $_cmp__135 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__135 != 0) {
+            return $_cmp__135;
         }        
         return 0;
     }
@@ -3791,13 +3812,13 @@ class Event_MovedPowerless extends Event {
         return 5;
     }
     function CompareTo($other) {
-        $_cmp__135 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__135 != 0) {
-            return $_cmp__135;
-        }        
-        $_cmp__136 = $this->Item->CompareTo($other->Item);
+        $_cmp__136 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__136 != 0) {
             return $_cmp__136;
+        }        
+        $_cmp__137 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__137 != 0) {
+            return $_cmp__137;
         }        
         return 0;
     }
@@ -3819,13 +3840,13 @@ class Event_FenceReduced extends Event {
         return 6;
     }
     function CompareTo($other) {
-        $_cmp__137 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__137 != 0) {
-            return $_cmp__137;
-        }        
-        $_cmp__138 = $this->Item->CompareTo($other->Item);
+        $_cmp__138 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__138 != 0) {
             return $_cmp__138;
+        }        
+        $_cmp__139 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__139 != 0) {
+            return $_cmp__139;
         }        
         return 0;
     }
@@ -3847,13 +3868,13 @@ class Event_Annexed extends Event {
         return 7;
     }
     function CompareTo($other) {
-        $_cmp__139 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__139 != 0) {
-            return $_cmp__139;
-        }        
-        $_cmp__140 = $this->Item->CompareTo($other->Item);
+        $_cmp__140 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__140 != 0) {
             return $_cmp__140;
+        }        
+        $_cmp__141 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__141 != 0) {
+            return $_cmp__141;
         }        
         return 0;
     }
@@ -3875,13 +3896,13 @@ class Event_CutFence extends Event {
         return 8;
     }
     function CompareTo($other) {
-        $_cmp__141 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__141 != 0) {
-            return $_cmp__141;
-        }        
-        $_cmp__142 = $this->Item->CompareTo($other->Item);
+        $_cmp__142 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__142 != 0) {
             return $_cmp__142;
+        }        
+        $_cmp__143 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__143 != 0) {
+            return $_cmp__143;
         }        
         return 0;
     }
@@ -3901,8 +3922,8 @@ class Event_PoweredUp extends Event {
         return 9;
     }
     function CompareTo($other) {
-        $_cmp__143 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__143;
+        $_cmp__144 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__144;
     }
 }
 
@@ -3922,13 +3943,13 @@ class Event_CardPlayed extends Event {
         return 10;
     }
     function CompareTo($other) {
-        $_cmp__144 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__144 != 0) {
-            return $_cmp__144;
-        }        
-        $_cmp__145 = $this->Item->CompareTo($other->Item);
+        $_cmp__145 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__145 != 0) {
             return $_cmp__145;
+        }        
+        $_cmp__146 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__146 != 0) {
+            return $_cmp__146;
         }        
         return 0;
     }
@@ -3950,13 +3971,13 @@ class Event_SpedUp extends Event {
         return 11;
     }
     function CompareTo($other) {
-        $_cmp__146 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__146 != 0) {
-            return $_cmp__146;
-        }        
-        $_cmp__147 = $this->Item->CompareTo($other->Item);
+        $_cmp__147 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__147 != 0) {
             return $_cmp__147;
+        }        
+        $_cmp__148 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__148 != 0) {
+            return $_cmp__148;
         }        
         return 0;
     }
@@ -3976,8 +3997,8 @@ class Event_Rutted extends Event {
         return 12;
     }
     function CompareTo($other) {
-        $_cmp__148 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__148;
+        $_cmp__149 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__149;
     }
 }
 
@@ -3995,8 +4016,8 @@ class Event_HighVoltaged extends Event {
         return 13;
     }
     function CompareTo($other) {
-        $_cmp__149 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__149;
+        $_cmp__150 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__150;
     }
 }
 
@@ -4016,13 +4037,13 @@ class Event_BonusDiscarded extends Event {
         return 14;
     }
     function CompareTo($other) {
-        $_cmp__150 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__150 != 0) {
-            return $_cmp__150;
-        }        
-        $_cmp__151 = $this->Item->CompareTo($other->Item);
+        $_cmp__151 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__151 != 0) {
             return $_cmp__151;
+        }        
+        $_cmp__152 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__152 != 0) {
+            return $_cmp__152;
         }        
         return 0;
     }
@@ -4044,13 +4065,13 @@ class Event_CardDiscarded extends Event {
         return 15;
     }
     function CompareTo($other) {
-        $_cmp__152 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__152 != 0) {
-            return $_cmp__152;
-        }        
-        $_cmp__153 = $this->Item->CompareTo($other->Item);
+        $_cmp__153 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__153 != 0) {
             return $_cmp__153;
+        }        
+        $_cmp__154 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__154 != 0) {
+            return $_cmp__154;
         }        
         return 0;
     }
@@ -4070,8 +4091,8 @@ class Event_Watched extends Event {
         return 16;
     }
     function CompareTo($other) {
-        $_cmp__154 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__154;
+        $_cmp__155 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__155;
     }
 }
 
@@ -4091,13 +4112,13 @@ class Event_Heliported extends Event {
         return 17;
     }
     function CompareTo($other) {
-        $_cmp__155 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__155 != 0) {
-            return $_cmp__155;
-        }        
-        $_cmp__156 = $this->Item->CompareTo($other->Item);
+        $_cmp__156 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__156 != 0) {
             return $_cmp__156;
+        }        
+        $_cmp__157 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__157 != 0) {
+            return $_cmp__157;
         }        
         return 0;
     }
@@ -4119,13 +4140,13 @@ class Event_Bribed extends Event {
         return 18;
     }
     function CompareTo($other) {
-        $_cmp__157 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__157 != 0) {
-            return $_cmp__157;
-        }        
-        $_cmp__158 = $this->Item->CompareTo($other->Item);
+        $_cmp__158 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__158 != 0) {
             return $_cmp__158;
+        }        
+        $_cmp__159 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__159 != 0) {
+            return $_cmp__159;
         }        
         return 0;
     }
@@ -4145,8 +4166,8 @@ class Event_Eliminated extends Event {
         return 19;
     }
     function CompareTo($other) {
-        $_cmp__159 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__159;
+        $_cmp__160 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__160;
     }
 }
 
@@ -4164,8 +4185,8 @@ class Event_Undone extends Event {
         return 20;
     }
     function CompareTo($other) {
-        $_cmp__160 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__160;
+        $_cmp__161 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__161;
     }
 }
 
@@ -4350,16 +4371,16 @@ function Shared_002EPlayer___fence($player__8) {
     switch (get_class($player__8))
     {
         case 'CrazyPlayer_Starting':
-            $_target__161 = 1;
+            $_target__162 = 1;
             break;
         case 'CrazyPlayer_Ko':
-            $_target__161 = 1;
+            $_target__162 = 1;
             break;
         default:
-            $_target__161 = 0;
+            $_target__162 = 0;
             break;
     }
-    switch ($_target__161)
+    switch ($_target__162)
     {
         case 0:
             return $player__8->Item->Fence;
@@ -4494,8 +4515,8 @@ function Shared_002EPlayer___decide($otherPlayers__1, $barns__3, $hayBales__4, $
  }));
  }));
                             default:
-                                $activePatternResult178849 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
-                                if (!is_null($activePatternResult178849)) {
+                                $activePatternResult305983 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
+                                if (!is_null($activePatternResult305983)) {
                                     return new Cons(new Event_FenceRemoved(new Moved($cmd__1->Direction, $nextPath__1, $nextPos__1)), FSharpList::get_Nil());
                                 }                                 else {
                                     $matchValue__25 = Shared_002EFenceModule___findLoop($cmd__1->Direction, $player__17->Tractor, $player__17->Fence);
@@ -4680,6 +4701,8 @@ function Shared_002EPlayer___decide($otherPlayers__1, $barns__3, $hayBales__4, $
                                 }                                 else {
                                     return FSharpList::get_Nil();
                                 }
+                            case 'PlayCard_PlayGameOver':
+                                return FSharpList::get_Nil();
                             default:
                                 return new Cons(new Event_CardPlayed($card__3), new Cons(new Event_SpedUp(new SpedUp(($card__3->power instanceof CardPower_Two ? 2 : 1))), FSharpList::get_Nil()));
                         }
@@ -5052,17 +5075,17 @@ function Shared_002EPlayer___possibleMoves($playerid__4, $board__1) {
                             switch (get_class($matchValue__36))
                             {
                                 case 'CrazyPlayer_Ko':
-                                    $_target__162 = 1;
+                                    $_target__163 = 1;
                                     break;
                                 case 'CrazyPlayer_Playing':
-                                    $_target__162 = 1;
+                                    $_target__163 = 1;
                                     break;
                                 default:
                                     $p__72 = $matchValue__36->Item->Parcel->tile;
-                                    $_target__162 = 0;
+                                    $_target__163 = 0;
                                     break;
                             }
-                            switch ($_target__162)
+                            switch ($_target__163)
                             {
                                 case 0:
                                     return new Cons(new Move_SelectCrossroad(new Crossroad($p__72, new CrossroadSide_CLeft())), new Cons(new Move_SelectCrossroad(new Crossroad($p__72, new CrossroadSide_CRight())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___NW']), new CrossroadSide_CRight())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___NE']), new CrossroadSide_CLeft())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___SW']), new CrossroadSide_CRight())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___SE']), new CrossroadSide_CLeft())), FSharpList::get_Nil()))))));
@@ -5078,17 +5101,17 @@ function Shared_002EPlayer___possibleMoves($playerid__4, $board__1) {
                         switch (get_class($matchValue__36))
                         {
                             case 'CrazyPlayer_Ko':
-                                $_target__163 = 1;
+                                $_target__164 = 1;
                                 break;
                             case 'CrazyPlayer_Playing':
-                                $_target__163 = 1;
+                                $_target__164 = 1;
                                 break;
                             default:
                                 $p__72 = $matchValue__36->Item->Parcel->tile;
-                                $_target__163 = 0;
+                                $_target__164 = 0;
                                 break;
                         }
-                        switch ($_target__163)
+                        switch ($_target__164)
                         {
                             case 0:
                                 return new Cons(new Move_SelectCrossroad(new Crossroad($p__72, new CrossroadSide_CLeft())), new Cons(new Move_SelectCrossroad(new Crossroad($p__72, new CrossroadSide_CRight())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___NW']), new CrossroadSide_CRight())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___NE']), new CrossroadSide_CLeft())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___SW']), new CrossroadSide_CRight())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___SE']), new CrossroadSide_CLeft())), FSharpList::get_Nil()))))));
@@ -5104,17 +5127,17 @@ function Shared_002EPlayer___possibleMoves($playerid__4, $board__1) {
                     switch (get_class($matchValue__36))
                     {
                         case 'CrazyPlayer_Ko':
-                            $_target__164 = 1;
+                            $_target__165 = 1;
                             break;
                         case 'CrazyPlayer_Playing':
-                            $_target__164 = 1;
+                            $_target__165 = 1;
                             break;
                         default:
                             $p__72 = $matchValue__36->Item->Parcel->tile;
-                            $_target__164 = 0;
+                            $_target__165 = 0;
                             break;
                     }
-                    switch ($_target__164)
+                    switch ($_target__165)
                     {
                         case 0:
                             return new Cons(new Move_SelectCrossroad(new Crossroad($p__72, new CrossroadSide_CLeft())), new Cons(new Move_SelectCrossroad(new Crossroad($p__72, new CrossroadSide_CRight())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___NW']), new CrossroadSide_CRight())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___NE']), new CrossroadSide_CLeft())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___SW']), new CrossroadSide_CRight())), new Cons(new Move_SelectCrossroad(new Crossroad(Shared_002EAxe___op_Addition__2BE35040($p__72, $GLOBALS['Shared_002EAxeModule___SE']), new CrossroadSide_CLeft())), FSharpList::get_Nil()))))));
@@ -5261,17 +5284,17 @@ class BoardCommand_Play extends BoardCommand {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__165 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__165 != 0) {
-            return $_cmp__165;
-        }        
-        $_cmp__166 = $this->Item1->CompareTo($other->Item1);
+        $_cmp__166 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__166 != 0) {
             return $_cmp__166;
         }        
-        $_cmp__167 = $this->Item2->CompareTo($other->Item2);
+        $_cmp__167 = $this->Item1->CompareTo($other->Item1);
         if ($_cmp__167 != 0) {
             return $_cmp__167;
+        }        
+        $_cmp__168 = $this->Item2->CompareTo($other->Item2);
+        if ($_cmp__168 != 0) {
+            return $_cmp__168;
         }        
         return 0;
     }
@@ -5293,13 +5316,13 @@ class BoardCommand_Start extends BoardCommand {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__168 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__168 != 0) {
-            return $_cmp__168;
-        }        
-        $_cmp__169 = $this->Item->CompareTo($other->Item);
+        $_cmp__169 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__169 != 0) {
             return $_cmp__169;
+        }        
+        $_cmp__170 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__170 != 0) {
+            return $_cmp__170;
         }        
         return 0;
     }
@@ -5339,17 +5362,17 @@ class BoardEvent_Played extends BoardEvent {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__170 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__170 != 0) {
-            return $_cmp__170;
-        }        
-        $_cmp__171 = $this->Item1->CompareTo($other->Item1);
+        $_cmp__171 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__171 != 0) {
             return $_cmp__171;
         }        
-        $_cmp__172 = $this->Item2->CompareTo($other->Item2);
+        $_cmp__172 = $this->Item1->CompareTo($other->Item1);
         if ($_cmp__172 != 0) {
             return $_cmp__172;
+        }        
+        $_cmp__173 = $this->Item2->CompareTo($other->Item2);
+        if ($_cmp__173 != 0) {
+            return $_cmp__173;
         }        
         return 0;
     }
@@ -5371,13 +5394,13 @@ class BoardEvent_Started extends BoardEvent {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__173 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__173 != 0) {
-            return $_cmp__173;
-        }        
-        $_cmp__174 = $this->Item->CompareTo($other->Item);
+        $_cmp__174 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__174 != 0) {
             return $_cmp__174;
+        }        
+        $_cmp__175 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__175 != 0) {
+            return $_cmp__175;
         }        
         return 0;
     }
@@ -5397,8 +5420,8 @@ class BoardEvent_Next extends BoardEvent {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__175 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__175;
+        $_cmp__176 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__176;
     }
 }
 
@@ -5418,13 +5441,13 @@ class BoardEvent_PlayerDrewCards extends BoardEvent {
         return 3;
     }
     function CompareTo($other) {
-        $_cmp__176 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__176 != 0) {
-            return $_cmp__176;
-        }        
-        $_cmp__177 = $this->Item->CompareTo($other->Item);
+        $_cmp__177 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__177 != 0) {
             return $_cmp__177;
+        }        
+        $_cmp__178 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__178 != 0) {
+            return $_cmp__178;
         }        
         return 0;
     }
@@ -5446,13 +5469,13 @@ class BoardEvent_GameWon extends BoardEvent {
         return 4;
     }
     function CompareTo($other) {
-        $_cmp__178 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__178 != 0) {
-            return $_cmp__178;
-        }        
-        $_cmp__179 = $this->Item->CompareTo($other->Item);
+        $_cmp__179 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__179 != 0) {
             return $_cmp__179;
+        }        
+        $_cmp__180 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__180 != 0) {
+            return $_cmp__180;
         }        
         return 0;
     }
@@ -5474,13 +5497,13 @@ class BoardEvent_GameEnded extends BoardEvent {
         return 5;
     }
     function CompareTo($other) {
-        $_cmp__180 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__180 != 0) {
-            return $_cmp__180;
-        }        
-        $_cmp__181 = $this->Item->CompareTo($other->Item);
+        $_cmp__181 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__181 != 0) {
             return $_cmp__181;
+        }        
+        $_cmp__182 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__182 != 0) {
+            return $_cmp__182;
         }        
         return 0;
     }
@@ -5504,17 +5527,17 @@ class BoardEvent_HayBalesPlaced extends BoardEvent {
         return 6;
     }
     function CompareTo($other) {
-        $_cmp__182 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__182 != 0) {
-            return $_cmp__182;
-        }        
-        $_cmp__183 = $this->added->CompareTo($other->added);
+        $_cmp__183 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__183 != 0) {
             return $_cmp__183;
         }        
-        $_cmp__184 = $this->removed->CompareTo($other->removed);
+        $_cmp__184 = $this->added->CompareTo($other->added);
         if ($_cmp__184 != 0) {
             return $_cmp__184;
+        }        
+        $_cmp__185 = $this->removed->CompareTo($other->removed);
+        if ($_cmp__185 != 0) {
+            return $_cmp__185;
         }        
         return 0;
     }
@@ -5536,13 +5559,13 @@ class BoardEvent_HayBaleDynamited extends BoardEvent {
         return 7;
     }
     function CompareTo($other) {
-        $_cmp__185 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__185 != 0) {
-            return $_cmp__185;
-        }        
-        $_cmp__186 = $this->Item->CompareTo($other->Item);
+        $_cmp__186 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__186 != 0) {
             return $_cmp__186;
+        }        
+        $_cmp__187 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__187 != 0) {
+            return $_cmp__187;
         }        
         return 0;
     }
@@ -5564,13 +5587,13 @@ class BoardEvent_DiscardPileShuffled extends BoardEvent {
         return 8;
     }
     function CompareTo($other) {
-        $_cmp__187 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__187 != 0) {
-            return $_cmp__187;
-        }        
-        $_cmp__188 = $this->Item->CompareTo($other->Item);
+        $_cmp__188 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__188 != 0) {
             return $_cmp__188;
+        }        
+        $_cmp__189 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__189 != 0) {
+            return $_cmp__189;
         }        
         return 0;
     }
@@ -5592,13 +5615,13 @@ class BoardEvent_DrawPileShuffled extends BoardEvent {
         return 9;
     }
     function CompareTo($other) {
-        $_cmp__189 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__189 != 0) {
-            return $_cmp__189;
-        }        
-        $_cmp__190 = $this->Item->CompareTo($other->Item);
+        $_cmp__190 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__190 != 0) {
             return $_cmp__190;
+        }        
+        $_cmp__191 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__191 != 0) {
+            return $_cmp__191;
         }        
         return 0;
     }
@@ -5618,8 +5641,8 @@ class BoardEvent_UndoCheckPointed extends BoardEvent {
         return 10;
     }
     function CompareTo($other) {
-        $_cmp__191 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__191;
+        $_cmp__192 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__192;
     }
 }
 
@@ -5711,13 +5734,13 @@ class FindWinner_Winner extends FindWinner {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__192 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__192 != 0) {
-            return $_cmp__192;
-        }        
-        $_cmp__193 = $this->Item->CompareTo($other->Item);
+        $_cmp__193 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__193 != 0) {
             return $_cmp__193;
+        }        
+        $_cmp__194 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__194 != 0) {
+            return $_cmp__194;
         }        
         return 0;
     }
@@ -5739,13 +5762,13 @@ class FindWinner_Lead extends FindWinner {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__194 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__194 != 0) {
-            return $_cmp__194;
-        }        
-        $_cmp__195 = $this->Item->CompareTo($other->Item);
+        $_cmp__195 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__195 != 0) {
             return $_cmp__195;
+        }        
+        $_cmp__196 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__196 != 0) {
+            return $_cmp__196;
         }        
         return 0;
     }
@@ -5819,8 +5842,8 @@ class BribeBlocker_InstantVictory extends BribeBlocker {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__196 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__196;
+        $_cmp__197 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__197;
     }
 }
 
@@ -5838,8 +5861,8 @@ class BribeBlocker_NoParcelsToBribe extends BribeBlocker {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__197 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__197;
+        $_cmp__198 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__198;
     }
 }
 
@@ -5861,8 +5884,8 @@ class BribeParcelBlocker_BarnBlocker extends BribeParcelBlocker {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__198 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__198;
+        $_cmp__199 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__199;
     }
 }
 
@@ -5880,8 +5903,8 @@ class BribeParcelBlocker_LastParcelBlocker extends BribeParcelBlocker {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__199 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__199;
+        $_cmp__200 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__200;
     }
 }
 
@@ -5899,8 +5922,8 @@ class BribeParcelBlocker_WatchedBlocker extends BribeParcelBlocker {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__200 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__200;
+        $_cmp__201 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__201;
     }
 }
 
@@ -5918,8 +5941,8 @@ class BribeParcelBlocker_FenceBlocker extends BribeParcelBlocker {
         return 3;
     }
     function CompareTo($other) {
-        $_cmp__201 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__201;
+        $_cmp__202 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__202;
     }
 }
 
@@ -5937,8 +5960,8 @@ class BribeParcelBlocker_FallowBlocker extends BribeParcelBlocker {
         return 4;
     }
     function CompareTo($other) {
-        $_cmp__202 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        return $_cmp__202;
+        $_cmp__203 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
+        return $_cmp__203;
     }
 }
 
@@ -5997,16 +6020,16 @@ function Shared_002EBoardModule___bribeParcels($board__10) {
                 switch (get_class($tupledArg__10[1]))
                 {
                     case 'CrazyPlayer_Starting':
-                        $_target__203 = 1;
+                        $_target__204 = 1;
                         break;
                     case 'CrazyPlayer_Ko':
-                        $_target__203 = 1;
+                        $_target__204 = 1;
                         break;
                     default:
-                        $_target__203 = 0;
+                        $_target__204 = 0;
                         break;
                 }
-                switch ($_target__203)
+                switch ($_target__204)
                 {
                     case 0:
                         $startCrossRoad = Shared_002EFenceModule___start($tupledArg__10[1]->Item->Tractor, $tupledArg__10[1]->Item->Fence);
@@ -6058,16 +6081,16 @@ function Shared_002EBoardModule___bribeParcelsBlockers($board__11) {
                     switch (get_class($matchValue__44[1]))
                     {
                         case 'CrazyPlayer_Starting':
-                            $_target__203 = 1;
+                            $_target__204 = 1;
                             break;
                         case 'CrazyPlayer_Ko':
-                            $_target__203 = 1;
+                            $_target__204 = 1;
                             break;
                         default:
-                            $_target__203 = 0;
+                            $_target__204 = 0;
                             break;
                     }
-                    switch ($_target__203)
+                    switch ($_target__204)
                     {
                         case 0:
                             $startCrossRoad__1 = Shared_002EFenceModule___start($matchValue__44[1]->Item->Tractor, $matchValue__44[1]->Item->Fence);
@@ -6213,17 +6236,17 @@ function Shared_002EBoardModule___evolve($state__6, $event__3) {
                             {
                                 case 'Event_BonusDiscarded':
                                     $card__8 = $e__18->Item;
-                                    $_target__203 = 0;
+                                    $_target__204 = 0;
                                     break;
                                 case 'Event_CardDiscarded':
                                     $card__8 = $e__18->Item;
-                                    $_target__203 = 0;
+                                    $_target__204 = 0;
                                     break;
                                 default:
-                                    $_target__203 = 1;
+                                    $_target__204 = 1;
                                     break;
                             }
-                            switch ($_target__203)
+                            switch ($_target__204)
                             {
                                 case 0:
                                     $newDiscardPile = new Cons($card__8, $board__29->DiscardPile);
@@ -6321,16 +6344,16 @@ function Shared_002EBoardModule___evolve($state__6, $event__3) {
             {
                 case 'BoardEvent_Started':
                     $s__3 = $event__3->Item;
-                    $_target__204 = 0;
+                    $_target__205 = 0;
                     break;
                 case 'BoardEvent_Played':
-                    $_target__204 = 1;
+                    $_target__205 = 1;
                     break;
                 default:
-                    $_target__204 = 1;
+                    $_target__205 = 1;
                     break;
             }
-            switch ($_target__204)
+            switch ($_target__205)
             {
                 case 0:
                     $board__17 = new Board_Board((function () use ($s__3) { 
@@ -6554,14 +6577,14 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                             $nextBoard = Shared_002EBoardModule___bribedevents($playerid__16, $events__2, $board__36);
                                             $eliminated = 0;
                                             return Seq::append(Seq::collect(function ($matchValue__55) use (&$eliminated) { 
-                                                $activePatternResult179129 = $matchValue__55;
-                                                if (Shared_002EPlayer___isKo($activePatternResult179129[1])) {
+                                                $activePatternResult306263 = $matchValue__55;
+                                                if (Shared_002EPlayer___isKo($activePatternResult306263[1])) {
                                                     $eliminated = $eliminated + 1;
                                                     return Seq::empty();
                                                 }                                                 else {
-                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult179129[1]))) {
+                                                    if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult306263[1]))) {
                                                         $eliminated = $eliminated + 1;
-                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult179129[0], new Event_Eliminated()));
+                                                        return Seq::singleton(new BoardEvent_Played($activePatternResult306263[0], new Event_Eliminated()));
                                                     }                                                     else {
                                                         return Seq::empty();
                                                     }
@@ -6586,8 +6609,17 @@ function Shared_002EBoardModule___decide($cmd__5, $state__7) {
                                                                     }
                                                                     return Seq::append($patternInput__9[1], Seq::delay(function ($unitVar__70) use ($cardsToTake, $matchValue__56, $patternInput__9, $playerid__16, $state__7) { 
                                                                         $cardsDrawn = Shared_002EDrawPile___take($cardsToTake, $patternInput__9[0]);
-                                                                        return Seq::append(Seq::singleton(new BoardEvent_PlayerDrewCards(new PlayerDrewCards($playerid__16, new Hand_PublicHand($cardsDrawn)))), Seq::delay(function ($unitVar__71) use ($cardsDrawn, $matchValue__56, $state__7) {                                                                         return Seq::append(FSharpList::contains(new Card_GameOver(), $cardsDrawn, [ 'Equals' => 'Util::equals', 'GetHashCode' => 'Util::structuralHash']) ? ($matchValue__56->Item instanceof Cons ? ($matchValue__56->Item->next instanceof Nil ? (function ($win__1) {                                                                         return Seq::singleton(new BoardEvent_GameWon($win__1));
- })($matchValue__56->Item->value) : Seq::singleton(new BoardEvent_GameEnded($matchValue__56->Item))) : Seq::singleton(new BoardEvent_GameEnded($matchValue__56->Item))) : Seq::empty(), Seq::delay(function ($unitVar__72) use ($state__7) {                                                                         if (Util::equals($state__7->UndoType, new UndoType_DontUndoCards())) {
+                                                                        return Seq::append(Seq::singleton(new BoardEvent_PlayerDrewCards(new PlayerDrewCards($playerid__16, new Hand_PublicHand($cardsDrawn)))), Seq::delay(function ($unitVar__71) use ($cardsDrawn, $matchValue__56, $playerid__16, $state__7) {                                                                         return Seq::append(FSharpList::contains(new Card_GameOver(), $cardsDrawn, [ 'Equals' => 'Util::equals', 'GetHashCode' => 'Util::structuralHash']) ? Seq::append(Seq::singleton(new BoardEvent_Played($playerid__16, new Event_CardPlayed(new PlayCard_PlayGameOver()))), Seq::delay(function ($unitVar__72) use ($matchValue__56) {                                                                         if ($matchValue__56->Item instanceof Cons) {
+                                                                            if ($matchValue__56->Item->next instanceof Nil) {
+                                                                                $win__1 = $matchValue__56->Item->value;
+                                                                                return Seq::singleton(new BoardEvent_GameWon($win__1));
+                                                                            }                                                                             else {
+                                                                                return Seq::singleton(new BoardEvent_GameEnded($matchValue__56->Item));
+                                                                            }
+                                                                        }                                                                         else {
+                                                                            return Seq::singleton(new BoardEvent_GameEnded($matchValue__56->Item));
+                                                                        }
+ })) : Seq::empty(), Seq::delay(function ($unitVar__73) use ($state__7) {                                                                         if (Util::equals($state__7->UndoType, new UndoType_DontUndoCards())) {
                                                                             return Seq::singleton(new BoardEvent_UndoCheckPointed());
                                                                         }                                                                         else {
                                                                             return Seq::empty();
@@ -6676,9 +6708,9 @@ function Shared_002EBoardModule___toState($board__37) {
                 $source__10 = Seq::map(function ($tupledArg__13) {                 return [ $tupledArg__13[0], Shared_002EPlayer___toState($tupledArg__13[1])];
  }, $source__9);
                 return FSharpArray::ofSeq($source__10);
-            })(), new STable($board__37->Item2->Table->Players, $board__37->Item2->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__74) use ($board__37) {             return Seq::collect(function ($matchValue__58) { 
-                $activePatternResult179145 = $matchValue__58;
-                return Seq::singleton([ $activePatternResult179145[0], $activePatternResult179145[1]]);
+            })(), new STable($board__37->Item2->Table->Players, $board__37->Item2->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__75) use ($board__37) {             return Seq::collect(function ($matchValue__58) { 
+                $activePatternResult306280 = $matchValue__58;
+                return Seq::singleton([ $activePatternResult306280[0], $activePatternResult306280[1]]);
             }, $board__37->Item2->Table->Names);
  })), $board__37->Item2->Table->Current), FSharpArray::ofList($board__37->Item2->DiscardPile), (function () use ($board__37) { 
                 $list__34 = Shared_002EFieldModule___parcels($board__37->Item2->Barns->Free);
@@ -6694,9 +6726,9 @@ function Shared_002EBoardModule___toState($board__37) {
                 $source__8 = Seq::map(function ($tupledArg__12) {                 return [ $tupledArg__12[0], Shared_002EPlayer___toState($tupledArg__12[1])];
  }, $source__7);
                 return FSharpArray::ofSeq($source__8);
-            })(), new STable($board__37->Item->Table->Players, $board__37->Item->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__73) use ($board__37) {             return Seq::collect(function ($matchValue__57) { 
-                $activePatternResult179141 = $matchValue__57;
-                return Seq::singleton([ $activePatternResult179141[0], $activePatternResult179141[1]]);
+            })(), new STable($board__37->Item->Table->Players, $board__37->Item->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__74) use ($board__37) {             return Seq::collect(function ($matchValue__57) { 
+                $activePatternResult306276 = $matchValue__57;
+                return Seq::singleton([ $activePatternResult306276[0], $activePatternResult306276[1]]);
             }, $board__37->Item->Table->Names);
  })), $board__37->Item->Table->Current), FSharpArray::ofList($board__37->Item->DiscardPile), (function () use ($board__37) { 
                 $list__32 = Shared_002EFieldModule___parcels($board__37->Item->Barns->Free);
@@ -6785,7 +6817,7 @@ function Shared_002EClient___cardName($_arg1__62) {
                                 return 'card bribe';
                             }                             else {
                                 if ($_arg1__62 instanceof Card_GameOver) {
-                                    return 'gameover';
+                                    return 'card gameover';
                                 }                                 else {
                                     switch (get_class($_arg1__62->power))
                                     {
@@ -6824,13 +6856,13 @@ class ServerMsg_JoinGame extends ServerMsg {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__205 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__205 != 0) {
-            return $_cmp__205;
-        }        
-        $_cmp__206 = $this->Item->CompareTo($other->Item);
+        $_cmp__206 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__206 != 0) {
             return $_cmp__206;
+        }        
+        $_cmp__207 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__207 != 0) {
+            return $_cmp__207;
         }        
         return 0;
     }
@@ -6852,13 +6884,13 @@ class ServerMsg_Command extends ServerMsg {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__207 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__207 != 0) {
-            return $_cmp__207;
-        }        
-        $_cmp__208 = $this->Item->CompareTo($other->Item);
+        $_cmp__208 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__208 != 0) {
             return $_cmp__208;
+        }        
+        $_cmp__209 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__209 != 0) {
+            return $_cmp__209;
         }        
         return 0;
     }
@@ -6880,13 +6912,13 @@ class ServerMsg_SendMessage extends ServerMsg {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__209 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__209 != 0) {
-            return $_cmp__209;
-        }        
-        $_cmp__210 = $this->Item->CompareTo($other->Item);
+        $_cmp__210 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__210 != 0) {
             return $_cmp__210;
+        }        
+        $_cmp__211 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__211 != 0) {
+            return $_cmp__211;
         }        
         return 0;
     }
@@ -6926,17 +6958,17 @@ class ClientMsg_Events extends ClientMsg {
         return 0;
     }
     function CompareTo($other) {
-        $_cmp__211 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__211 != 0) {
-            return $_cmp__211;
-        }        
-        $_cmp__212 = $this->Item1->CompareTo($other->Item1);
+        $_cmp__212 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__212 != 0) {
             return $_cmp__212;
         }        
-        $_cmp__213 = $this->Item2 > $other->Item2 ? 1 : ($this->Item2 < $other->Item2 ? -1 : 0);
+        $_cmp__213 = $this->Item1->CompareTo($other->Item1);
         if ($_cmp__213 != 0) {
             return $_cmp__213;
+        }        
+        $_cmp__214 = $this->Item2 > $other->Item2 ? 1 : ($this->Item2 < $other->Item2 ? -1 : 0);
+        if ($_cmp__214 != 0) {
+            return $_cmp__214;
         }        
         return 0;
     }
@@ -6958,13 +6990,13 @@ class ClientMsg_Message extends ClientMsg {
         return 1;
     }
     function CompareTo($other) {
-        $_cmp__214 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__214 != 0) {
-            return $_cmp__214;
-        }        
-        $_cmp__215 = $this->Item->CompareTo($other->Item);
+        $_cmp__215 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__215 != 0) {
             return $_cmp__215;
+        }        
+        $_cmp__216 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__216 != 0) {
+            return $_cmp__216;
         }        
         return 0;
     }
@@ -6990,21 +7022,21 @@ class ClientMsg_Sync extends ClientMsg {
         return 2;
     }
     function CompareTo($other) {
-        $_cmp__216 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__216 != 0) {
-            return $_cmp__216;
-        }        
-        $_cmp__217 = $this->Item1->CompareTo($other->Item1);
+        $_cmp__217 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__217 != 0) {
             return $_cmp__217;
         }        
-        $_cmp__218 = $this->Item2 > $other->Item2 ? 1 : ($this->Item2 < $other->Item2 ? -1 : 0);
+        $_cmp__218 = $this->Item1->CompareTo($other->Item1);
         if ($_cmp__218 != 0) {
             return $_cmp__218;
         }        
-        $_cmp__219 = $this->Item3->CompareTo($other->Item3);
+        $_cmp__219 = $this->Item2 > $other->Item2 ? 1 : ($this->Item2 < $other->Item2 ? -1 : 0);
         if ($_cmp__219 != 0) {
             return $_cmp__219;
+        }        
+        $_cmp__220 = $this->Item3->CompareTo($other->Item3);
+        if ($_cmp__220 != 0) {
+            return $_cmp__220;
         }        
         return 0;
     }
@@ -7026,13 +7058,13 @@ class ClientMsg_SyncPlayer extends ClientMsg {
         return 3;
     }
     function CompareTo($other) {
-        $_cmp__220 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__220 != 0) {
-            return $_cmp__220;
-        }        
-        $_cmp__221 = $this->Item->CompareTo($other->Item);
+        $_cmp__221 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__221 != 0) {
             return $_cmp__221;
+        }        
+        $_cmp__222 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__222 != 0) {
+            return $_cmp__222;
         }        
         return 0;
     }
@@ -7054,13 +7086,13 @@ class ClientMsg_ReceiveMessage extends ClientMsg {
         return 4;
     }
     function CompareTo($other) {
-        $_cmp__222 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__222 != 0) {
-            return $_cmp__222;
-        }        
-        $_cmp__223 = $this->Item->CompareTo($other->Item);
+        $_cmp__223 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__223 != 0) {
             return $_cmp__223;
+        }        
+        $_cmp__224 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__224 != 0) {
+            return $_cmp__224;
         }        
         return 0;
     }
@@ -7204,16 +7236,16 @@ function SharedServer___bgaNextPlayer($board__2) {
     switch (get_class($board__2->Board))
     {
         case 'Board_InitialState':
-            $_target__224 = 1;
+            $_target__225 = 1;
             break;
         case 'Board_Won':
-            $_target__224 = 1;
+            $_target__225 = 1;
             break;
         default:
-            $_target__224 = 0;
+            $_target__225 = 0;
             break;
     }
-    switch ($_target__224)
+    switch ($_target__225)
     {
         case 0:
             $matchValue__5 = Shared_002EBoardModule___currentPlayer($board__2->Board->Item);
@@ -7261,17 +7293,17 @@ function SharedServer___bgaScore($events__2, $board__4, $updateScore) {
     {
         case 'Board_Board':
             $b__6 = $board__4->Board->Item;
-            $_target__225 = 0;
+            $_target__226 = 0;
             break;
         case 'Board_Won':
             $b__6 = $board__4->Board->Item2;
-            $_target__225 = 0;
+            $_target__226 = 0;
             break;
         default:
-            $_target__225 = 1;
+            $_target__226 = 1;
             break;
     }
-    switch ($_target__225)
+    switch ($_target__226)
     {
         case 0:
             return Seq::iterate(function ($e__3) use ($b__6, $updateScore) {             if ($e__3 instanceof BoardEvent_Played) {
@@ -7327,17 +7359,17 @@ function SharedServer___textAction($previous, $b__7, $e__4) {
     {
         case 'Board_Board':
             $board__5 = $b__7->Board->Item;
-            $_target__226 = 0;
+            $_target__227 = 0;
             break;
         case 'Board_Won':
             $board__5 = $b__7->Board->Item2;
-            $_target__226 = 0;
+            $_target__227 = 0;
             break;
         default:
-            $_target__226 = 1;
+            $_target__227 = 1;
             break;
     }
-    switch ($_target__226)
+    switch ($_target__227)
     {
         case 0:
             $playerName = function ($p__6) use ($board__5) { 
@@ -7388,21 +7420,21 @@ function SharedServer___textAction($previous, $b__7, $e__4) {
                             $e__8 = $e__4->Item2->Item;
                             $p__9 = $e__4->Item1;
                             return [ clienttranslate('${icon} ${player} takes one of ${bribed}\'s parcel'), Map::ofList(new Cons((function () use ($p__9, $playerName) { 
-                                $v__7 = $playerName($p__9);
-                                return [ 'player', $v__7];
+                                $v__8 = $playerName($p__9);
+                                return [ 'player', $v__8];
                             })(), new Cons((function () use ($e__8, $playerName) { 
-                                $v__8 = $playerName($e__8->Victim);
-                                return [ 'bribed', $v__8];
+                                $v__9 = $playerName($e__8->Victim);
+                                return [ 'bribed', $v__9];
                             })(), new Cons((function () { 
-                                $v__9 = SharedServer___cardIcon(new Card_Bribe());
-                                return [ 'icon', $v__9];
+                                $v__10 = SharedServer___cardIcon(new Card_Bribe());
+                                return [ 'icon', $v__10];
                             })(), FSharpList::get_Nil()))), [ 'Compare' => 'Util::comparePrimitives'])];
                         }                         else {
                             if ($e__4->Item2 instanceof Event_Eliminated) {
                                 $p__10 = $e__4->Item1;
                                 return [ clienttranslate('${player} is eliminated !'), Map::ofList(new Cons((function () use ($p__10, $playerName) { 
-                                    $v__10 = $playerName($p__10);
-                                    return [ 'player', $v__10];
+                                    $v__11 = $playerName($p__10);
+                                    return [ 'player', $v__11];
                                 })(), FSharpList::get_Nil()), [ 'Compare' => 'Util::comparePrimitives'])];
                             }                             else {
                                 if ($e__4->Item2 instanceof Event_CardPlayed) {
@@ -7411,86 +7443,86 @@ function SharedServer___textAction($previous, $b__7, $e__4) {
                                         case 'PlayCard_PlayHelicopter':
                                             $p__11 = $e__4->Item1;
                                             return [ clienttranslate('${icon} ${player} is heliported to new crossroad'), Map::ofList(new Cons((function () use ($p__11, $playerName) { 
-                                                $v__11 = $playerName($p__11);
-                                                return [ 'player', $v__11];
+                                                $v__12 = $playerName($p__11);
+                                                return [ 'player', $v__12];
                                             })(), new Cons((function () { 
-                                                $v__12 = SharedServer___cardIcon(new Card_Helicopter());
-                                                return [ 'icon', $v__12];
+                                                $v__13 = SharedServer___cardIcon(new Card_Helicopter());
+                                                return [ 'icon', $v__13];
                                             })(), FSharpList::get_Nil())), [ 'Compare' => 'Util::comparePrimitives'])];
                                         case 'PlayCard_PlayHighVoltage':
                                             $p__12 = $e__4->Item1;
                                             return [ clienttranslate('${icon} ${player}\'s fence cannot be cut until next turn'), Map::ofList(new Cons((function () use ($p__12, $playerName) { 
-                                                $v__13 = $playerName($p__12);
-                                                return [ 'player', $v__13];
+                                                $v__14 = $playerName($p__12);
+                                                return [ 'player', $v__14];
                                             })(), new Cons((function () { 
-                                                $v__14 = SharedServer___cardIcon(new Card_HighVoltage());
-                                                return [ 'icon', $v__14];
+                                                $v__15 = SharedServer___cardIcon(new Card_HighVoltage());
+                                                return [ 'icon', $v__15];
                                             })(), FSharpList::get_Nil())), [ 'Compare' => 'Util::comparePrimitives'])];
                                         case 'PlayCard_PlayWatchdog':
                                             $p__13 = $e__4->Item1;
                                             return [ clienttranslate('${icon} ${player} field is protected until next turn'), Map::ofList(new Cons((function () use ($p__13, $playerName) { 
-                                                $v__15 = $playerName($p__13);
-                                                return [ 'player', $v__15];
+                                                $v__16 = $playerName($p__13);
+                                                return [ 'player', $v__16];
                                             })(), new Cons((function () { 
-                                                $v__16 = SharedServer___cardIcon(new Card_Watchdog());
-                                                return [ 'icon', $v__16];
+                                                $v__17 = SharedServer___cardIcon(new Card_Watchdog());
+                                                return [ 'icon', $v__17];
                                             })(), FSharpList::get_Nil())), [ 'Compare' => 'Util::comparePrimitives'])];
                                         case 'PlayCard_PlayRut':
                                             $p__14 = $e__4->Item1;
                                             $victim = $e__4->Item2->Item->victim;
                                             return [ clienttranslate('${icon} ${player} makes ${rutted} loose 2 moves during next turn'), Map::ofList(new Cons((function () use ($p__14, $playerName) { 
-                                                $v__17 = $playerName($p__14);
-                                                return [ 'player', $v__17];
+                                                $v__18 = $playerName($p__14);
+                                                return [ 'player', $v__18];
                                             })(), new Cons((function () use ($playerName, $victim) { 
-                                                $v__18 = $playerName($victim);
-                                                return [ 'rutted', $v__18];
+                                                $v__19 = $playerName($victim);
+                                                return [ 'rutted', $v__19];
                                             })(), new Cons((function () { 
-                                                $v__19 = SharedServer___cardIcon(new Card_Rut());
-                                                return [ 'icon', $v__19];
+                                                $v__20 = SharedServer___cardIcon(new Card_Rut());
+                                                return [ 'icon', $v__20];
                                             })(), FSharpList::get_Nil()))), [ 'Compare' => 'Util::comparePrimitives'])];
                                         case 'PlayCard_PlayHayBale':
                                             $hb = $e__4->Item2->Item->path;
                                             $p__15 = $e__4->Item1;
                                             $pc = $e__4->Item2->Item;
                                             return [ clienttranslate('${icon} ${player} blocks ${haybales} paths'), Map::ofList(new Cons((function () use ($p__15, $playerName) { 
-                                                $v__20 = $playerName($p__15);
-                                                return [ 'player', $v__20];
+                                                $v__21 = $playerName($p__15);
+                                                return [ 'player', $v__21];
                                             })(), new Cons((function () use ($hb) { 
-                                                $v__21 = FSharpList::length($hb);
-                                                return [ 'haybales', $v__21];
+                                                $v__22 = FSharpList::length($hb);
+                                                return [ 'haybales', $v__22];
                                             })(), new Cons((function () use ($pc) { 
-                                                $v__22 = SharedServer___cardIcon(Shared_002ECardModule___ofPlayCard($pc));
-                                                return [ 'icon', $v__22];
+                                                $v__23 = SharedServer___cardIcon(Shared_002ECardModule___ofPlayCard($pc));
+                                                return [ 'icon', $v__23];
                                             })(), FSharpList::get_Nil()))), [ 'Compare' => 'Util::comparePrimitives'])];
                                         case 'PlayCard_PlayDynamite':
                                             $p__16 = $e__4->Item1;
                                             return [ clienttranslate('${icon} ${player} dynamites 1 hay bale'), Map::ofList(new Cons((function () use ($p__16, $playerName) { 
-                                                $v__23 = $playerName($p__16);
-                                                return [ 'player', $v__23];
+                                                $v__24 = $playerName($p__16);
+                                                return [ 'player', $v__24];
                                             })(), new Cons((function () { 
-                                                $v__24 = SharedServer___cardIcon(new Card_Dynamite());
-                                                return [ 'icon', $v__24];
+                                                $v__25 = SharedServer___cardIcon(new Card_Dynamite());
+                                                return [ 'icon', $v__25];
                                             })(), FSharpList::get_Nil())), [ 'Compare' => 'Util::comparePrimitives'])];
                                         case 'PlayCard_PlayNitro':
                                             $p__17 = $e__4->Item1;
                                             $power = $e__4->Item2->Item->power;
                                             return [ clienttranslate('${icon} ${player} get ${nitro} extra move(s)'), Map::ofList(new Cons((function () use ($p__17, $playerName) { 
-                                                $v__25 = $playerName($p__17);
-                                                return [ 'player', $v__25];
+                                                $v__26 = $playerName($p__17);
+                                                return [ 'player', $v__26];
                                             })(), new Cons((function () use ($power) { 
                                                 switch (get_class($power))
                                                 {
                                                     case 'CardPower_Two':
-                                                        $v__26 = 2;
+                                                        $v__27 = 2;
                                                         break;
                                                     default:
-                                                        $v__26 = 1;
+                                                        $v__27 = 1;
                                                         break;
                                                 }
-                                                return [ 'nitro', $v__26];
+                                                return [ 'nitro', $v__27];
                                             })(), new Cons((function () use ($power) { 
-                                                $v__27 = SharedServer___cardIcon(new Card_Nitro($power));
-                                                return [ 'icon', $v__27];
+                                                $v__28 = SharedServer___cardIcon(new Card_Nitro($power));
+                                                return [ 'icon', $v__28];
                                             })(), FSharpList::get_Nil()))), [ 'Compare' => 'Util::comparePrimitives'])];
                                         default:
                                             return [ NULL, Map::empty([ 'Compare' => 'Util::comparePrimitives'])];
@@ -7501,8 +7533,8 @@ function SharedServer___textAction($previous, $b__7, $e__4) {
                                         case 'Event_Undone':
                                             $p__18 = $e__4->Item1;
                                             return [ clienttranslate('${player} undo last moves'), Map::ofList(new Cons((function () use ($p__18, $playerName) { 
-                                                $v__28 = $playerName($p__18);
-                                                return [ 'player', $v__28];
+                                                $v__29 = $playerName($p__18);
+                                                return [ 'player', $v__29];
                                             })(), FSharpList::get_Nil()), [ 'Compare' => 'Util::comparePrimitives'])];
                                         default:
                                             return [ NULL, Map::empty([ 'Compare' => 'Util::comparePrimitives'])];
@@ -7518,17 +7550,20 @@ function SharedServer___textAction($previous, $b__7, $e__4) {
                     case 'BoardEvent_PlayerDrewCards':
                         $e__7 = $e__4->Item;
                         if (Shared_002EHandModule___contains(new Card_GameOver(), $e__7->Cards)) {
-                            return [ clienttranslate('${player} draws the Game Over card. The game ends now !'), Map::ofList(new Cons((function () use ($e__7, $playerName) { 
+                            return [ clienttranslate('${icon} ${player} draws the Game Over card. The game ends now !'), Map::ofList(new Cons((function () use ($e__7, $playerName) { 
                                 $v__4 = $playerName($e__7->Player);
                                 return [ 'player', $v__4];
-                            })(), FSharpList::get_Nil()), [ 'Compare' => 'Util::comparePrimitives'])];
+                            })(), new Cons((function () { 
+                                $v__5 = SharedServer___cardIcon(new Card_GameOver());
+                                return [ 'icon', $v__5];
+                            })(), FSharpList::get_Nil())), [ 'Compare' => 'Util::comparePrimitives'])];
                         }                         else {
                             return [ clienttranslate('${player} draws ${cardcount} card(s)'), Map::ofList(new Cons((function () use ($e__7, $playerName) { 
-                                $v__5 = $playerName($e__7->Player);
-                                return [ 'player', $v__5];
+                                $v__6 = $playerName($e__7->Player);
+                                return [ 'player', $v__6];
                             })(), new Cons((function () use ($e__7) { 
-                                $v__6 = Shared_002EHandModule___count($e__7->Cards);
-                                return [ 'cardcount', $v__6];
+                                $v__7 = Shared_002EHandModule___count($e__7->Cards);
+                                return [ 'cardcount', $v__7];
                             })(), FSharpList::get_Nil())), [ 'Compare' => 'Util::comparePrimitives'])];
                         }
                     case 'BoardEvent_Next':
@@ -7544,8 +7579,8 @@ function SharedServer___textAction($previous, $b__7, $e__4) {
                                 case 'CrazyPlayer_Playing':
                                     $p__19 = $matchValue__12->Item;
                                     return [ clienttranslate('${player} ends turn after ${moves} moves'), Map::ofList(new Cons((function () use ($playerName, $player__5) { 
-                                        $v__29 = $playerName($player__5);
-                                        return [ 'player', $v__29];
+                                        $v__30 = $playerName($player__5);
+                                        return [ 'player', $v__30];
                                     })(), new Cons([ 'moves', $p__19->Moves->Done], FSharpList::get_Nil())), [ 'Compare' => 'Util::comparePrimitives'])];
                                 default:
                                     return [ NULL, Map::empty([ 'Compare' => 'Util::comparePrimitives'])];
@@ -7556,16 +7591,16 @@ function SharedServer___textAction($previous, $b__7, $e__4) {
                     case 'BoardEvent_GameWon':
                         $p__20 = $e__4->Item;
                         return [ clienttranslate('${player} wins the game !'), Map::ofList(new Cons((function () use ($p__20, $playerName) { 
-                            $v__31 = $playerName($p__20);
-                            return [ 'player', $v__31];
+                            $v__32 = $playerName($p__20);
+                            return [ 'player', $v__32];
                         })(), FSharpList::get_Nil()), [ 'Compare' => 'Util::comparePrimitives'])];
                     case 'BoardEvent_GameEnded':
                         $ps = $e__4->Item;
                         return [ clienttranslate('${players} end the game in a draw !'), Map::ofList(new Cons((function () use ($playerName, $ps) { 
-                            $v__32 = join(' / ', FSharpArray::ofSeq(Seq::delay(function ($unitVar) use ($playerName, $ps) {                             return Seq::map(function ($p__21) use ($playerName) {                             return $playerName($p__21);
+                            $v__33 = join(' / ', FSharpArray::ofSeq(Seq::delay(function ($unitVar) use ($playerName, $ps) {                             return Seq::map(function ($p__21) use ($playerName) {                             return $playerName($p__21);
  }, $ps);
  })));
-                            return [ 'players', $v__32];
+                            return [ 'players', $v__33];
                         })(), FSharpList::get_Nil()), [ 'Compare' => 'Util::comparePrimitives'])];
                     default:
                         return [ NULL, Map::empty([ 'Compare' => 'Util::comparePrimitives'])];
@@ -7680,8 +7715,8 @@ function SharedServer_002EStatsModule___inc($n, $name__1, $stats__1) {
     if (is_null($matchValue__13)) {
         return Map::add($name__1, $n, $stats__1);
     }     else {
-        $v__33 = $matchValue__13;
-        $value = $v__33 + $n;
+        $v__34 = $matchValue__13;
+        $value = $v__34 + $n;
         return Map::add($name__1, $value, $stats__1);
     }
 }
@@ -7693,8 +7728,8 @@ function SharedServer_002EStatsModule___up($f, $name__2, $stats__2) {
         $value__2 = $f(0, $stats__2);
         return Map::add($name__2, $value__2, $stats__2);
     }     else {
-        $v__34 = $matchValue__14;
-        $value__1 = $f($v__34, $stats__2);
+        $v__35 = $matchValue__14;
+        $value__1 = $f($v__35, $stats__2);
         return Map::add($name__2, $value__1, $stats__2);
     }
 }
@@ -7705,8 +7740,8 @@ function SharedServer_002EStatsModule___getStat($name__3, $stats__3) {
     if (is_null($matchValue__15)) {
         return 0;
     }     else {
-        $v__35 = $matchValue__15;
-        return $v__35;
+        $v__36 = $matchValue__15;
+        return $v__36;
     }
 }
 
@@ -7880,6 +7915,8 @@ function SharedServer_002EStatsModule___update($stats__10, $e__9) {
                                                         $player__45 = $victim__1;
                                                         $newStats__14 = SharedServer_002EStatsModule___incStat(1, $GLOBALS['SharedServer_002EStatsModule___rutted_number'], $player__45, $stats__50);
                                                         return new UndoableStats($newStats__14, $stats__10->UndoPoint);
+                                                    case 'PlayCard_PlayGameOver':
+                                                        return $stats__10;
                                                     default:
                                                         $hb__1 = $cp->path;
                                                         $rm = $cp->moved;

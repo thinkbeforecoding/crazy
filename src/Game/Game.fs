@@ -302,20 +302,33 @@ let view (model : Model) (dispatch : Msg -> unit) =
               | None -> () 
 
                          ]
-    | Won(winner, board) ->
+    | Won(winners, board) ->
         div []
             [ playersDashboard model dispatch
               div [ ClassName "board" ]
                   [ yield! boardView model.CardAction board
         
-                    let player = board.Players.[winner]
 
                     div [ ClassName "victory-box" ]
                         [ div [ ClassName "victory" ]
-                            [ p [] [ str "And the winner is"]
-                              div [ ClassName ("winner " + colorName (Player.color player)) ]
-                                  [ div [ ClassName "player"] [] ]
-                              p [] [ str board.Table.Names.[winner] ] 
+                            [ 
+                              match winners with
+                              | [winner] ->
+                                  let player = board.Players.[winner]
+                                  p [] [ str "And the winner is"]
+                                  div [ ClassName ("winner " + colorName (Player.color player)) ]
+                                      [ div [ ClassName "player"] [] ]
+                                  p [] [ str board.Table.Names.[winner] ] 
+                              | _ ->
+                                  let players = List.map (fun p -> board.Players.[p]) winners
+                                  p [] [ str (Globalization.translate "Draw game between")]
+                                  div [] [
+                                      for player in players ->
+                                          div [ ClassName ("winner " + colorName (Player.color player)) ]
+                                              [ div [ ClassName "player"] [] ]
+                                      ]
+                                  p [] [ str (winners |> List.map (fun winner -> board.Table.Names.[winner]) |> String.concat " / " ) ] 
+
 
                               p [ ClassName "back"] [ a [ Href "/" ] [ str "back to home" ]]
 
@@ -327,6 +340,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                     | None -> () 
 
                   ]
+              lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
             ]
 
 

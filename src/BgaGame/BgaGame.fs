@@ -121,7 +121,8 @@ type Bridge(dispatch: ClientMsg -> unit) =
                 | PlayWatchdog  -> "playWatchdog", createObj ["value" ==> true; "lock" ==> true]
                 | PlayHelicopter (Crossroad(Axe(q,r), side)) -> "playHelicopter", createObj ["q" ==>  q; "r" ==> r; "side" ==> string side; "lock" ==> true ]
                 | PlayBribe (Parcel(Axe(q,r)))  ->  "playBribe", createObj ["q" ==>  q; "r" ==> r; "lock" ==> true ]
-                | PlayHayBale _ -> null, null
+                | PlayHayBale _ 
+                | PlayGameOver -> null, null
             | Player.Discard c ->
                 match c with
                 | Nitro One -> "discard", createObj [ "card" ==> "Nitro1"; "lock" ==> "true" ]
@@ -563,6 +564,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                     ] 
                                 ]
                       ]
+                  lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
+
                 ]
             ]
 

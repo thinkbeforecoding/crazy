@@ -1,3 +1,7 @@
+### 0.5.6	- 2020-06-11
+* Draw game
+* Game over card
+
 ### 0.5.5	- 2020-06-11
 * Change font for consistency with rules leaflet + better translation support
 * Better size/position of the victory flash screen + more visible "hide" button

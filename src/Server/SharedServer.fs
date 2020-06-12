@@ -171,7 +171,7 @@ let textAction (previous: UndoableBoard) (b: UndoableBoard)  e =
             Php.clienttranslate "${player} cut ${cut}'s fence",  Map.ofList [ "player" ==> playerName p; "cut" ==> playerName e.Player ]
         | Board.PlayerDrewCards e ->
             if Hand.contains GameOver e.Cards then
-                Php.clienttranslate "${player} draws the Game Over card. The game ends now !", Map.ofList ["player" ==> playerName e.Player ]
+                Php.clienttranslate "${icon} ${player} draws the Game Over card. The game ends now !", Map.ofList ["player" ==> playerName e.Player;  "icon" ==> cardIcon GameOver ]
             else
                 Php.clienttranslate "${player} draws ${cardcount} card(s)", Map.ofList [  "player" ==> playerName e.Player; "cardcount" ==> Hand.count e.Cards]
         | Board.Played(p, Player.Event.Bribed e) ->
@@ -455,6 +455,9 @@ module Stats =
                     |> incStat 1 ruts_number (Some p)
                     |> incStat 1 rutted_number (Some victim)
                 { stats with Stats = newStats}
+            | PlayGameOver ->
+                stats
+
         | _ -> stats
 
 
