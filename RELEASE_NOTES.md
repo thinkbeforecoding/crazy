@@ -1,3 +1,8 @@
+### 0.5.7	- 2020-06-18
+* Fix zombie turn
+* New icon
+* Fix Cut but connected to fallow land
+
 ### 0.5.6	- 2020-06-11
 * Draw game
 * Game over card

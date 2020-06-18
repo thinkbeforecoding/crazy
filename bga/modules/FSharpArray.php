@@ -40,4 +40,19 @@ class FSharpArray {
         }
         return $result;
     }
+
+    public static function findIndex($predicate, $array)
+    {
+        $index = 0;
+        foreach ($array as $item)
+        {
+            if ($predicate($item))
+            {
+                return $index;
+            }
+            $index++;
+        }
+
+        return -1;
+    }
 }

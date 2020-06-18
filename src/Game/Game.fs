@@ -73,6 +73,9 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | Undo ->
         Player.Undo
         |> handleCommand  currentModel
+    | Quit ->
+        Player.Quit
+        |> handleCommand  currentModel
     | Move(dir,crossroad) ->
         Player.Move { Direction = dir; Destination = crossroad }
         |> handleCommand currentModel
@@ -300,6 +303,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
               | Some playerId ->
                   chatView dispatch playerId board model.Chat
               | None -> () 
+
+              button [ OnClick (fun _ -> dispatch Quit) ] [ str "Quit"] 
 
                          ]
     | Won(winners, board) ->

@@ -137,6 +137,7 @@ type Bridge(dispatch: ClientMsg -> unit) =
                 | Bribe -> "discard", createObj [ "card" ==> "Bribe"; "lock" ==> "true" ]
                 | GameOver -> null, null
             | Player.Start _ -> null, null
+            | Player.Quit -> null, null
 
         if not (isNull cmdName) then
             do! Async.FromContinuations(fun (c,r,_) -> send(cmdName, args, c,r)) |> Async.Ignore
@@ -277,6 +278,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | Undo ->
         Player.Undo
         |> handleCommand currentModel
+    | Quit -> currentModel, Cmd.none
     | Move(dir,crossroad) ->
         Player.Move { Direction = dir; Destination = crossroad }
         |> handleCommand currentModel
@@ -492,16 +494,17 @@ let playedCard dispatch card =
     match card with
     | Some c ->
       let boardDiv = document.getElementById("board") :?> Browser.Types.HTMLDivElement
-      let top = (max 0. (boardDiv.offsetTop - window.scrollY))
+
+      let top = 
+        if isNull boardDiv then
+            0.
+        else
+            max 0. (boardDiv.offsetTop - window.scrollY)
       div [ClassName "played-card"
            Style [Top (sprintf "calc (%fpx + 10em)" top)]
            OnAnimationEnd (fun _ -> dispatch HidePlayedCard) ]
           [ div [ClassName ("card " + Client.cardName c)] [] ]
-    | None -> 
-      //div [ClassName "played-card"
-      //     Style [Top 40] ]
-      //    [ div [ClassName ("card " + cardName Watchdog)] [] ]
-      null
+    | None -> null
 
 let view (model : Model) (dispatch : Msg -> unit) =
     match model.Board.Board with

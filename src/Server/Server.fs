@@ -302,6 +302,7 @@ module Dto =
             | PlayWatchdog -> null
             | PlayHelicopter c -> ofCrossroad c |> box
             | PlayBribe p -> ofParcel p |> box
+            | PlayGameOver -> null
         }
 
     let toPlayCard (cp: PlayCardDto) =
@@ -407,6 +408,7 @@ let serialize =
     | Board.Event.Played (playerid, Player.Event.Bribed e  ) -> "Bribed" , box { Player = playerid; Event = { Dto.BribedDto.Parcel = Dto.ofParcel e.Parcel; Dto.BribedDto.Victim = e.Victim} }
     | Board.Event.Played (playerid, Player.Event.BonusDiscarded e  ) -> "BonusDiscarded" , box { Player = playerid; Event = Dto.ofCard e }
     | Board.Event.Played (playerid, Player.Event.Eliminated  ) -> "Eliminated" , box { Player = playerid; Event = null }
+    | Board.Event.Played (playerid, Player.Event.PlayerQuit  ) -> "PlayerQuit" , box { Player = playerid; Event = null }
     | Board.Event.Played (playerid, Player.Event.Undone  ) -> "Undone" , box { Player = playerid; Event = null }
     | Board.Event.Next  -> "Next" , null
     | Board.Event.UndoCheckPointed  -> "UndoCheckPointed" , null
@@ -468,6 +470,7 @@ let deserialize data =
         | "Bribed", JObj { Player = p; Event = JObj (e: Dto.BribedDto) } -> [Board.Played(p, Player.Bribed { Parcel = Dto.toParcel e.Parcel; Victim = e.Victim })]
         | "BonusDiscarded", JObj { Player = p; Event = JObj (e: string) } -> [Board.Played(p, Player.BonusDiscarded (Dto.toCard e) )]
         | "Eliminated", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Eliminated )]
+        | "PlayerQuit", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.PlayerQuit )]
         | "Undone", JObj { Player = p; Event = _ } -> [Board.Played(p, Player.Undone )]
         | "Next", _ -> [ Board.Next]
         | "UndoCheckPointed", _ -> [ Board.UndoCheckPointed ]
@@ -504,6 +507,7 @@ let serializeCmd =
     | Board.Play (p, Player.Discard c) -> "Discard", box { Player = p; Command = box c }
     | Board.Play (p, Player.SelectFirstCrossroad c) -> "SelectFirstCrossroad", box { Player = p; Command = box c }
     | Board.Play (p, Player.Undo) -> "Undo", box { Player = p; Command = null }
+    | Board.Play (p, Player.Quit) -> "Quit", box { Player = p; Command = null }
 
 
 

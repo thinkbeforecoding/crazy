@@ -68,7 +68,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${you} must select a crossroad around your field from where to start' ),
         "type" => "activeplayer",
         "possibleactions" => array("selectFirstCrossroad", "undo"),
-        "transitions" => ["selectFirstCrossroad" => 3 ]
+        "transitions" => ["selectFirstCrossroad" => 3, "zombiepass" => 11, "endGame" => 99 ]
  
 
     ],
@@ -115,7 +115,7 @@ $machinestates = array(
         "type" => "game",
         "action" => "stZombie",
         "updateGameProgression" => true,   
-        "transitions" => ["nextPlayer" => 3, "nextStarting" => 2, "nextEndTurn" => 4 ]
+        "transitions" => ["nextPlayer" => 3, "nextStarting" => 2, "nextEndTurn" => 4, "endGame" => 99 ]
 
     ],
     

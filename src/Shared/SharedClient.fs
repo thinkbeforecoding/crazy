@@ -67,6 +67,7 @@ type Msg =
     | HidePop
     | HideVictory
     | Undo
+    | Quit
     | CommandNotSent of int * UndoableBoard
 
 

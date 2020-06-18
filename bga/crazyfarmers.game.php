@@ -351,9 +351,8 @@ class CrazyFarmers extends Table
     }
     
     */
-    function playCommand($playerCmd)
+    function playCommand($player_id, $playerCmd, $zombie=false)
     {
-        $player_id = self::getActivePlayerId();
         $state = self::loadState();
         $version = $state[0];
         $board = $state[1];
@@ -399,7 +398,8 @@ class CrazyFarmers extends Table
                 }
             }
         }
-        self::updateState($es,$board);
+
+        self::updateState($es,$board, $zombie);
 
     }
 
@@ -420,7 +420,7 @@ class CrazyFarmers extends Table
         $player_id = self::getActivePlayerId();
         $cmd =  new Command_SelectFirstCrossroad(new SelectFirstCrossroad($crossroad));
 
-        self::playCommand($cmd);
+        self::playCommand($player_id, $cmd);
     }
 
     
@@ -430,7 +430,7 @@ class CrazyFarmers extends Table
         $player_id = self::getActivePlayerId();
         $cmd = new Command_Move(new PlayerMove($dir, $destination));
 
-        self::playCommand($cmd);
+        self::playCommand($player_id, $cmd);
 
     }
     function playCard($card)
@@ -439,7 +439,7 @@ class CrazyFarmers extends Table
         $player_id = self::getActivePlayerId();
         $cmd = new Command_PlayCard($card);
 
-        self::playCommand($cmd);
+        self::playCommand($player_id, $cmd);
     }
     function discard($card)
     {
@@ -447,7 +447,7 @@ class CrazyFarmers extends Table
         $player_id = self::getActivePlayerId();
         $cmd = new Command_Discard($card);
 
-        self::playCommand($cmd);
+        self::playCommand($player_id, $cmd);
     }
 
     function endTurn()
@@ -456,7 +456,7 @@ class CrazyFarmers extends Table
         $player_id = self::getActivePlayerId();
         $cmd = new Command_EndTurn();
 
-        self::playCommand($cmd);
+        self::playCommand($player_id, $cmd);
     }
 
     function undo()
@@ -465,12 +465,12 @@ class CrazyFarmers extends Table
         $player_id = self::getActivePlayerId();
         $cmd = new Command_Undo();
 
-        self::playCommand($cmd);
+        self::playCommand($player_id, $cmd);
     }
 
-    function updateState($es,$board)
+    function updateState($es,$board, $zombie)
     {
-        SharedServer___bgaUpdateState($es,$board,
+        SharedServer___bgaUpdateState($es,$board,$zombie,
             $this->gamestate->state()['name'], 
             function($state) {$this->gamestate->nextState($state);},
             function($player) {  self::eliminatePlayer($player); }
@@ -496,7 +496,13 @@ class CrazyFarmers extends Table
         $player_id = self::activeNextPlayer();
         self::giveExtraTime($player_id);
 
-        $this->gamestate->nextState("nextPlayer");
+        $state = self::loadState();
+        $version = $state[0];
+        $board = $state[1];
+
+        SharedServer___bgaUpdateZombieState($board,
+            function($state) {$this->gamestate->nextState($state);}
+        );
     }
 
 
@@ -569,26 +575,26 @@ class CrazyFarmers extends Table
 
     function zombieTurn( $state, $active_player )
     {
-    	$statename = $state['name'];
+        $statename = $state['name'];
+        $cmd = new Command_Quit();
+        self::playCommand($active_player, $cmd, true);
     	
-        if ($state['type'] === "activeplayer") {
-            switch ($statename) {
-                default:
-                    $this->gamestate->nextState( "zombiepass" );
-                	break;
-            }
+        // if ($state['type'] === "activeplayer") {
+        //     switch ($statename) {
+        //         default:
+        //             $this->gamestate->nextState( "zombiepass" );
+        //         	break;
+        //     }
 
-            return;
-        }
+        //     return;
+        // }
 
-        if ($state['type'] === "multipleactiveplayer") {
-            // Make sure player is in a non blocking status for role turn
-            $this->gamestate->setPlayerNonMultiactive( $active_player, '' );
+        // if ($state['type'] === "multipleactiveplayer") {
+        //     // Make sure player is in a non blocking status for role turn
+        //     $this->gamestate->setPlayerNonMultiactive( $active_player, '' );
             
-            return;
-        }
-
-        throw new feException( "Zombie mode not supported at this game state: ".$statename );
+        //     return;
+        // }
     }
     
 ///////////////////////////////////////////////////////////////////////////////////:

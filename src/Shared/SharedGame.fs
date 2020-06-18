@@ -222,8 +222,17 @@ module Table =
           Names = Map.ofList players }
 
     let eliminate player table =
+        let index = Array.findIndex(fun p -> p = player) table.Players
+        let newPlayers = Array.filter (fun p -> p <> player) table.Players
         { table with
-            Players = Array.filter (fun p -> p <> player) table.Players }
+            Players = newPlayers
+            Current =
+                if table.Current <= index then
+                    table.Current % (Array.length newPlayers)
+                else
+                    table.Current - 1
+            
+            }
 
     let isCurrent playerid (table:GameTable) =
         table.Player = playerid
@@ -1042,6 +1051,7 @@ module Player =
         | Discard of Card
         | EndTurn
         | Undo
+        | Quit
     and Start =
         { Parcel: Parcel }
     and SelectFirstCrossroad =
@@ -1072,6 +1082,7 @@ module Player =
         | Bribed of Bribed
         | Eliminated
         | Undone
+        | PlayerQuit
     and 
         [<CompiledName("PlayerStarted")>]
         Started =
@@ -1282,6 +1293,7 @@ module Player =
                                             let start = Fence.start p.Tractor p.Fence
                                             if not (Crossroad.isInField remainingField start) then
                                                 CutFence { Player = playerid }
+                                            
                                         else
                                             if Crossroad.isInField annexed p.Tractor && not (Crossroad.isInField remainingField p.Tractor) then
                                                 CutFence { Player = playerid }
@@ -1416,9 +1428,12 @@ module Player =
                 [ CardDiscarded card ]
             else
                 []
-
-                    
-        | _ -> failwith "Invalid operation"      
+        
+        | Starting _, Quit
+        | Playing _, Quit ->
+            [ PlayerQuit ]
+        | Ko _, Quit -> []
+        | _ -> failwith "Invalid operation"
 
     let evolve player event =
         match player, event with
@@ -1467,7 +1482,10 @@ module Player =
                         Bonus = player.Bonus |> Bonus.discard e }
         | Playing player, CardDiscarded card ->
             Playing { player with Hand = player.Hand |> Hand.remove card }
-        | Playing player, Eliminated ->
+        | Playing player, Eliminated
+        | Playing player, PlayerQuit ->
+            Ko player.Color
+        | Starting player, PlayerQuit ->
             Ko player.Color
         | _ -> player 
 
@@ -1767,12 +1785,17 @@ module Board =
 
     let next shouldShuffle state =
         let playerId = state.Table.Player
-        let player = state.Players.[playerId]
+        let player = Map.tryFind playerId state.Players
         let nextPlayerId = state.Table.Next.Player 
         let nextPlayer = state.Players.[nextPlayerId]
-        [ yield! 
-           Bonus.endTurn (Player.bonus player)
-           |> List.map (fun c -> Played(playerId, Player.BonusDiscarded c))
+        [ 
+          let bonus = 
+            match player with
+            | Some player -> Player.bonus player
+            | None -> Bonus.empty
+          yield! 
+               Bonus.endTurn bonus
+               |> List.map (fun c -> Played(playerId, Player.BonusDiscarded c))
 
           if shouldShuffle then
             if not state.PrivateDrawPile then
@@ -2083,6 +2106,25 @@ module Board =
                         }
             { state with Board = newBoard 
                          AtUndoPoint = false}
+        | Board board, Played(playerid,(Player.PlayerQuit as e)) ->
+            let currentPlayer = board.Table.Player
+            let newPlayer = Player.evolve board.Players.[playerid] e
+            let newTable = Table.eliminate playerid board.Table
+            let players = Map.add playerid newPlayer board.Players
+
+            let players = 
+                if playerid = currentPlayer then
+                    let nextPlayer = Player.startTurn board.Players.[newTable.Player]
+                    players |> Map.add newTable.Player nextPlayer
+                else
+                    players
+            let newBoard =
+                Board { board with
+                            Players = players
+                            Table = newTable
+                        }
+            { state with Board = newBoard 
+                         AtUndoPoint = false}
         | _, Played (_, Player.Undone) -> 
             { state with Board = state.UndoPoint
                          AtUndoPoint = true }
@@ -2118,7 +2160,18 @@ module Board =
                 AtUndoPoint = true }
         | Won _, _ -> state
 
+    
+    let cont f (board: UndoableBoard, events) =
+        match board.Board with
+        | Board b ->
+            let newEvents = f b events 
+            
+            let newBoard = List.fold evolve board newEvents
+            (newBoard, events @ newEvents)
+        | _ -> board, events
 
+
+        
     let decide cmd (state: UndoableBoard) =
         match state.Board, cmd with
         | InitialState, Start cmd ->
@@ -2224,98 +2277,136 @@ module Board =
             let others = Player.otherPlayers playerid board
 
             if playerid = board.Table.Player then
-                let events = 
-                    Player.decide others board.Barns board.HayBales (fun() -> bribeParcels board) cmd player
+                (state, [])
+                |> cont (fun board _ ->
 
+                    let events = 
+                        Player.decide others board.Barns board.HayBales (fun() -> bribeParcels board) cmd player
+                    // return cards action
+                    // and bonus effects
+                    [ for e in events do
+                        Played(playerid,e)
 
+                      for e in events do
+                        match e with
+                        | Player.CardPlayed (PlayRut victim) -> 
+                            Played(victim, Player.Rutted)
+                        | Player.CardPlayed (PlayHayBale(added,removed)) ->
+                            HayBalesPlaced(added, removed)
+                        | Player.CardPlayed (PlayDynamite bale) ->
+                            HayBaleDynamited bale
+                        | _ -> ()
+                    ])
+                |> cont (fun board _ ->
+                        // check wether some players were eliminated
+                        [ for KeyValue(pid, p) in board.Players do
+                           if Field.isEmpty (Player.field p) && not (Player.isKo p) then
+                               Played(pid, Player.Eliminated)
+                               UndoCheckPointed // an elimination cannot be undone 
+                        ]
+                        )
+                |> cont (fun board _ ->
+                    [
+                    for pid, p in Map.toSeq board.Players do
+                        match p with
+                        | Playing ({ Power = Power.PowerDown } as player) ->
+                            if Crossroad.isInField player.Field player.Tractor then
+                                Played(pid, Player.PoweredUp)
+                        | _ -> () ])
+                |> cont (fun board  _ ->
+                        let remainingPlayers =
+                            board.Players
+                            |> Map.toSeq
+                            |> Seq.choose(fun (pid,p) -> 
+                                match p with
+                                | Ko _ -> None
+                                | _  -> Some pid)
+                            |> Seq.toList
 
-                [ for e in events do
-                    Played(playerid,e)
-
-                  for e in events do
-                    match e with
-                    | Player.CardPlayed (PlayRut victim) -> 
-                        Played(victim, Player.Rutted)
-                    | Player.CardPlayed (PlayHayBale(added,removed)) ->
-                        HayBalesPlaced(added, removed)
-                    | Player.CardPlayed (PlayDynamite bale) ->
-                        HayBaleDynamited bale
-                    | _ -> ()
-                  
-                  let nextState = List.fold Player.evolve player events
-
-                  match List.tryFind (function Player.Annexed _ -> true | _ -> false) events with
-                  | Some (Player.Annexed e) ->
-                        let nextBoard = 
-                            { board with Players = Map.add playerid nextState board.Players }
-                            |> annexed playerid e
-                            |> bribedevents playerid events
-
-                        let mutable eliminated = 0
-                        for KeyValue(pid, p) in nextBoard.Players do
-                            
-                            if Player.isKo p then   
-                                eliminated <- eliminated + 1
-                            elif Field.isEmpty (Player.field p) then
-                                eliminated <- eliminated + 1
-                                Played(pid, Player.Eliminated)
-
-                        eliminated <- eliminated + 1 // we test if one more elimination would make no player left.
-                                                     // this is a trick for peeble to catche the byref capture
-                        if eliminated >= Map.count nextBoard.Players  then
+                        match remainingPlayers with
+                        | [ winner] ->
                             // winner by ko
-                            GameWon playerid
-
-                        else
-                            match tryFindWinner nextBoard with
+                            [ GameWon winner ]
+                        | _ -> [] )
+                |> cont (fun board es ->
+                            match tryFindWinner board with
                             | Winner winners ->
+                                // winner because goal is reached
                                 match winners with
-                                | [ win ] ->GameWon win
-                                | _ -> GameEnded winners
+                                | [ win ] -> [GameWon win]
+                                | _ -> [ GameEnded winners ]
                             | Lead leads ->
+                                match List.tryFind (function Played(_, Player.Annexed _) -> true | _ -> false) es with
+                                | Some (Played (player, Player.Annexed e)) ->
+                                    let cardsToTake =
+                                        e.FreeBarns.Length + 2 * e.OccupiedBarns.Length
+                                    [
+                                        if cardsToTake > 0 then
+                                            if not board.PrivateDrawPile then
+                                                let cardsDrawn = board.DrawPile |> DrawPile.take cardsToTake
+                                                PlayerDrewCards 
+                                                    { Player = playerid
+                                                      Cards = PublicHand cardsDrawn }
 
+                                                if List.contains GameOver cardsDrawn then
+                                                    Played(playerid, Player.CardPlayed PlayCard.PlayGameOver)
 
-                                let cardsToTake =
-                                    e.FreeBarns.Length + 2 * e.OccupiedBarns.Length
-                                if cardsToTake > 0 then
-                                    if not board.PrivateDrawPile then
-                                        let drawPile, es = 
-                                            if cardsToTake > List.length board.DrawPile then
-                                                let shuffledDiscardPile = DrawPile.shuffle board.DiscardPile
-                                                board.DrawPile @ shuffledDiscardPile, [DiscardPileShuffled shuffledDiscardPile]
-                                                
-                                            else
-                                                board.DrawPile, []
-                                            
+                                                    match leads with
+                                                    | [ win ] -> GameWon win
+                                                    |  _ -> GameEnded leads
 
-                                        yield! es
-                                        let cardsDrawn = drawPile |> DrawPile.take cardsToTake
-                                        PlayerDrewCards 
-                                            { Player = playerid
-                                              Cards = PublicHand cardsDrawn }
-
-                                        if List.contains GameOver cardsDrawn then
-                                            Played(playerid, Player.CardPlayed PlayCard.PlayGameOver)
-
-                                            match leads with
-                                            | [ win ] -> GameWon win
-                                            |  _ -> GameEnded leads
-
-                                        if state.UndoType = DontUndoCards then
-                                            UndoCheckPointed
-                                else
-                                    match nextState with
-                                    | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) && state.UndoType = NoUndo ->
-                                        yield! next state.ShouldShuffle board 
-                                    | _ -> ()
-                  | _ -> 
-                      match nextState with
-                      | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) && state.UndoType = NoUndo ->
-                              yield! next state.ShouldShuffle board 
-                      | _ -> ()
-                ]
+                                                elif state.UndoType = DontUndoCards then
+                                                    UndoCheckPointed
+                                        else
+                                            let player = board.Players.[playerid]
+                                            match player with
+                                            | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) && state.UndoType = NoUndo ->
+                                                yield! next state.ShouldShuffle board 
+                                            | _ -> ()
+                                    ]
+                                | _ -> 
+                                    let player = board.Players.[playerid]
+                                    if playerid <> board.Table.Player then
+                                        let nextPlayerId = board.Table.Player
+                                        let nextPlayer = board.Players.[nextPlayerId]
+                                        [ yield! Bonus.startTurn (Player.bonus nextPlayer)
+                                                  |> List.map (fun c -> Played(nextPlayerId, Player.BonusDiscarded c))
+                                          yield UndoCheckPointed ] 
+                                    else
+                                        match player with
+                                        | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) && state.UndoType = NoUndo ->
+                                              next state.ShouldShuffle board 
+                                        | _ -> []
+                )
+                |> fun (_,es) -> es
             else
-                []
+                match cmd with
+                | Player.Quit -> 
+                    (state, [])
+                    |> cont (fun board _ ->
+                        let events = Player.decide others board.Barns board.HayBales (fun() -> bribeParcels board) cmd player
+                        [ for e in events do
+                            Played(playerid,e) ] )
+                    |> cont (fun board _ ->
+                       let remainingPlayers =
+                           board.Players
+                           |> Map.toSeq
+                           |> Seq.choose(fun (pid,p) -> 
+                               match p with
+                               | Ko _ -> None
+                               | _  -> Some pid)
+                           |> Seq.toList
+
+                       match remainingPlayers with
+                       | [ winner] ->
+                           // winner by ko
+                           [ GameWon winner ] 
+                       | _ -> []
+                    )
+                    |> fun (_,es) -> es
+
+                | _ -> []
+
         | _ -> []
 
     let toState (board: Board) =
@@ -2413,6 +2504,7 @@ module Board =
             match board.SWinner, board.SWinners with
             | null, null
             | null, [||] -> Board state
+            | winner, [||]
             | winner, null -> Won([winner], state) 
             | _, winners -> Won(List.ofArray winners, state) 
         

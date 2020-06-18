@@ -42,51 +42,67 @@ let privateEvents playerId events =
     | Board.DrawPileShuffled _ -> Board.DrawPileShuffled []
     | e -> e )
 
-let bgaUpdateState events (board: UndoableBoard) (state: string) changeState eliminatePlayer =
-    for e in events do
-        match e with
-        | Board.Next -> changeState "next"
-        | Board.GameWon _ -> changeState "endGame"
-        | Board.GameEnded _ -> changeState "endGame"
-        | Board.Played(_,Player.FirstCrossroadSelected _) ->
-            changeState "selectFirstCrossroad"
-        | Board.Played(p, Player.Eliminated) ->
-             eliminatePlayer p;
+let bgaUpdateState events (board: UndoableBoard) (zombie: bool) (state: string) changeState eliminatePlayer =
+    if zombie then
+        changeState "zombiepass" 
+    else
+        for e in events do
+            match e with
+            | Board.Next -> changeState "next"
+            | Board.GameWon _ -> changeState "endGame"
+            | Board.GameEnded _ -> changeState "endGame"
+            | Board.Played(_,Player.FirstCrossroadSelected _) ->
+                changeState "selectFirstCrossroad"
+            | Board.Played(p, Player.Eliminated) ->
+                 eliminatePlayer p;
 
-        |Board.Played(p, Player.Undone) ->
-            match board.Board with
-            | Board.Board b ->
-                match b.Players.[p] with
-                | Starting _ -> changeState "restart"
-                | Playing player ->
-                    if Player.canMove (Some p) board.Board then
-                        changeState "canMove"
-                    elif Hand.canPlay player.Hand then
-                        if Hand.shouldDiscard player.Hand then
-                            changeState "shouldDiscard"
-                        else
-                            changeState "endTurn"
+            |Board.Played(p, Player.Undone) ->
+                match board.Board with
+                | Board.Board b ->
+                    match b.Players.[p] with
+                    | Starting _ -> changeState "restart"
+                    | Playing player ->
+                        if Player.canMove (Some p) board.Board then
+                            changeState "canMove"
+                        elif Hand.canPlay player.Hand then
+                            if Hand.shouldDiscard player.Hand then
+                                changeState "shouldDiscard"
+                            else
+                                changeState "endTurn"
+                    | _ -> ()
+                | _ -> ()
+            | Board.Played(p, _) ->
+                match board.Board with
+                | Board.Board b ->
+                    match b.Players.[p] with
+                    | Playing player ->
+                        if Player.canMove (Some p) board.Board then
+                            changeState "canMove"
+                        elif Hand.canPlay player.Hand then
+                            if Hand.shouldDiscard player.Hand then
+                                changeState "shouldDiscard"
+                            else
+                                changeState "endTurn"
+                        elif board.UndoType <> NoUndo then
+                             changeState "endTurn"
+                    | _ -> ()
                 | _ -> ()
             | _ -> ()
-        | Board.Played(p, _) ->
-            match board.Board with
-            | Board.Board b ->
-                match b.Players.[p] with
-                | Playing player ->
-                    if Player.canMove (Some p) board.Board then
-                        changeState "canMove"
-                    elif Hand.canPlay player.Hand then
-                        if Hand.shouldDiscard player.Hand then
-                            changeState "shouldDiscard"
-                        else
-                            changeState "endTurn"
-                    elif board.UndoType <> NoUndo then
-                         changeState "endTurn"
-                | _ -> ()
-            | _ -> ()
-        | _ -> ()
 
-
+let bgaUpdateZombieState (board: UndoableBoard) changeState =
+    match board.Board with
+    | Board b -> 
+        let p = b.Table.Player
+        match b.Players.[p] with
+        | Starting _ -> changeState "nextStarting"
+        | Playing player ->
+           if Player.canMove (Some p) board.Board then
+               changeState "nextPlayer"
+           else
+                   changeState "nextEndTurn" 
+        | Ko _ -> ()
+    | Won _ -> changeState "nextPlayer"
+    | _ -> ()
 let bgaNextPlayer (board: UndoableBoard) =
     match board.Board with
     | Board b ->

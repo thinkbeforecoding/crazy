@@ -990,9 +990,10 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
 
 
         
-    | Fable.Operation(Fable.Call(Fable.InstanceCall( Some (Fable.Value(Fable.StringConstant s, _ ))),({ Args = args; ThisArg = Some this} as argInfo)), typ, _) ->
-        match s, typ with
+    | Fable.Operation(Fable.Call(Fable.InstanceCall( Some (Fable.Value(Fable.StringConstant s, _ ))),({ Args = args; ThisArg = Some this} as argInfo)), _, _) ->
+        match s, this.Type with
         | "filter", Fable.Type.Array _  -> PhpCall(PhpConst(PhpConstString ("FSharpArray::" + fixName s)), convertArgsThisLast ctx argInfo)
+        | "findIndex", Fable.Type.Array _  -> PhpCall(PhpConst(PhpConstString ("FSharpArray::" + fixName s)), convertArgsThisLast ctx argInfo)
         
         | _ -> PhpMethod(convertExpr ctx this,fixName s, [for arg in args -> convertExpr ctx arg ] )
     | Fable.Operation(Fable.CurriedApply(expr, args),_,_) ->
@@ -1455,7 +1456,7 @@ let fs =
             for d in convertDecl phpComp decl do
                 i,d
     ]
-convertDecl phpComp asts.[1].Declarations.[217]
+convertDecl phpComp asts.[1].Declarations.[51]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w
