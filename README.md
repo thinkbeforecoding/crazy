@@ -15,7 +15,7 @@ Jump on your customized tractor and lay electric fences to circle plots to add t
 
 Fame and glory is only a fence away so be sly, think hard and show no mercy. Let’s bring on the Craziness and Make Agriculture Great Again!
 
-![Crazy Farmers](img/Matos_KS_transparent_avec_boite.png)
+![Crazy Farmers](img/Matos_KS_transparent_avec_boite_small.png)
 
 ## The Kickstarter
 
