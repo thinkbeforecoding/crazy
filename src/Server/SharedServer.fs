@@ -38,7 +38,7 @@ let privateEvents playerId events =
         else
             Board.PlayerDrewCards { Player = p.Player; Cards = Hand.toPrivate p.Cards }
             
-    | Board.DiscardPileShuffled _ -> Board.DiscardPileShuffled []
+    | Board.DiscardPileShuffled cards -> Board.DiscardPileShuffled [ for c in cards -> Card.Rut  ]
     | Board.DrawPileShuffled _ -> Board.DrawPileShuffled []
     | e -> e )
 

@@ -159,8 +159,8 @@ opponents will try to stop you by cutting your electric fences or playing event 
 ////////
 
 'custom_buy_button' => array(
-    'url' => 'https://www.kickstarter.com/projects/1486112993/crazy-farmers-and-the-clotures-electriques?ref=discovery',
-    'label' => totranslate('KickStarter June 18th')
+    'url' => 'https://www.kickstarter.com/projects/1486112993/crazy-farmers-and-the-clotures-electriques?ref=2fs2c4&fbclid=IwAR3yHCuZJy6sawaRPWm0V2wUk2zOHi8etQhsSYObWVg8Y952VWI-zcCYG2k',
+    'label' => totranslate('KickStarter now')
  )
 
 );

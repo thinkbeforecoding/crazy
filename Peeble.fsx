@@ -1125,6 +1125,8 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
 
     | Fable.Expr.TypeCast(expr, t) ->
         convertExpr ctx expr
+    | Fable.Expr.Sequential([Fable.Value(Fable.UnitConstant, _) ; body]) ->
+        convertExpr ctx body
         
 
 
@@ -1466,7 +1468,7 @@ w.ToString()
 
 
 let fix =  
-    (string w).Replace("$Barns, $Goal, $Undo)", "$Barns, $Goal, $Undo=NULL)")
+    (string w).Replace("$Barns, $Goal, $Undo, $UseGameOver)", "$Barns, $Goal, $Undo=NULL, $UseGameOver=false)")
               .Replace("$this->Undo = $Undo;", "$this->Undo = $Undo ?? new UndoType_FullUndo();")
 IO.File.WriteAllText(@"C:\development\crazy\bga\modules\crazyfarmers.php", fix)
 IO.File.WriteAllText(@"C:\development\crazy\php\lib.php", fix)

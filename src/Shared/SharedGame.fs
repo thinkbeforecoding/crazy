@@ -128,6 +128,11 @@ module Hand =
         | PublicHand p -> List.isEmpty p
         | PrivateHand p -> p = 0
 
+    let isPublic =
+        function
+        | PublicHand _ -> true
+        | PrivateHand _ -> false
+
     let toPrivate =
         function
         | PublicHand p -> PrivateHand (List.length p)
@@ -293,12 +298,12 @@ type Board =
 and PlayingBoard =
     { Players: Map<string, CrazyPlayer>
       Table: GameTable
-      PrivateDrawPile: bool
-      DrawPile: Card list
+      DrawPile: Hand
       DiscardPile: Card list
       Barns: Barns
       HayBales: Path Set
       Goal: Goal
+      UseGameOver: bool
       }
 
 type UndoableBoard =
@@ -334,12 +339,14 @@ type BoardState =
     { SPlayers: (string*PlayerState) []
       STable: STable
       SDiscardPile: Card []
+      SDrawPile: int option
       SFreeBarns: Parcel[]
       SOccupiedBarns: Parcel[]
       SHayBales: Path[]
       SGoal: Goal
       SWinner: string
       SWinners: string[]
+      SUseGameOver: bool option
     }
 and STable =
     { SPlayers: string[]
@@ -1015,13 +1022,13 @@ module DrawPile =
         |> List.collect (fun (c,n) -> [for _ in 1..n -> c])
 
 
-    let shuffle cards =
+    let shuffle useGameOver cards =
         let rand = System.Random()
         let cardsWithoutGameOver = 
-            cards
-            |> List.filter (function GameOver -> false | _ -> true) 
+                cards
+                |> List.filter (function GameOver -> false | _ -> true) 
         let remainingCards = List.length cardsWithoutGameOver
-        if remainingCards <= 8 then
+        if remainingCards <= 8 || not useGameOver then
             cards
             |> List.sortBy (fun _ -> rand.Next()) 
         else
@@ -1698,6 +1705,7 @@ module Board =
         { Players: (Color * string * string) list
           Goal: Goal
           Undo: UndoType
+          UseGameOver: bool
         }
 
     [<CompiledName("BoardEvent")>]
@@ -1721,6 +1729,7 @@ module Board =
           Barns: Parcel list
           Goal: Goal
           Undo: UndoType
+          UseGameOver: bool
         }
     and PlayerDrewCards =
         { Player: string 
@@ -1798,8 +1807,9 @@ module Board =
                |> List.map (fun c -> Played(playerId, Player.BonusDiscarded c))
 
           if shouldShuffle then
-            if not state.PrivateDrawPile then
-                yield DrawPileShuffled (DrawPile.shuffle state.DrawPile)
+            match state.DrawPile with
+            | PublicHand drawPile -> yield DrawPileShuffled (DrawPile.shuffle state.UseGameOver drawPile)
+            | PrivateHand _ -> ()
 
           yield Next
           yield! 
@@ -1992,12 +2002,12 @@ module Board =
                     { Players =
                         Map.ofList [ for c,u,n,p in s.Players -> u, Starting { Color = c; Parcel = p; Hand = PublicHand []; Bonus = Bonus.empty}]
                       Table =  Table.start [ for _,p,n,_ in s.Players -> p,n ] 
-                      DrawPile = s.DrawPile
+                      DrawPile = PublicHand s.DrawPile
                       DiscardPile = []
                       Barns = Barns.init s.Barns
                       HayBales = Set.empty
                       Goal = s.Goal
-                      PrivateDrawPile = false
+                      UseGameOver = s.UseGameOver
                        }
            { Board = board
              UndoPoint = board
@@ -2044,7 +2054,10 @@ module Board =
             { state with Board = newBoard
                          AtUndoPoint = false }
         |  Board board, PlayerDrewCards e ->
-            let newDrawPile = board.DrawPile |> DrawPile.remove e.Cards
+            let newDrawPile = 
+                match board.DrawPile with
+                | PublicHand cards -> DrawPile.remove e.Cards cards |> PublicHand
+                | PrivateHand cards -> PrivateHand (cards - Hand.count e.Cards) 
             let player = board.Players.[e.Player] |> Player.takeCards e.Cards
             let newBoard = 
                 Board {
@@ -2078,7 +2091,11 @@ module Board =
             let newBoard = 
                 Board {
                     board with
-                        DrawPile = board.DrawPile @ cards
+                        DrawPile = 
+                            match board.DrawPile with
+                            | PublicHand drawPile ->
+                                 PublicHand (drawPile @ cards)
+                            | PrivateHand drawPile -> PrivateHand(drawPile + List.length cards)
                         DiscardPile = [] }
             { state with Board = newBoard
                          AtUndoPoint = false }
@@ -2086,7 +2103,11 @@ module Board =
             let newBoard =
                 Board {
                     board with
-                        DrawPile = cards }
+                        DrawPile = 
+                            match board.DrawPile with
+                            | PublicHand _ -> PublicHand cards
+                            | PrivateHand _ ->  board.DrawPile }
+
             { state with Board = newBoard
                          AtUndoPoint = false }
 
@@ -2238,10 +2259,11 @@ module Board =
                         failwith "To many players"
             [ Started {
                 Players = players
-                DrawPile = DrawPile.shuffle DrawPile.cards
+                DrawPile = DrawPile.shuffle cmd.UseGameOver DrawPile.cards
                 Barns = barns 
                 Goal = goal
-                Undo = cmd.Undo } ] 
+                Undo = cmd.Undo
+                UseGameOver = cmd.UseGameOver} ] 
         | Board board, Play(playerId, Player.EndTurn) ->
             if board.Table.Player = playerId then
                 let player = board.Players.[playerId]
@@ -2329,6 +2351,17 @@ module Board =
                             [ GameWon winner ]
                         | _ -> [] )
                 |> cont (fun board es ->
+                    match List.tryFind (function Played(_, Player.Annexed _) -> true | _ -> false) es with
+                    | Some (Played (_, Player.Annexed e)) ->
+                        let cardsToTake =
+                            e.FreeBarns.Length + 2 * e.OccupiedBarns.Length
+                        if cardsToTake > Hand.count board.DrawPile then
+                            [ DiscardPileShuffled (DrawPile.shuffle board.UseGameOver board.DiscardPile) ]
+                        else
+                            []
+                    | _ -> []
+                )
+                |> cont (fun board es ->
                             match tryFindWinner board with
                             | Winner winners ->
                                 // winner because goal is reached
@@ -2342,21 +2375,23 @@ module Board =
                                         e.FreeBarns.Length + 2 * e.OccupiedBarns.Length
                                     [
                                         if cardsToTake > 0 then
-                                            if not board.PrivateDrawPile then
-                                                let cardsDrawn = board.DrawPile |> DrawPile.take cardsToTake
-                                                PlayerDrewCards 
-                                                    { Player = playerid
-                                                      Cards = PublicHand cardsDrawn }
+                                            match board.DrawPile with
+                                            | PublicHand drawPile ->
+                                                    let cardsDrawn = drawPile |> DrawPile.take cardsToTake
+                                                    PlayerDrewCards 
+                                                        { Player = playerid
+                                                          Cards = PublicHand cardsDrawn }
 
-                                                if List.contains GameOver cardsDrawn then
-                                                    Played(playerid, Player.CardPlayed PlayCard.PlayGameOver)
+                                                    if List.contains GameOver cardsDrawn then
+                                                        Played(playerid, Player.CardPlayed PlayCard.PlayGameOver)
 
-                                                    match leads with
-                                                    | [ win ] -> GameWon win
-                                                    |  _ -> GameEnded leads
+                                                        match leads with
+                                                        | [ win ] -> GameWon win
+                                                        |  _ -> GameEnded leads
 
-                                                elif state.UndoType = DontUndoCards then
-                                                    UndoCheckPointed
+                                                    elif state.UndoType = DontUndoCards then
+                                                        UndoCheckPointed
+                                            | PrivateHand _ -> ()
                                         else
                                             let player = board.Players.[playerid]
                                             match player with
@@ -2423,23 +2458,27 @@ module Board =
                          SNames = [| for KeyValue(p,n) in board.Table.Names -> p,n |]
                          SCurrent = board.Table.Current }
               SDiscardPile = List.toArray board.DiscardPile
+              SDrawPile = Some (Hand.count board.DrawPile)
               SFreeBarns = Field.parcels board.Barns.Free |> List.toArray
               SOccupiedBarns = Field.parcels board.Barns.Occupied |> List.toArray
               SHayBales = Set.toArray board.HayBales
               SGoal = board.Goal
               SWinner = null
               SWinners = [||]
-                         }
+              SUseGameOver = Some board.UseGameOver }
         | InitialState -> 
             { SPlayers = [||]
               STable = { SPlayers = null; SAllPlayers = null; SNames = null; SCurrent = 0}
               SDiscardPile = [||]
+              SDrawPile = None
               SFreeBarns = null
               SOccupiedBarns = null
               SHayBales = null
               SGoal = Common 0
               SWinner = null
-              SWinners = [||] }
+              SWinners = [||]
+              SUseGameOver = None
+              }
         | Won(winners, board) ->
             { SPlayers =
                 board.Players
@@ -2452,6 +2491,7 @@ module Board =
                          SNames = [| for KeyValue(p,n) in board.Table.Names -> p,n |]
                          SCurrent = board.Table.Current }
               SDiscardPile = List.toArray board.DiscardPile
+              SDrawPile = Some (Hand.count board.DrawPile)
               SFreeBarns = Field.parcels board.Barns.Free |> List.toArray
               SOccupiedBarns = Field.parcels board.Barns.Occupied |> List.toArray
               SHayBales = Set.toArray board.HayBales
@@ -2465,8 +2505,7 @@ module Board =
                 | []
                 | [_] -> [||]
                 | _ -> List.toArray winners
-
-                
+              SUseGameOver = Some board.UseGameOver 
                 }
 
     
@@ -2493,13 +2532,13 @@ module Board =
                               AllPlayers = board.STable.SAllPlayers
                               Names = Map.ofArray board.STable.SNames
                               Current = board.STable.SCurrent }
-                    DrawPile = [] 
+                    DrawPile = board.SDrawPile |> Option.defaultValue 0 |> PrivateHand
                     DiscardPile = Array.toList board.SDiscardPile
                     Barns = { Free = Field.ofParcels board.SFreeBarns
                               Occupied = Field.ofParcels board.SOccupiedBarns }
                     HayBales = set board.SHayBales
                     Goal = board.SGoal
-                    PrivateDrawPile = true
+                    UseGameOver = board.SUseGameOver |> Option.defaultValue false
                     }
             match board.SWinner, board.SWinners with
             | null, null

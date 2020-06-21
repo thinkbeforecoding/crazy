@@ -37,7 +37,8 @@ class CrazyFarmers extends Table
         self::initGameStateLabels( array( 
             "board" => 10,
             "game_mode" => 100,
-            "undo_mode" => 101
+            "undo_mode" => 101,
+            "gamover_card" => 102
             //    "my_second_global_variable" => 11,
             //      ...
             //    "my_first_game_variant" => 100,
@@ -176,6 +177,14 @@ class CrazyFarmers extends Table
                 $undoType = new UndoType_FullUndo();
         }
 
+        switch ($this->gamestate->table_globals[102])
+        {
+            case 2:
+                $useGameOver = true;
+            break;
+            default:
+                $useGameOver = false;
+        }
 
 
 
@@ -185,7 +194,8 @@ class CrazyFarmers extends Table
                 new BoardStart(
                         FSharpList::ofArray($crazyPlayers),
                         $goal,
-                        $undoType));
+                        $undoType,
+                        $useGameOver));
         $board = $GLOBALS['Shared_002EBoardModule___initialState'];
         $es = Shared_002EBoardModule___decide($cmd, $board);
         

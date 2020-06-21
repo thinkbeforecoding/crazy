@@ -69,7 +69,15 @@ $game_options = array(
     
                         3 => array( 'name' => totranslate('No Undo'), 'description' => totranslate('No Undo at all'), 'nobeginner' => true, 'tmdisplay' => totranslate('No Undo') )
                     )
-        )
+            ),
+    102 => array(
+                'name' => totranslate('Game Over card'),    
+                'values' => array(
+                            1 => array( 'name' => totranslate('No'), 'description' => totranslate('Do not use the Game Over card ')),
+        
+                            2 => array( 'name' => totranslate('Yes'), 'description' => totranslate('Use the Game Over card'), 'tmdisplay' => totranslate('Game Over card') ),
+                        )
+            )
 );
 
 

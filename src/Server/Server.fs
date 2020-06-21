@@ -191,6 +191,7 @@ module Dto =
           CommonGoal: bool
           Goal: int
           Undo: string
+          UseGameOver: Nullable<bool>
          }
 
     let ofUndoType =
@@ -367,6 +368,7 @@ let serialize =
                          Dto.CommonGoal = match e.Goal with | Common _ -> true | Individual _ -> false
                          Dto.Goal = match e.Goal with | Common n -> n |Individual n -> n
                          Dto.Undo = Dto.ofUndoType e.Undo
+                         Dto.UseGameOver = Nullable e.UseGameOver
                          }
     | Board.Event.Played (playerid, Player.Event.MovedInField e ) -> 
         "MovedInField", box { Player = playerid
@@ -433,7 +435,9 @@ let deserialize data =
                              Barns = List.ofArray e.Barns
                              DrawPile = e.DrawPile |> Seq.map Dto.toCard |> Seq.toList
                              Goal = if e.CommonGoal then Common e.Goal else Individual e.Goal
-                             Undo = Dto.toUndoType e.Undo } ]
+                             Undo = Dto.toUndoType e.Undo 
+                             UseGameOver = if  e.UseGameOver.HasValue then e.UseGameOver.Value else false
+                             } ]
         | "MovedInField", JObj { Player = p; Event = JObj(e: Dto.MovedDto) } -> 
             [Board.Played(p, Player.MovedInField (Dto.toMoved e))]
         | "FirstCrossroadSelected", JObj { Player = p; Event = JObj (e: Dto.FirstCrossroadSelectedDto) } -> 
@@ -1279,7 +1283,7 @@ module Join =
             for event in events do
                 match event with
                 | SharedJoin.Event.Started e ->
-                    do! runner.PostAndAsyncReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e.Players -> p.Color, p.PlayerId, p.Name ]; Goal = e.Goal; Undo = FullUndo }, c.Reply))
+                    do! runner.PostAndAsyncReply(fun c -> gameid, GameRunnerCmd.Exec(Board.Start { Players = [ for p in e.Players -> p.Color, p.PlayerId, p.Name ]; Goal = e.Goal; Undo = FullUndo; UseGameOver = true }, c.Reply))
                          |> Async.Ignore
                 | _ -> ()
             //connections.SendClientIf(function SetupGame id | JoiningGame id when id = gameid -> true | _ -> false ) (Events(events, version))

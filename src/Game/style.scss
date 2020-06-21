@@ -521,17 +521,35 @@ body {
         }
     }
 
-    .hand-title {
-        position: absolute;
-        top: 0.3em;
-        left: 0.3em;
+
+
+    h3, .hand-title {
         font-family: 'BrushCrush';
         color: white;
         font-size: 120%;
         text-shadow: 2px 0.2em 0.2em #333;
     }
+    h3 { 
+        margin: 0;
+        margin-top: -0.5em; 
+    }
+
+    .hand-title {
+        position: absolute;
+        top: 0.3em;
+        left: 0.3em;
+    }
+    .hand {
+        flex: 1 1 auto;
+        display: flex;
+        flex-flow: row;
+        align-content: center;
+        justify-content: center;
+    }
+
 
     .empty-hand {
+        flex: 1 1 auto;
         text-align: center;
         font-style: italic;
         font-size: 80%;
@@ -582,6 +600,60 @@ body {
 
         .player:hover {
             background-position-y: -100%;
+        }
+    }
+
+
+    .card-count {
+        position: relative;
+        overflow: hidden;
+        width: 3em;
+        justify-self: end;
+        margin-right: 0.5em;
+
+
+        &:before {
+            content: "";
+            display: block;
+            padding-top: $card-ratio;
+        }
+
+        div {
+            @include hover-count;
+            font-size: 1.5em;
+            background-image: url(~img/cards-2.jpg);
+            background-size: 600% 200%;
+            background-position: 0 0;
+            border-radius: 10%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    }
+
+    .drawpile {
+        flex: 0 1 auto;
+        align-self: stretch;
+        justify-self: flex-end;
+        display: flex;
+        flex-flow: column;
+        align-items: center;
+        margin-right: 0.5em;
+    }
+
+    .card-info {
+
+        .tooltiptext {
+            @include tooltip;
+        }
+
+        &:hover .tooltiptext {
+            visibility: visible;
         }
     }
 }

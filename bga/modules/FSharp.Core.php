@@ -103,3 +103,10 @@ class ResultError extends Result {
         $this->ErrorValue = $value;
     }
 }
+
+class Option {
+    static function  defaultArg($opt, $val)
+    {
+        return is_null($opt) ? $val : $opt;
+    }
+}
