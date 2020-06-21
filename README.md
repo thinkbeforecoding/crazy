@@ -15,6 +15,8 @@ Jump on your customized tractor and lay electric fences to circle plots to add t
 
 Fame and glory is only a fence away so be sly, think hard and show no mercy. Let’s bring on the Craziness and Make Agriculture Great Again!
 
+![Crazy Farmers](img/Matos_KS_transparent_avec_boite.png)
+
 ## The Kickstarter
 
 With our publisher [The Freaky 42](https://www.facebook.com/TheFreaky42/), we've launched a Kickstarter on June 18th for the board game.
@@ -38,6 +40,7 @@ You can play with your friends or with other BGA players using a free account:
 [Crazy Farmers on Board Game Arena](https://boardgamearena.com/gamepanel?game=crazyfarmers)
 
 It was a very interesting offer, but there was a double challenge:
+
 * The code had to be in Php
 * I had never written a line of Php in my life
 
