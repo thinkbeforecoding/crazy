@@ -26,6 +26,20 @@ class Seq {
             yield $projection($item);
         }
     }
+
+    public static function choose($projection, $seq)
+    {
+        foreach($seq as $item)
+        { 
+            $value = $projection($item);
+            if (!is_null($value))
+            {
+                yield $value;
+            }
+        }
+    }
+
+
     public static function collect($projection, $seq)
     {
         foreach($seq as $item)

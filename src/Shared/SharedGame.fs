@@ -1291,21 +1291,6 @@ module Player =
                                     FreeBarns = annexedBarns.Free |> Field.parcels
                                     OccupiedBarns = annexedBarns.Occupied |> Field.parcels
                                     FenceLength = 0}
-
-                                for playerid, p in otherPlayers do
-                                    match p with
-                                    | Playing p ->
-                                        let remainingField = p.Field - annexed
-                                        if not (Fence.isEmpty p.Fence) then
-                                            let start = Fence.start p.Tractor p.Fence
-                                            if not (Crossroad.isInField remainingField start) then
-                                                CutFence { Player = playerid }
-                                            
-                                        else
-                                            if Crossroad.isInField annexed p.Tractor && not (Crossroad.isInField remainingField p.Tractor) then
-                                                CutFence { Player = playerid }
-                                    | _ -> ()
-
                             ]
                         | loop -> [  FenceLooped { Move = dir; Loop = loop; Crossroad = nextPos } ]
                 | PowerDown ->
@@ -2334,6 +2319,10 @@ module Board =
                         | Playing ({ Power = Power.PowerDown } as player) ->
                             if Crossroad.isInField player.Field player.Tractor then
                                 Played(pid, Player.PoweredUp)
+                        | Playing ({ Power = Power.PowerUp} as player) ->
+                            let start = Fence.start player.Tractor player.Fence
+                            if not (Crossroad.isInField player.Field start) then
+                                Played(playerid, Player.CutFence { Player = pid })
                         | _ -> () ])
                 |> cont (fun board  _ ->
                         let remainingPlayers =

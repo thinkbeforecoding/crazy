@@ -298,24 +298,24 @@ abstract class FSharpList implements IteratorAggregate {
 
     static function groupBy($property, $list)
     {
-        $map = [];
+        $comparer = [ 'Compare' => 'Util::compare' ];
+        $map = Map::empty($comparer);
 
         while($list instanceof Cons)
         {
             $key = $property($list->value);
-            $items = $map[$key] ?? [];
+            $items = Map::tryFind($key, $map) ?? [];
             array_push($items, $list->value);
-            $map[$key] = $items;
-
+            $map = Map::add($key, $items, $map);
             $list = $list->next;
         }
 
         $lst = NULL;
         $p = &$lst; 
 
-        foreach (array_keys($map) as $key)
+        foreach (Map::toSeq($map) as $kv)
         {
-            $p = new Cons([ $key, FSharpList::ofArray($map[$key])], NULL);
+            $p = new Cons([ $kv[0], FSharpList::ofArray($kv[1])], NULL);
             $p = &$p->next;
         }
 
