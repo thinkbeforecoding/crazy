@@ -553,12 +553,13 @@
             return  convertToSimpleJson(convertFromJson($js));
             }, $Events);
 
-          echo "[\n";
+        
+          echo "<pre>[\n";
           foreach($es as $e)
           {
               echo json_encode($e), ",\n";
           }
-          echo "]\n";
+          echo "]\n</pre>";
         ?>
     </body>
 </html>

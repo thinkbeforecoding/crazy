@@ -39,7 +39,7 @@ let s =
 //    s.Deserialize<Envelope>(new JsonTextReader(json))
 
 let events = 
-    Http.RequestStream("http://localhost/convert.php")
+    Http.RequestStream("http://localhost/convert3.php")
     |> fun stream -> s.Deserialize<Board.Event []>(new JsonTextReader(new IO.StreamReader(stream.ResponseStream)))
     |> Array.toList
     |> List.takeWhile(function
@@ -47,10 +47,10 @@ let events =
                         | _ -> true )
 
 
-
 let state = List.fold Board.evolve Board.initialState events
 
-let es = Board.decide (Board.Play("88218789", Player.PlayCard(PlayBribe(Parcel(Axe(-1,0))) ))) state
+//let es = Board.decide (Board.Play("63097441", Player.PlayCard(PlayBribe(Parcel(Axe(-1,1))) ))) state
+let es = Board.decide (Board.Play("2323673", Player.PlayCard(PlayBribe(Parcel(Axe(2,1))) ))) state
 
 //let events = 
 //    data.data.data

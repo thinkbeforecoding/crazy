@@ -488,7 +488,13 @@ let playersHand model dispatch =
             
             handView dispatch true model.PlayerId board model.CardAction (Player.hand board.Players.[playerId])
         | _ -> null
-    | None -> null
+    | None -> 
+        match model.Board.Board with
+        | Board board 
+        | Won(_,board) ->
+            handView dispatch true model.PlayerId board None Hand.empty
+        | _ -> null
+        
 
 let playedCard dispatch card =
     match card with

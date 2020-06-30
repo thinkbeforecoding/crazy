@@ -1143,7 +1143,36 @@ module Player =
             let (Fence paths) = fence
             paths @ border 
         Field.fill fullBorder - field
-                    
+                 
+
+    let nearestContact field (Fence fence) pos =
+        let rec loop pos fence len =
+            if Crossroad.isInField field pos then
+                Some(pos, fence, len)
+            else
+                match fence with
+                | [] -> None
+                | (_,dir) :: tail -> 
+                    loop (Crossroad.neighbor (Direction.rev dir) pos) tail (len+1)
+        loop pos fence 0
+
+                 
+    let fullAnnexation (p: Playing) =
+        let mainField = Field.principalField p.Field p.Fence p.Tractor
+        let start = Fence.start p.Tractor p.Fence
+        if Crossroad.isInField mainField start then
+            match nearestContact mainField p.Fence p.Tractor with
+            | Some(pos, paths, len) when pos <> start ->
+                let border = Field.borderBetween start pos mainField
+                let fullBorder = 
+                    paths @ border 
+                Some(Field.fill fullBorder - mainField, len)
+            | _ -> None
+
+
+        else
+            None
+
 
     let startTurn player =
         match player with
@@ -1262,35 +1291,7 @@ module Player =
                               else
                                   FenceDrawn { Move = dir; Path = nextPath; Crossroad = nextPos }  
                               yield! decideCut otherPlayers nextPos
-                              if endInField && not pathInField && not inFallow then
-                                let nextFence = Fence.add (nextPath, dir) player.Fence
-                                let baseAnnexed = 
-                                    annexation player.Field nextFence nextPos
-
-                                let annexed = 
-                                    otherPlayers
-                                    |> List.fold (fun anx (_,p) ->
-                                        anx - watchedField p) baseAnnexed
-
-                                let lostFields = 
-                                    [ for color,p in otherPlayers do
-                                        match p with
-                                        | Playing p ->
-                                            let lost = Field.intersect annexed p.Field
-                                            if not (Field.isEmpty lost) then
-                                                color, Field.parcels lost
-                                        |_ -> ()
-                                    ] 
-
-                                let annexedBarns = 
-                                    barns |> Barns.intersectWith annexed
-
-                                Annexed {
-                                    NewField = Field.parcels annexed
-                                    LostFields = lostFields
-                                    FreeBarns = annexedBarns.Free |> Field.parcels
-                                    OccupiedBarns = annexedBarns.Occupied |> Field.parcels
-                                    FenceLength = 0}
+                              
                             ]
                         | loop -> [  FenceLooped { Move = dir; Loop = loop; Crossroad = nextPos } ]
                 | PowerDown ->
@@ -1365,50 +1366,8 @@ module Player =
                             if field player |> Field.containsParcel parcel then
                               Bribed { Parcel = parcel; Victim = playerId }
                           BonusDiscarded (Card.ofPlayCard card)
+                        ]
 
-
-                          match Fence.bribeAnnexation parcel p.Tractor p.Fence with
-                          | None -> ()
-                          | Some(remaining, _, [] ) ->
-                                FenceReduced { NewLength = remaining }
-                          | Some(remaining, pos, fence) ->
-                             
-                                let baseAnnexed = 
-                                    annexation (p.Field + Field.ofParcels [parcel]) (Fence fence) pos
-
-                                let annexed = 
-                                    otherPlayers
-                                    |> List.fold (fun anx (_,p) ->
-                                        anx - watchedField p) baseAnnexed
-
-                                let lostFields = 
-                                    [ for color,p in otherPlayers do
-                                        match p with
-                                        | Playing p ->
-                                            let lost = Field.intersect annexed p.Field
-                                            if not (Field.isEmpty lost) then
-                                                color, Field.parcels lost
-                                        |_ -> ()
-                                    ] 
-
-                                let annexedBarns = 
-                                    barns |> Barns.intersectWith annexed
-
-                                Annexed {
-                                    NewField = Field.parcels annexed
-                                    LostFields = lostFields
-                                    FreeBarns = annexedBarns.Free |> Field.parcels
-                                    OccupiedBarns = annexedBarns.Occupied |> Field.parcels
-                                    FenceLength = remaining }
-
-                                        
-
-
-
-                          if p.Power = PowerDown && Parcel.contains p.Tractor parcel then
-                                // The player has been reconnected
-                                PoweredUp
-                          ]
                     | _ -> []
                 | PlayGameOver -> []
 
@@ -2304,6 +2263,53 @@ module Board =
                             HayBaleDynamited bale
                         | _ -> ()
                     ])
+                |> cont (fun board _ ->
+
+                        let player = board.Players.[playerid]
+                        match player with
+                        | Playing player ->
+                            match Player.fullAnnexation player with
+                            | Some(surrounded, newLength) ->
+                                if Field.isEmpty surrounded  then
+                                    [ Played(playerid, Player.FenceReduced {NewLength = newLength })]
+                                else
+                                    let protectedField =
+                                        Field.unionMany [
+                                            for id,p in Map.toSeq  board.Players do
+                                                match p with
+                                                | Playing p when id <> playerid && p.Bonus.Watched ->
+                                                    p.Field
+                                                |_ -> () 
+                                        ]
+
+                                    let annexed = surrounded - protectedField
+
+                                    let lostFields = 
+                                        [ for id,p in Map.toSeq board.Players do
+                                            match p with
+                                            | Playing p when id <> playerid ->
+                                                let lost = Field.intersect annexed p.Field
+                                                if not (Field.isEmpty lost) then
+                                                    id, Field.parcels lost
+                                            |_ -> () ] 
+        
+                                    let annexedBarns = 
+                                        board.Barns |> Barns.intersectWith annexed
+        
+                                    [ Played(playerid,
+                                        Player.Annexed {
+                                          NewField = Field.parcels annexed
+                                          LostFields = lostFields
+                                          FreeBarns = annexedBarns.Free |> Field.parcels
+                                          OccupiedBarns = annexedBarns.Occupied |> Field.parcels
+                                          FenceLength = newLength }) ]
+        
+                                    
+                                    
+                            | None -> []
+
+                        | _ -> []
+                )
                 |> cont (fun board _ ->
                         // check wether some players were eliminated
                         [ for KeyValue(pid, p) in board.Players do

@@ -138,6 +138,8 @@ let started goal =
         DrawPile = []
         Barns = []
         Goal = goal
+        Undo = FullUndo
+        UseGameOver = false
     }
 
 let left axe = Crossroad (axe,CLeft) 
@@ -207,16 +209,16 @@ let ``neighbor tile can be bribed``() =
     let state =
         [ started (Common 20)
           yield! startfences p1 (left (N+NE)) []
-          p1 (Annexed { NewField = [Parcel.center + N; Parcel.center + NW ]; LostFields = [] ; FreeBarns = []; OccupiedBarns = [] } )
+          p1 (Annexed { NewField = [Parcel.center + N; Parcel.center + NW ]; LostFields = [] ; FreeBarns = []; OccupiedBarns = []; FenceLength = 0 } )
           Next
           yield! startfences p2 (left (2 * S))  []
-          p2 (Annexed { NewField = [Parcel.center + S; Parcel.center + SW ]; LostFields = []; FreeBarns = []; OccupiedBarns = [] } )
+          p2 (Annexed { NewField = [Parcel.center + S; Parcel.center + SW ]; LostFields = []; FreeBarns = []; OccupiedBarns = []; FenceLength = 0 } )
           yield! fencesDrawn p2 (left (2 * S)) [ Horizontal; Down] |> fst
           Next
         ]
         |> List.fold Board.evolve Board.initialState 
 
-    match state with
+    match state.Board with
     | Board board ->
         test <@   Board.bribeParcels board = Ok (Field.ofParcels [ Parcel.center + SW ]) @>
     | _ -> failwith "Invalid board state"
@@ -226,16 +228,16 @@ let ``fence start cannot be bribed``() =
     let state =
         [ started (Common 20)
           yield! startfences p1 (left (N+NE)) []
-          p1 (Annexed { NewField = [Parcel.center + N; Parcel.center + NW ]; LostFields = [] ; FreeBarns = []; OccupiedBarns = [] } )
+          p1 (Annexed { NewField = [Parcel.center + N; Parcel.center + NW ]; LostFields = [] ; FreeBarns = []; OccupiedBarns = []; FenceLength = 0 } )
           Next
           yield! startfences p2 (left (SW))  []
-          p2 (Annexed { NewField = [Parcel.center + S; Parcel.center + SW ]; LostFields = []; FreeBarns = []; OccupiedBarns = [] } )
+          p2 (Annexed { NewField = [Parcel.center + S; Parcel.center + SW ]; LostFields = []; FreeBarns = []; OccupiedBarns = []; FenceLength = 0  } )
           yield! fencesDrawn p2 (left (SW)) [ Horizontal; Down] |> fst
           Next
         ]
         |> List.fold Board.evolve Board.initialState 
 
-    match state with
+    match state.Board with
     | Board board ->
         test <@   Board.bribeParcels board = Error NoParcelsToBribe @>
     | _ -> failwith "Invalid board state"
