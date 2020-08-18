@@ -635,7 +635,8 @@ let boardCardActionView dispatch board  cardAction =
                 | Board.BribeParcelBlocker.FenceBlocker -> tileWithTooltip p (translate "You cannot bribe a parcel that would cut a fence or where the player is")
                 | Board.BribeParcelBlocker.LastParcelBlocker -> tileWithTooltip p (translate "You cannot bribe another player's last parcel")
                 | Board.BribeParcelBlocker.WatchedBlocker -> tileWithTooltip p (translate "You cannot bribe parcel protected by a watchdog")
-                | Board.BribeParcelBlocker.FallowBlocker -> tileWithTooltip p (translate "You cannot bribe parcel that with split a fallow land") ]
+                | Board.BribeParcelBlocker.FallowBlocker -> tileWithTooltip p (translate "You cannot bribe parcel that with split a fallow land")
+                | Board.BribeParcelBlocker.BridgeBlocker -> tileWithTooltip p (translate "You cannot bribe parcel that would create a hole in your field") ]
     | _ ->
         []
 

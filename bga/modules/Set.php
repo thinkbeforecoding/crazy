@@ -400,6 +400,39 @@ class SetTree {
         return SetTree::forall(function ($x) use($comparer, $b) { return SetTree::mem($comparer, $x, $b); }, $a);
     }
 
+    static function minimumElementAux($s, $n)
+    {
+        switch(get_class($s))
+        {
+            case 'SetNode':
+                return SetTree::minimumElementAux($s->left, $s->value);
+            case 'SetOne':
+                return $s->value;
+            default:
+                return $n;
+        } 
+    }
+    
+    static function minimumElementOpt($s)
+    {
+        switch(get_class($s))
+        {
+            case 'SetNode':
+                return SetTree::minimumElementAux($s->left, $s->value);
+            case 'SetOne':
+                return $s->value;
+            default:
+                return NULL;
+        } 
+    }
+
+    static function minimumElement($s)
+    {
+        $result = SetTree::minimumElementOpt($s);
+        if (is_null($result))
+            throw new Exception("Set contains no elements");
+        return $result;
+    }
 }
 
 class SetEmpty extends SetTree { }
@@ -534,6 +567,11 @@ class Set implements IteratorAggregate {
     static function isSubset($set1, $set2) 
     {
         return SetTree::subset($set1->Comparer, $set1->Tree, $set2->Tree); 
+    }
+
+    static function minElement($set)
+    {
+        return SetTree::minimumElement($set->Tree);
     }
 
     public function getIterator() {

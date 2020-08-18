@@ -1,8 +1,11 @@
-<?php
+<html>
+    <body>
+    <?php
         function bga_rand($min,$max) { return rand($min,$max); }
         include 'FSharp.Core.php';
         include 'Serialization.php';
         include 'lib.php';
+
         function echo_list ($name, $l)
         {
             echo "<p>",$name,"</p><ul>";
@@ -368,79 +371,22 @@
             array('id' => '351','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"0"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]}]'),
             array('id' => '352','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"0"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]'),
             array('id' => '353','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":"2","r":"0"},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":0},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '354','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":-1},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '355','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Undone","fields":[]}]'),
-            array('id' => '356','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"0"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]}]'),
-            array('id' => '357','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"0"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]'),
-            array('id' => '358','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":"2","r":"0"},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":0},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '359','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":-1},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '360','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Undone","fields":[]}]'),
-            array('id' => '361','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"-1"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]}]'),
-            array('id' => '362','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"-1"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]'),
-            array('id' => '363','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":0},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '364','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":2,"r":0},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":0},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '365','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_MovedInField","fields":[{"_type":"Moved","Move":{"_case":"Direction_Horizontal","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":1},"border":{"_case":"BorderSide_BN","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":0,"r":1},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '366','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Undone","fields":[]}]'),
-            array('id' => '367','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"0","r":"0"},"side":{"_case":"CrossroadSide_CRight","fields":[]}}]}]}]'),
-            array('id' => '368','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"0","r":"0"},"side":{"_case":"CrossroadSide_CRight","fields":[]}}]}]'),
-            array('id' => '369','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_MovedInField","fields":[{"_type":"Moved","Move":{"_case":"Direction_Horizontal","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BN","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":-1},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '370','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":0},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '371','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":2,"r":0},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":0},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '372','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Undone","fields":[]}]'),
-            array('id' => '373','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"-3"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]}]'),
-            array('id' => '374','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"-3"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]'),
-            array('id' => '375','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":-2},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":-2},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '376','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":2,"r":-2},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":-2},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '377','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Undone","fields":[]}]'),
-            array('id' => '378','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"-3"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]}]'),
-            array('id' => '379','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"-3"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]'),
-            array('id' => '380','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":-2},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":-2},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '381','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":2,"r":-2},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":-2},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '382','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Undone","fields":[]}]'),
-            array('id' => '383','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"-1"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]}]'),
-            array('id' => '384','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"-1"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]'),
-            array('id' => '385','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":0},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '386','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":2,"r":0},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":0},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '387','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Undone","fields":[]}]'),
-            array('id' => '388','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"-1"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]}]'),
-            array('id' => '389','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"-1"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]'),
-            array('id' => '390','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":0},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '391','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":2,"r":0},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":0},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '392','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_MovedInField","fields":[{"_type":"Moved","Move":{"_case":"Direction_Horizontal","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":1},"border":{"_case":"BorderSide_BN","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":0,"r":1},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '393','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Undone","fields":[]}]'),
-            array('id' => '394','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"0"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]}]'),
-            array('id' => '395','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"0"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]'),
-            array('id' => '396','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":"2","r":"0"},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":0},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '397','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":-1},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '398','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_MovedInField","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":2,"r":-1},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":-1},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '399','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Undone","fields":[]}]'),
-            array('id' => '400','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"0"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]}]'),
-            array('id' => '401','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"0"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]'),
-            array('id' => '402','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":"2","r":"0"},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":0},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '403','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":-1},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '404','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Undone","fields":[]}]'),
-            array('id' => '405','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"-2","r":"2"},"side":{"_case":"CrossroadSide_CRight","fields":[]}}]}]}]'),
-            array('id' => '406','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"-2","r":"2"},"side":{"_case":"CrossroadSide_CRight","fields":[]}}]}]'),
-            array('id' => '407','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":-1,"r":2},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":-1,"r":2},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '408','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Down","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":-2,"r":3},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":-2,"r":3},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            array('id' => '409','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Horizontal","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":-1,"r":3},"border":{"_case":"BorderSide_BN","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":0,"r":2},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
-            array('id' => '410','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Annexed","fields":[{"_type":"Annexed","NewField":{"_list":[{"_type":"Parcel","tile":{"_type":"Axe","q":-1,"r":2}}]},"LostFields":{"_list":[]},"FreeBarns":{"_list":[{"_type":"Parcel","tile":{"_type":"Axe","q":-1,"r":2}}]},"OccupiedBarns":{"_list":[]},"FenceLength":0}]}]'),
-            array('id' => '411','type' => 'BoardEvent_GameWon','body' => '["84193640"]')
+            #array('id' => '354','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":-1},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
+     
           );
+
+
           
-
-
-          $es = Seq::map(function ($row) { $js = (object)[ '_case' => $row['type'],
+        $es = Seq::map(function ($row) { $js = (object)[ '_case' => $row['type'],
             'fields' => json_decode($row['body'])];
-            return  convertToSimpleJson(convertFromJson($js));
+            return convertFromJson($js);
             }, $Events);
-
-          echo "<pre>[\n";
-          foreach($es as $e)
-          {
-              echo json_encode($e), ",\n";
-          }
-          echo "]\n</pre>";
-        ?>
-    </body>
-</html>
+        
+        $board = $GLOBALS['Shared_002EBoardModule___initialState'];
+        $newBoard = Seq::fold('Shared_002EBoardModule___evolve', $board, $es);
+    
+        $cmd = new BoardCommand_Play("84193640", new Command_Move(new PlayerMove(new Direction_Up(), new Crossroad(new Axe(2,-1), new CrossroadSide_CLeft() ))));
+        
+        $results = Shared_002EBoardModule___decide($cmd, $newBoard);
+    
+        echo_list("events", $results);

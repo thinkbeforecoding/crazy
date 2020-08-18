@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <DefineConstants>FABLE_COMPILER</DefineConstants>
+    <WarningsAsErrors>25</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="index.html" />
+    <None Include="paket.references" />
+    <Compile Include="Version.fs" />
+    <Compile Include="Globalization.fs" />
+    <Compile Include="..\Shared\Shared.fs" Link="Shared.fs" />
+    <Compile Include="..\Shared\SharedGame.fs" Link="SharedGame.fs" />
+    <Compile Include="..\Shared\SharedClient.fs" Link="SharedClient.fs" />
+    <Compile Include="Debugger.fs" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

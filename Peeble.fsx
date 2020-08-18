@@ -679,12 +679,13 @@ type PhpCompiler =
             this.CapturedVars <- Set.add (ByValue var) this.CapturedVars
 
     member this.UseVarByRef(var) =
-        if not (Set.contains var this.LocalVars) then
+        if not (Set.contains var this.LocalVars) && not (Set.contains (ByValue var) this.CapturedVars) then
             this.CapturedVars <- Set.add (ByRef var) this.CapturedVars
+
     member this.UseVar(var) =
-        let name = match var with ByValue n | ByRef n -> n
-        if not (Set.contains name this.LocalVars) then
-            this.CapturedVars <- Set.add var this.CapturedVars
+        match var with 
+        | ByValue name -> this.UseVar name
+        | ByRef name -> this.UseVarByRef name
 
     member this.MakeUniqueVar(name) =
         this.Id <- this.Id + 1

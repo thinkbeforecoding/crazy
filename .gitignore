@@ -18,3 +18,4 @@ deploy
 prep/
 .paket/load/
 bga-deploy/
+debugger/

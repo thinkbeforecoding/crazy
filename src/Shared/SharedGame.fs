@@ -426,13 +426,16 @@ module Parcel =
         let x,y,z = Axe.cube p
         abs x <= 3 && abs y <= 3 && abs z <= 3
 
-    let neighbors (Parcel p) =
+    let unrestrictedNeighbors (Parcel p) =
         [ Parcel (p + Axe.N)
           Parcel (p + Axe.NE)
           Parcel (p + Axe.SE)
           Parcel (p + Axe.S)
           Parcel (p + Axe.SW)
           Parcel (p + Axe.NW) ]
+
+    let neighbors p =
+        unrestrictedNeighbors p
         |> List.filter isOnBoard
 
 
@@ -700,13 +703,17 @@ module Field =
         ]
         |> set |> Field
 
-    let borderTiles (Field parcels) =
+    let border neighbors (Field parcels) =
         let allNeighbors =
             parcels
-            |> Seq.collect Parcel.neighbors
+            |> Seq.collect neighbors
             |> set
         allNeighbors - parcels
         |> Field
+        
+
+    let borderTiles parcels = border Parcel.neighbors parcels
+    let unrestrictedborderTiles parcels = border Parcel.unrestrictedNeighbors parcels
 
     let counterclock field (Crossroad(tile,side)) =
         match side with
@@ -1137,12 +1144,6 @@ module Player =
         |> List.map (fun (playerid,_) -> CutFence { Player = playerid } )
 
         
-    let annexation field fence tractor =
-        let border = Field.borderBetween (Fence.start tractor fence) tractor field
-        let fullBorder = 
-            let (Fence paths) = fence
-            paths @ border 
-        Field.fill fullBorder - field
                  
 
     let nearestContact field (Fence fence) pos =
@@ -1157,19 +1158,17 @@ module Player =
         loop pos fence 0
 
                  
-    let fullAnnexation (p: Playing) =
-        let mainField = Field.principalField p.Field p.Fence p.Tractor
-        let start = Fence.start p.Tractor p.Fence
+    let fullAnnexation field fence tractor =
+        let mainField = Field.principalField field fence tractor
+        let start = Fence.start tractor fence
         if Crossroad.isInField mainField start then
-            match nearestContact mainField p.Fence p.Tractor with
+            match nearestContact mainField fence tractor with
             | Some(pos, paths, len) when pos <> start ->
                 let border = Field.borderBetween start pos mainField
                 let fullBorder = 
                     paths @ border 
                 Some(Field.fill fullBorder - mainField, len)
             | _ -> None
-
-
         else
             None
 
@@ -1770,6 +1769,7 @@ module Board =
         | WatchedBlocker
         | FenceBlocker
         | FallowBlocker
+        | BridgeBlocker
 
 
 
@@ -1806,6 +1806,65 @@ module Board =
         |> Seq.filter (fun p -> isCutParcel field p)
         |> Field.ofParcels
             
+    let findBridgeParcels field =
+        let (Field border) = Field.unrestrictedborderTiles field
+
+
+        let neighbor (dir: Axe) (parcel: Parcel) = 
+            let neighbor = parcel + dir
+            if Set.contains neighbor border then
+                Some neighbor
+            else
+                None
+
+        let mutable cut = []
+        let mutable visited = Map.empty
+        let mutable time = 0
+
+
+        let rec loop parent parcel : int =
+            visited <- Map.add parcel time visited
+            let d0 = time
+            time <- time + 1 
+            let isRoot = (parent = parcel)
+
+            let step dir (low,children) =
+                match neighbor dir parcel with
+                | Some nxt when nxt <> parent ->
+                    let n,c = 
+                        match Map.tryFind nxt visited with
+                        | Some d -> min d low, children
+                        | None -> loop parcel nxt, children+1
+
+                    if n >= d0 && not isRoot then
+                        cut <- parcel :: cut
+                        
+                    
+                    min n low,c
+                | _ -> 
+                    low,children
+
+
+            let d, children = 
+                (d0, 0)
+                |> step Axe.N
+                |> step Axe.NE
+                |> step Axe.SE
+                |> step Axe.S
+                |> step Axe.SW
+                |> step Axe.NW
+
+            if isRoot && children > 1 then
+                cut <- parcel :: cut
+
+            visited <- Map.add parcel d visited
+            d
+
+        let start = Set.minElement border
+        loop start start |> ignore
+        cut 
+        |> List.filter Parcel.isOnBoard
+        |> Field.ofParcels 
             
 
 
@@ -1815,8 +1874,10 @@ module Board =
             Error InstantVictory
         else
             let player = board.Players.[board.Table.Player]
-            let border = Field.borderTiles (Player.field player) 
+            let playerField = Player.field player
+            let border = Field.borderTiles playerField
             let barns = board.Barns.Free + board.Barns.Occupied
+            let bridgeParcels = findBridgeParcels playerField
 
             let otherPlayersFields =
                  currentOtherPlayers board
@@ -1837,7 +1898,7 @@ module Board =
                                     |> Field.intersect field
 
                                 
-                                field - startTiles - cutParcels
+                                field - startTiles - cutParcels - bridgeParcels
                                 
 
                             | Starting _ 
@@ -1857,12 +1918,14 @@ module Board =
             []
         else
             let player = board.Players.[board.Table.Player]
-            let border = Field.borderTiles (Player.field player) 
+            let playerField = Player.field player
+            let border = Field.borderTiles playerField
             let othersFields = Field.unionMany [for (_,p) in currentOtherPlayers board -> Player.field p ]
             let barns = 
                 Field.intersect border (board.Barns.Free + board.Barns.Occupied)
                 |> Field.intersect othersFields
             let border = border - barns
+            let bridgeParcels = findBridgeParcels playerField
 
             [ for barn in Field.parcels barns do
                 barn, BarnBlocker
@@ -1871,6 +1934,7 @@ module Board =
                 let field = Player.field neighborPlayer
                 let bonus = Player.bonus neighborPlayer
                 let fieldBorder = Field.intersect border field
+
                 if Field.size field = 1  then
                     for p in Field.parcels fieldBorder do
                         p, LastParcelBlocker
@@ -1891,6 +1955,9 @@ module Board =
                         let cutParcels = cutParcels field (Field.intersect field border)
                         for p in Field.parcels cutParcels do
                             p, FallowBlocker
+                        let bridges = Field.intersect bridgeParcels field
+                        for p in Field.parcels bridges do
+                            p, BridgeBlocker
                     | Starting _ 
                     | Ko _ -> () ]
 
@@ -1927,16 +1994,6 @@ module Board =
                 |> Map.add playerid newPlayer
                 |> Map.add p.Victim newVictim 
         }
-
-    let bribedevents playerid events (board: PlayingBoard) =
-        events
-        |> List.fold (fun board event ->
-            match event with
-            | Player.Bribed p -> bribed playerid p board
-            | _ -> board
-        ) board
-
-
 
     let evolve (state: UndoableBoard) event =
         match state.Board,event with
@@ -2268,7 +2325,7 @@ module Board =
                         let player = board.Players.[playerid]
                         match player with
                         | Playing player ->
-                            match Player.fullAnnexation player with
+                            match Player.fullAnnexation player.Field player.Fence player.Tractor with
                             | Some(surrounded, newLength) ->
                                 if Field.isEmpty surrounded  then
                                     [ Played(playerid, Player.FenceReduced {NewLength = newLength })]

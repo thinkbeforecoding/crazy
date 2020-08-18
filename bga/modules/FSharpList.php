@@ -332,23 +332,23 @@ abstract class FSharpList implements IteratorAggregate {
         $chunk = NULL;
         $pc = &$chunk;
 
-        $c = 0;
+        $c = $size;
         while ($list instanceof Cons)
         {
-            if ($c++ == $size)
+
+            $pc = new Cons($list->value, NULL);
+            $pc = &$pc->next;
+            $list = $list->next;
+
+            if (--$c == 0)
             {
                 $pc = FSharpList::get_Nil();
                 $p = new Cons($chunk, NULL);
                 $p = &$p->next;
                 $chunk = NULL;
                 $pc = &$chunk;
-                $c = 0;
+                $c = $size;
             }
-
-
-            $pc = new Cons($list->value, NULL);
-            $pc = &$pc->next;
-            $list = $list->next;
 
         }
 
