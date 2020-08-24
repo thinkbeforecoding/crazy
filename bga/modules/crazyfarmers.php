@@ -4413,7 +4413,7 @@ function Shared_002EPlayer___fullAnnexation($field__8, $fence__5, $tractor__6) {
                 $pos__13 = $matchValue__22[0];
                 $border__1 = Shared_002EFieldModule___borderBetween($start__5, $pos__13, $mainField);
                 $fullBorder = FSharpList::append($paths__20, $border__1);
-                return [ Shared_002EField___op_Subtraction__Z24735800(Shared_002EFieldModule___fill($fullBorder), $mainField), $len__2];
+                return [ Shared_002EField___op_Subtraction__Z24735800(Shared_002EFieldModule___fill($fullBorder), $field__8), $len__2];
             }             else {
                 return NULL;
             }

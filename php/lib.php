@@ -2748,18 +2748,10 @@ function Shared_002EFieldModule___fill($paths__18) {
  }, $paths__18);
     $list__6 = FSharpList::sortBy(function ($t__2) {     return [ Shared_002EAxe__get_Q($t__2, NULL), Shared_002EAxe__get_R($t__2, NULL)];
  }, $list__5, [ 'Compare' => 'Util::compareArrays']);
-    echo_list("hz", $list__5);
-    echo_list("hz sorted", $list__6);
     $sortedPaths = FSharpList::groupBy(function ($tile__8) {     return Shared_002EAxe__get_Q($tile__8, NULL);
  }, $list__6, [ 'Equals' => function ($_x__35, $_y__36) {     return $_x__35 === $_y__36;
  }, 'GetHashCode' => 'Util::structuralHash']);
-    echo_list("sorted paths", $sortedPaths);
-
-    $elements__2 = FSharpList::ofSeq(Seq::delay(function ($unitVar__25) use ($sortedPaths) {     return Seq::collect(function ($matchValue__12) {    
-        
-        echo_list("chunk", FSharpList::chunkBySize(2, $matchValue__12[1]));
-
-        return Seq::collect(function ($l) use ($matchValue__12) {     if ($l instanceof Cons) {
+    $elements__2 = FSharpList::ofSeq(Seq::delay(function ($unitVar__25) use ($sortedPaths) {     return Seq::collect(function ($matchValue__12) {     return Seq::collect(function ($l) use ($matchValue__12) {     if ($l instanceof Cons) {
         if ($l->next instanceof Cons) {
             if ($l->next->next instanceof Nil) {
                 $e = $l->next->value;
@@ -2956,14 +2948,9 @@ function Shared_002EFieldModule___findBorder($field__4, $crossroad) {
 #128
 function Shared_002EFieldModule___principalField($field__5, $fence__1, $crossroad__1) {
     $start__3 = Shared_002EFenceModule___start($crossroad__1, $fence__1);
-    echo("Principal Field start<br/>");
-
     if (Shared_002ECrossroadModule___isInField($field__5, $start__3)) {
         $onBorder = Shared_002EFieldModule___findBorder($field__5, $start__3);
         $border = Shared_002EFieldModule___borderBetween($onBorder, $onBorder, $field__5);
-        echo_list("border",$border);
-        echo_list("fill", Shared_002EFieldModule___fill($border)->parcels);
-
         return Shared_002EFieldModule___fill($border);
     }     else {
         return $GLOBALS['Shared_002EFieldModule___empty'];
@@ -4412,11 +4399,6 @@ function Shared_002EPlayer___nearestContact($field__7, $_arg1__55, $pos__10) {
 function Shared_002EPlayer___fullAnnexation($field__8, $fence__5, $tractor__6) {
     $mainField = Shared_002EFieldModule___principalField($field__8, $fence__5, $tractor__6);
     $start__5 = Shared_002EFenceModule___start($tractor__6, $fence__5);
-    var_dump($start__5);
-    echo_list("mainfield",$mainField->parcels);
-    echo_list("field",$field__8->parcels);
-    echo_list("fence",$fence__5->paths);
-
     if (Shared_002ECrossroadModule___isInField($mainField, $start__5)) {
         $matchValue__22 = Shared_002EPlayer___nearestContact($mainField, $fence__5, $tractor__6);
         if (!is_null($matchValue__22)) {
@@ -4431,7 +4413,7 @@ function Shared_002EPlayer___fullAnnexation($field__8, $fence__5, $tractor__6) {
                 $pos__13 = $matchValue__22[0];
                 $border__1 = Shared_002EFieldModule___borderBetween($start__5, $pos__13, $mainField);
                 $fullBorder = FSharpList::append($paths__20, $border__1);
-                return [ Shared_002EField___op_Subtraction__Z24735800(Shared_002EFieldModule___fill($fullBorder), $mainField), $len__2];
+                return [ Shared_002EField___op_Subtraction__Z24735800(Shared_002EFieldModule___fill($fullBorder), $field__8), $len__2];
             }             else {
                 return NULL;
             }
@@ -4946,7 +4928,6 @@ function Shared_002EPlayer___evolve($player__19, $event) {
                     return new CrazyPlayer_Playing((function () use ($e__8, $player__27) { 
                         $Fence__4 = Shared_002EFenceModule___truncate($e__8->FenceLength, $player__27->Fence);
                         $Field = Shared_002EField___op_Addition__Z24735800($player__27->Field, Shared_002EFieldModule___ofParcels($e__8->NewField));
-
                         return new Playing($player__27->Color, $player__27->Tractor, $Fence__4, $Field, $player__27->Power, $player__27->Moves, $player__27->Hand, $player__27->Bonus);
                     })());
                 case 9:

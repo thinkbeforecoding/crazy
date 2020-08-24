@@ -1167,7 +1167,7 @@ module Player =
                 let border = Field.borderBetween start pos mainField
                 let fullBorder = 
                     paths @ border 
-                Some(Field.fill fullBorder - mainField, len)
+                Some(Field.fill fullBorder - field, len)
             | _ -> None
         else
             None
