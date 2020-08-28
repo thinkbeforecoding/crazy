@@ -4619,8 +4619,8 @@ function Shared_002EPlayer___decide($otherPlayers__1, $barns__3, $hayBales__4, $
  }));
  }));
                         default:
-                            $activePatternResult1216 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
-                            if (!is_null($activePatternResult1216)) {
+                            $activePatternResult27975 = Shared_002EFenceOps____007CRwd_007C__007C($nextPath__1, $player__17->Fence);
+                            if (!is_null($activePatternResult27975)) {
                                 return new Cons(new Event_FenceRemoved(new Moved($cmd__1->Direction, $nextPath__1, $nextPos__1)), FSharpList::get_Nil());
                             }                             else {
                                 $matchValue__26 = Shared_002EFenceModule___findLoop($cmd__1->Direction, $player__17->Tractor, $player__17->Fence);
@@ -6157,7 +6157,7 @@ function Shared_002EBoardModule___findBridgeParcels($field__12) {
         $d0__1 = $time__1;
         $time__1 = $time__1 + 1;
         $isRoot = Util::equals($parent__1, $parcel__7);
-        $step = function ($dir__17, $tupledArg__8) use ($d0__1, $isRoot, $parcel__7, $parent__1, $patternInput__8, $visited__1, &$cut__1, &$loop__7) { 
+        $step = function ($dir__17, $tupledArg__8) use ($d0__1, $isRoot, $parcel__7, $parent__1, $patternInput__8, &$cut__1, &$loop__7, &$visited__1) { 
             $neighbor__3 = Shared_002EParcel___op_Addition__ZF6EFE4B($parcel__7, $dir__17);
             if (Set::contains($neighbor__3, $patternInput__8->parcels)) {
                 $matchValue__41 = $neighbor__3;
@@ -6868,9 +6868,9 @@ function Shared_002EBoardModule___decide($cmd__5, $state__8) {
                                 }
                             }, $tupledArg__12[0], $tupledArg__12[1]);
                             $tupledArg__14 = Shared_002EBoardModule___cont(function ($board__39, $_arg3__3) {                             return FSharpList::ofSeq(Seq::delay(function ($unitVar__65) use ($board__39) {                             return Seq::collect(function ($matchValue__61) { 
-                                $activePatternResult1508 = $matchValue__61;
-                                if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult1508[1])) ? !Shared_002EPlayer___isKo($activePatternResult1508[1]) : false) {
-                                    return Seq::append(Seq::singleton(new BoardEvent_Played($activePatternResult1508[0], new Event_Eliminated())), Seq::delay(function ($unitVar__66) {                                     return Seq::singleton(new BoardEvent_UndoCheckPointed());
+                                $activePatternResult28267 = $matchValue__61;
+                                if (Shared_002EFieldModule___isEmpty(Shared_002EPlayer___field($activePatternResult28267[1])) ? !Shared_002EPlayer___isKo($activePatternResult28267[1]) : false) {
+                                    return Seq::append(Seq::singleton(new BoardEvent_Played($activePatternResult28267[0], new Event_Eliminated())), Seq::delay(function ($unitVar__66) {                                     return Seq::singleton(new BoardEvent_UndoCheckPointed());
  }));
                                 }                                 else {
                                     return Seq::empty();
@@ -7172,8 +7172,8 @@ function Shared_002EBoardModule___toState($board__53) {
  }, $source__13);
                 return FSharpArray::ofSeq($source__14);
             })(), new STable($board__53->Item2->Table->Players, $board__53->Item2->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__75) use ($board__53) {             return Seq::collect(function ($matchValue__68) { 
-                $activePatternResult1549 = $matchValue__68;
-                return Seq::singleton([ $activePatternResult1549[0], $activePatternResult1549[1]]);
+                $activePatternResult28308 = $matchValue__68;
+                return Seq::singleton([ $activePatternResult28308[0], $activePatternResult28308[1]]);
             }, $board__53->Item2->Table->Names);
  })), $board__53->Item2->Table->Current), FSharpArray::ofList($board__53->Item2->DiscardPile), Shared_002EHandModule___count($board__53->Item2->DrawPile), (function () use ($board__53) { 
                 $list__33 = Shared_002EFieldModule___parcels($board__53->Item2->Barns->Free);
@@ -7190,8 +7190,8 @@ function Shared_002EBoardModule___toState($board__53) {
  }, $source__11);
                 return FSharpArray::ofSeq($source__12);
             })(), new STable($board__53->Item->Table->Players, $board__53->Item->Table->AllPlayers, FSharpArray::ofSeq(Seq::delay(function ($unitVar__74) use ($board__53) {             return Seq::collect(function ($matchValue__67) { 
-                $activePatternResult1545 = $matchValue__67;
-                return Seq::singleton([ $activePatternResult1545[0], $activePatternResult1545[1]]);
+                $activePatternResult28304 = $matchValue__67;
+                return Seq::singleton([ $activePatternResult28304[0], $activePatternResult28304[1]]);
             }, $board__53->Item->Table->Names);
  })), $board__53->Item->Table->Current), FSharpArray::ofList($board__53->Item->DiscardPile), Shared_002EHandModule___count($board__53->Item->DrawPile), (function () use ($board__53) { 
                 $list__31 = Shared_002EFieldModule___parcels($board__53->Item->Barns->Free);

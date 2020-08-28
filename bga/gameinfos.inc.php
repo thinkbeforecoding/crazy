@@ -41,12 +41,11 @@ $gameinfos = array(
 'players' => array( 2,3,4 ),    
 
 // Suggest players to play with this number of players. Must be null if there is no such advice, or if there is only one possible player configuration.
-'suggest_player_number' => null,
+'suggest_player_number' => 2,
 
 // Discourage players to play with these numbers of players. Must be null if there is no such advice.
 'not_recommend_player_number' => null,
 // 'not_recommend_player_number' => array( 2, 3 ),      // <= example: this is not recommended to play this game with 2 or 3 players
-
 
 // Estimated game duration, in minutes (used only for the launch, afterward the real duration is computed)
 'estimated_duration' => 30,           
@@ -73,7 +72,7 @@ $gameinfos = array(
 'losers_not_ranked' => false,
 
 // Game is "beta". A game MUST set is_beta=1 when published on BGA for the first time, and must remains like this until all bugs are fixed.
-'is_beta' => 1,                     
+'is_beta' => 0,                     
 
 // Is this game cooperative (all players wins together or loose together)
 'is_coop' => 0, 
@@ -124,7 +123,9 @@ $gameinfos = array(
 // A good length for this text is between 100 and 150 words (about 6 to 9 lines on a standard display)
 'presentation' => array(
 
-    totranslate("Crazy Farmers And The Clotures Electriques is an equally accessible and wacky game,
+    totranslate("Crazy Farmers And The Clôtures Electriques is a strong emerging strategy game (2p)
+which tends to be more lightweight and chaotic in 3-4p (better around a table with friends and a good drink in this mode).
+In any case it’s a game with a pinch of « take that » and cutthroat maneuvers 
 where you’ll get to experience the best UFC games ever. As you may wonder, UFC stands
 for Ultimate Farming Championship. In 2042, the European Union has long since cut off
 financial aid to farmers. In order to get out of this situation, farmers created a competition for
@@ -145,7 +146,7 @@ opponents will try to stop you by cutting your electric fences or playing event 
 //  http://en.doc.boardgamearena.com/Game_meta-information:_gameinfos.inc.php
 //  IMPORTANT: this list should be ORDERED, with the most important tag first.
 //  IMPORTANT: it is mandatory that the FIRST tag is 1, 2, 3 and 4 (= game category)
-'tags' => array( 3, 11, 105),
+'tags' => array( 3, 11, 30, 105, 206),
 
 
 //////// BGA SANDBOX ONLY PARAMETERS (DO NOT MODIFY)
@@ -160,7 +161,7 @@ opponents will try to stop you by cutting your electric fences or playing event 
 
 'custom_buy_button' => array(
     'url' => 'https://www.kickstarter.com/projects/1486112993/crazy-farmers-and-the-clotures-electriques?ref=2fs2c4&fbclid=IwAR3yHCuZJy6sawaRPWm0V2wUk2zOHi8etQhsSYObWVg8Y952VWI-zcCYG2k',
-    'label' => totranslate('KickStarter now')
+    'label' => totranslate('KickStarter')
  )
 
 );

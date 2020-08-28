@@ -85,7 +85,7 @@ var commonPlugins = [
 ];
 var bgaPlugins = [
     new HtmlWebpackPlugin({
-        filename: 'game/bga.html',
+        filename: 'bga.html',
         template: resolve('./src/Debugger/index.html'),
         excludeChunks: ['join', 'game', 'joinstyle']
     })

@@ -646,6 +646,7 @@ type PhpCompiler =
       mutable DecisionTargets: (Fable.Ident list * Fable.Expr) list
       mutable LocalVars: string Set
       mutable CapturedVars: Capture Set
+      mutable MutableVars: string Set
       mutable Id: int
     }
     static member empty =
@@ -660,13 +661,17 @@ type PhpCompiler =
           DecisionTargets = []
           LocalVars = Set.empty
           CapturedVars = Set.empty
+          MutableVars = Set.empty
           Id = 0
           }
     member this.AddType(phpType: PhpType) =
         this.Types <- Map.add phpType.Name phpType this.Types
         phpType
 
-    member this.AddLocalVar(var) =
+    member this.AddLocalVar(var, isMutable) =
+        if isMutable then
+            this.MutableVars <- Set.add var this.MutableVars
+
         if this.CapturedVars.Contains(Capture.ByRef var) then
             ()
         elif this.CapturedVars.Contains(Capture.ByValue var) then
@@ -676,9 +681,13 @@ type PhpCompiler =
 
     member this.UseVar(var) =
         if not (Set.contains var this.LocalVars) && not (Set.contains (ByRef var) this.CapturedVars) then
-            this.CapturedVars <- Set.add (ByValue var) this.CapturedVars
+            if Set.contains var this.MutableVars then
+                this.CapturedVars <- Set.add (ByRef var) this.CapturedVars
+            else
+                this.CapturedVars <- Set.add (ByValue var) this.CapturedVars
 
     member this.UseVarByRef(var) =
+        this.MutableVars <- Set.add var this.MutableVars
         if not (Set.contains var this.LocalVars) && not (Set.contains (ByValue var) this.CapturedVars) then
             this.CapturedVars <- Set.add (ByRef var) this.CapturedVars
 
@@ -1092,7 +1101,7 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
 
         let innerCtx = ctx.NewScope()
         for id in bindings do
-            innerCtx.AddLocalVar(fixName id.Name)
+            innerCtx.AddLocalVar(fixName id.Name, id.IsMutable)
         let body = convertExprToStatement innerCtx target Return
         for capturedVar in innerCtx.CapturedVars do
             ctx.UseVar(capturedVar)
@@ -1118,7 +1127,7 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
     | Fable.Let(bindings, body) ->
         let innerCtx = ctx.NewScope()
         for id,_ in bindings do
-            innerCtx.AddLocalVar(fixName id.Name)
+            innerCtx.AddLocalVar(fixName id.Name, id.IsMutable)
         let body = convertExprToStatement innerCtx expr Return
         for capturedVar in innerCtx.CapturedVars do
             ctx.UseVar(capturedVar)
@@ -1158,12 +1167,12 @@ and convertFunction (ctx: PhpCompiler) kind body =
         match kind with
         | Fable.Lambda(arg) ->
             let argName = fixName arg.Name
-            scope.AddLocalVar argName
+            scope.AddLocalVar(argName, arg.IsMutable)
             [argName]
         | Fable.Delegate(args) ->
             [ for arg in args do
                 let argName = fixName arg.Name
-                scope.AddLocalVar argName
+                scope.AddLocalVar(argName, arg.IsMutable)
                 argName ]
  
     let phpBody = convertExprToStatement scope body Return
@@ -1271,11 +1280,11 @@ and convertMatching ctx input guard thenExpr elseExpr expr returnStrategy =
 
                 phpCase, 
                     [ for ident, binding in List.zip idents bindings do
-                        ctx.AddLocalVar(fixName ident.Name)
+                        ctx.AddLocalVar(fixName ident.Name, ident.IsMutable)
                         Assign(PhpVar(fixName ident.Name, None), convertExpr ctx binding)
                       match returnStrategy with
                       | Target t -> 
-                            ctx.AddLocalVar(fixName t)
+                            ctx.AddLocalVar(fixName t, false)
                             Assign(PhpVar(fixName t, None), PhpConst(PhpConstNumber(float i)))
                             Break;
                       | Return _ ->
@@ -1343,7 +1352,7 @@ and convertExprToStatement ctx expr returnStrategy =
         | _ ->
             let idents,target = ctx.DecisionTargets.[index]
             [ for ident, boundValue in List.zip idents boundValues do
-                ctx.AddLocalVar(fixName ident.Name)
+                ctx.AddLocalVar(fixName ident.Name, ident.IsMutable)
                 Assign(PhpVar(fixName ident.Name, None), convertExpr ctx boundValue)
               yield! convertExprToStatement ctx target returnStrategy ]
 
@@ -1351,7 +1360,7 @@ and convertExprToStatement ctx expr returnStrategy =
         [ 
           for ident, expr in bindings do 
               let name = fixName ident.Name
-              ctx.AddLocalVar(name)
+              ctx.AddLocalVar(name, ident.IsMutable)
               yield! convertExprToStatement ctx expr (Let name)
           yield! convertExprToStatement ctx body returnStrategy ]
 
@@ -1370,7 +1379,7 @@ and convertExprToStatement ctx expr returnStrategy =
         let left = convertExpr ctx expr
         match left with
         | PhpVar(v,_) -> 
-            ctx.AddLocalVar(v)
+            ctx.AddLocalVar(v, true)
         | _ -> ()
         [ Assign(left, convertExpr ctx value)]
             
@@ -1379,7 +1388,7 @@ and convertExprToStatement ctx expr returnStrategy =
         match returnStrategy with
         | Return -> [ PhpStatement.Return (convertExpr ctx expr) ]
         | Let(var) -> 
-            ctx.AddLocalVar(var)
+            ctx.AddLocalVar(var, false)
             [ Assign(PhpVar(var,None), convertExpr ctx expr) ]
         | Do -> [ PhpStatement.Do (convertExpr ctx expr) ]
         | Target _ -> failwithf "Target should be assigned by decisiontree success"
@@ -1459,7 +1468,7 @@ let fs =
             for d in convertDecl phpComp decl do
                 i,d
     ]
-convertDecl phpComp asts.[1].Declarations.[51]
+convertDecl phpComp asts.[1].Declarations.[216]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w
