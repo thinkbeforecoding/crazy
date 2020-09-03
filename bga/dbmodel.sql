@@ -42,3 +42,13 @@ CREATE TABLE IF NOT EXISTS `Events` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE INDEX `STREAM_INDEX` ON `Events` (`id`);
+
+CREATE TABLE IF NOT EXISTS `Commands` (
+    `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+    `version` int(10) unsigned NOT NULL,
+    `type` varchar(60) NOT NULL,
+    `body` varchar(65535) NOT NULL,
+    PRIMARY KEY (`id`)
+    
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

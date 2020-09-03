@@ -286,6 +286,22 @@ class CrazyFarmers extends Table
         self::DbQuery( $sql );
     }
 
+    function saveCommand($c, $version)
+    {
+        $sqlExists = "SELECT count(*) FROM information_schema.tables WHERE TABLE_SCHEMA = (DATABASE()) AND TABLE_NAME = 'Commands'";
+        if (self::getUniqueValueFromDB($sqlExists) != 0)
+        {
+            $jc = convertToJson($c);
+
+            $type = $jc['_case'];
+            $body = json_encode($jc['fields']);
+    
+            $sql = "INSERT INTO `Commands` (`version`,`type`, `body`) VALUES (".$version.",'".$type."','".addslashes($body)."')";
+            self::DbQuery( $sql );
+
+        }
+    }
+
 
     function saveEvents($es)
     {
@@ -369,6 +385,9 @@ class CrazyFarmers extends Table
         $stats = $state[2];
         $previousBoard = $board;
         $cmd = new BoardCommand_Play($player_id, $playerCmd);
+
+        self::saveCommand($cmd, $version);
+
         $es = Shared_002EBoardModule___decide($cmd, $board);
 
 
