@@ -1,24 +1,12 @@
 ﻿module Regression
 
 open Xunit
-open Fable.Remoting.Json
 open Shared
-open Newtonsoft.Json
-open System
 open Swensen.Unquote
 open Shared.Player
 open Shared.Board
+open Testing
 
-
-
-let s =
-    let js = Newtonsoft.Json.JsonSerializer()
-    js.Converters.Add (FableJsonConverter())
-    js
-
-let readEvents text = 
-    s.Deserialize<Board.Event []>(new JsonTextReader(new IO.StringReader(text)))
-    |> Array.toList
 
 
 

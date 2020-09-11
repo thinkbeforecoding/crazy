@@ -291,6 +291,19 @@ module Bonus =
             { bonus with Heliported = bonus.Heliported - 1 }
         | _ -> bonus
 
+type PlayerPosition =
+    { Player: string
+      TractorPos: Crossroad
+      FencePos: Fence
+      FieldPos: Field }
+
+type BoardPosition =
+    { Positions: PlayerPosition Set }
+
+type History =
+    { PlayersHistory: Map<string, BoardPosition list> }
+
+
 type Board = 
     | InitialState
     | Board of PlayingBoard
@@ -304,7 +317,7 @@ and PlayingBoard =
       HayBales: Path Set
       Goal: Goal
       UseGameOver: bool
-      }
+      History: History }
 
 type UndoableBoard =
     { Board: Board
@@ -347,6 +360,7 @@ type BoardState =
       SWinner: string
       SWinners: string[]
       SUseGameOver: bool option
+      SHistory: (string * ( (string * Crossroad * Fence * Parcel list ) [])[] ) []
     }
 and STable =
     { SPlayers: string[]
@@ -1632,6 +1646,79 @@ module Player =
                 Bonus = p.SBonus
             }
         | SKo color -> Ko color
+
+
+module History =
+    let empty = { PlayersHistory = Map.empty }
+    let createPos (board: PlayingBoard) =
+        { Positions = 
+            board.Players
+            |> Map.toSeq
+            |> Seq.choose (fun (pid, player) ->
+                match player with
+                | Playing p ->
+                    Some ({ Player = pid
+                            TractorPos = p.Tractor
+                            FencePos = p.Fence
+                            FieldPos = p.Field })
+                | _ -> None)
+
+            |> set }
+
+    let repetitions player (boardPos: BoardPosition) (history: History) =
+        match Map.tryFind player history.PlayersHistory with
+        | Some h -> 
+
+            let rec count n h =
+                match h with
+                | [] -> n
+                | pos :: rest  ->
+                    if pos = boardPos then
+                        count (n+1) rest
+                    else
+                        count n rest
+
+            count 0 h
+        | None -> 0
+
+
+    let addPos player (boardPos: BoardPosition) (history: History) =
+        let playerHistory =
+            match Map.tryFind player history.PlayersHistory with
+            | None -> []
+            | Some h -> h
+            
+        { PlayersHistory = 
+            history.PlayersHistory
+            |> Map.add player (boardPos :: playerHistory) }
+                               
+    
+    let findRepeatedPositions player (boardPos: BoardPosition) (history: History) =
+        match Map.tryFind player history.PlayersHistory with
+        | Some h ->
+            let posOfOtherPlayers = boardPos.Positions |> Set.filter (fun p -> p.Player <> player)
+
+            let rec findRep once twice positions =
+                match positions with
+                | [] -> twice
+                | pos :: rest ->
+                    if Set.isSubset posOfOtherPlayers pos.Positions then
+                        if Set.contains pos.Positions once then
+                            findRep once (Set.add pos.Positions twice) rest
+                        else
+                            findRep (Set.add pos.Positions once) twice rest
+                    else
+                        findRep once twice rest
+
+            findRep Set.empty Set.empty h
+            |> Seq.choose ( Seq.tryFind (fun p -> p.Player = player ) )
+            |> Seq.map (fun p -> p.TractorPos)
+            |> Seq.toList
+
+        | None -> []
+        
+
+
 module Board =
     let initialState = 
         { Board = InitialState
@@ -1659,6 +1746,7 @@ module Board =
         | PlayerDrewCards of PlayerDrewCards
         | GameWon of string
         | GameEnded of string list
+        | GameEndedByRepetition
         | HayBalesPlaced of added: Path list * removed: Path list
         | HayBaleDynamited of Path
         | DiscardPileShuffled of Card list
@@ -1965,6 +2053,7 @@ module Board =
     let annexed playerid e (board: PlayingBoard) =
         let annexedPlayer = Player.evolve board.Players.[playerid] (Player.Annexed e)
         let newMap = Map.add playerid annexedPlayer board.Players
+        let freeFields = Field.ofParcels e.NewField - (Field.unionMany [for _, f in e.LostFields -> Field.ofParcels f])
         e.LostFields
         |> List.fold (fun (board: PlayingBoard) (playerid, parcels) ->
             match board.Players.[playerid] with
@@ -1978,7 +2067,9 @@ module Board =
                            let annexedBarns =
                                { Free = e.FreeBarns |> Field.ofParcels
                                  Occupied = e.OccupiedBarns |> Field.ofParcels }
-                           Barns.annex annexedBarns board.Barns }
+                           Barns.annex annexedBarns board.Barns
+                       History = if Field.isEmpty freeFields then board.History else History.empty
+                           }
 
     let bribed playerid p (board: PlayingBoard) =
         let newPlayer = Player.evolve board.Players.[playerid] (Player.Bribed p)
@@ -2009,6 +2100,7 @@ module Board =
                       HayBales = Set.empty
                       Goal = s.Goal
                       UseGameOver = s.UseGameOver
+                      History = History.empty
                        }
            { Board = board
              UndoPoint = board
@@ -2031,6 +2123,13 @@ module Board =
                     Board = won 
                     UndoPoint = won
                     AtUndoPoint = true }
+        | Board board, GameEndedByRepetition
+            -> 
+                let won = Won([], board)
+                { state with
+                    Board = won
+                    UndoPoint = won
+                    AtUndoPoint = true }
                 
 
         | Board board, Played (_, Player.CutFence { Player = playerid }) ->
@@ -2051,6 +2150,7 @@ module Board =
             let newBoard = 
                 annexed playerid e board
                 |> Board
+
 
             { state with Board = newBoard
                          AtUndoPoint = false }
@@ -2168,13 +2268,16 @@ module Board =
                          AtUndoPoint = false }
         
         | Board board, Next ->
+            let previousPlayer = board.Table.Player
             let nextTable = board.Table.Next
             let player = Player.startTurn board.Players.[nextTable.Player]
             let newBoard = 
                 Board {
                     board with
                         Players = Map.add nextTable.Player player board.Players
-                        Table = nextTable}
+                        Table = nextTable
+                        History = History.addPos previousPlayer (History.createPos board) board.History
+                        }
             { state with
                 Board = newBoard
                 UndoPoint = newBoard
@@ -2270,7 +2373,12 @@ module Board =
                 let player = board.Players.[playerId]
                 match player with
                 | Playing p when not (Player.canMove (Some playerId) state.Board || Hand.shouldDiscard p.Hand ) -> 
-                    next state.ShouldShuffle board
+                    let boardPos = History.createPos board
+                                           
+                    if History.repetitions playerId boardPos board.History = 2 then
+                        [ GameEndedByRepetition ]
+                    else
+                        next state.ShouldShuffle board
                 | _ -> []
             else
                 []
@@ -2517,7 +2625,11 @@ module Board =
               SGoal = board.Goal
               SWinner = null
               SWinners = [||]
-              SUseGameOver = Some board.UseGameOver }
+              SUseGameOver = Some board.UseGameOver
+              SHistory = [| for KeyValue(p,h) in board.History.PlayersHistory ->
+                                    p, ( [| for boardpos in h -> [| for pos in boardpos.Positions -> pos.Player, pos.TractorPos, pos.FencePos, Field.parcels pos.FieldPos  |] |])
+              |]
+              }
         | InitialState -> 
             { SPlayers = [||]
               STable = { SPlayers = null; SAllPlayers = null; SNames = null; SCurrent = 0}
@@ -2530,6 +2642,7 @@ module Board =
               SWinner = null
               SWinners = [||]
               SUseGameOver = None
+              SHistory = [||]
               }
         | Won(winners, board) ->
             { SPlayers =
@@ -2558,6 +2671,7 @@ module Board =
                 | [_] -> [||]
                 | _ -> List.toArray winners
               SUseGameOver = Some board.UseGameOver 
+              SHistory = [||]
                 }
 
     
@@ -2591,6 +2705,11 @@ module Board =
                     HayBales = set board.SHayBales
                     Goal = board.SGoal
                     UseGameOver = board.SUseGameOver |> Option.defaultValue false
+                    History =
+                        { PlayersHistory = Map.ofList
+                                                [ for p, ph in board.SHistory ->
+                                                    p, [ for h in ph ->  { Positions = set [ for pl,t,fence,field in h -> { Player = pl; TractorPos = t; FencePos = fence; FieldPos = Field.ofParcels field  } ]  } ]
+                                                ]}
                     }
             match board.SWinner, board.SWinners with
             | null, null

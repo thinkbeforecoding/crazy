@@ -221,6 +221,17 @@ let drawcrossroad pos f =
           | Error HighVoltageProtection -> tooltip (translate "The fence is under High Voltage. You'd be reduced to ashes !")
         ]
 
+let highlightCrossroad pos  =
+    let x,y = Pix.ofPlayer pos |> Pix.rotate
+    let (Crossroad(Axe(q,r),s)) = pos
+    let key = sprintf "c-%d-%d-%s" q r (match s with CLeft -> "l" | CRight -> "r")
+    div [ ClassName ("crossroad warn " + key ) 
+          Key key
+          Style [ Left (sprintf "%f%%" x)
+                  Top (sprintf "%f%%" y) ]
+          ] 
+        []
+
 let crossroad pos f = drawcrossroad pos (Ok f)
 
 let blockedCrossroad pos e = drawcrossroad pos (Error e)

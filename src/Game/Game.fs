@@ -296,6 +296,11 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
                   yield! boardCardActionView dispatch board model.CardAction 
 
+                  for q in -4..4 do
+                  for r in -4..4-q do
+                      highlightCrossroad (Crossroad(Axe(q,r), CLeft))
+                      highlightCrossroad (Crossroad(Axe(q,r), CRight))
+
                 ]
               lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
 

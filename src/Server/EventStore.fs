@@ -206,7 +206,7 @@ let loadChat (container: Container) stream =
                 let newEntries =
                     
                     (batchResult.Resource |> Seq.map(fun r ->
-                        { Shared.Text = r.m; Shared.Player = r.pl; Shared.Date = r.d }
+                        { Shared.Text = r.m; Shared.ChatEntry.Player = r.pl; Shared.Date = r.d }
                     ) |> Seq.toList) @ entries
 
                 return! fold newEntries

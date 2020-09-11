@@ -425,6 +425,7 @@ let serialize =
     | Board.Event.DrawPileShuffled e  -> "DrawPileShuffled" , box (e |> Seq.map Dto.ofCard |> Seq.toArray) 
     | Board.Event.GameWon e  -> "GameWon" , box e
     | Board.Event.GameEnded e  -> "GameWon" , box (List.toArray e)
+    | Board.Event.GameEndedByRepetition  -> "GameEndedByRepetition" , null
 
 
 let deserialize data =
@@ -494,6 +495,7 @@ let deserialize data =
         | "DrawPileShuffled", JObj (e: string[]) -> [ Board.DrawPileShuffled (e |> Seq.map Dto.toCard |> Seq.toList) ]
         | "GameWon", JObj e -> [ Board.GameWon e ]
         | "GameEnded", JObj e -> [ Board.GameEnded (Array.toList e) ]
+        | "GameEndedByRepetition", _ -> [ Board.GameEndedByRepetition ]
         | _ -> []
     with
     | _ -> []
