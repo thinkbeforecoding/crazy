@@ -1452,7 +1452,9 @@ let compOptions =
       CompilerOptions.debugMode = false
       CompilerOptions.outputPublicInlinedFunctions = false
       CompilerOptions.precompiledLib = None
-      CompilerOptions.verbosity = Verbosity.Normal}
+      CompilerOptions.verbosity = Verbosity.Normal
+      CompilerOptions.classTypes = false
+      CompilerOptions.typescript = false }
 
 let asts =
     [ for file in files do
