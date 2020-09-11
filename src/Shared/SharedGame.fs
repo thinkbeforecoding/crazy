@@ -25,7 +25,8 @@ module Axe =
     let W2 = NW + SW
     let E2 = NE + SE
 
-    let center = Axe(0,0)
+    let zero = Axe(0,0)
+    let center = zero
 
     
 
@@ -869,6 +870,7 @@ module Barns =
           Occupied = Field.empty }
 
 
+    let create axes = axes |> List.map Parcel
 
     let annex annexed barns =
         { Free = barns.Free - annexed.Free
@@ -1716,6 +1718,34 @@ module History =
             |> Seq.toList
 
         | None -> []
+
+    let findDangerousPositions player (boardPos: BoardPosition) (history: History) =
+        [ for KeyValue(opponent, h) in history.PlayersHistory do
+            if opponent <> player then
+                let posOfOtherPlayers = boardPos.Positions |> Set.filter (fun p -> p.Player <> opponent)
+                let rec findRep once twice positions =
+                    match positions with
+                    | [] -> twice
+                    | pos :: rest ->
+                        if Set.isSubset posOfOtherPlayers pos.Positions then
+                            if Set.contains pos.Positions once then
+                                findRep once (Set.add pos.Positions twice) rest
+                            else
+                                findRep (Set.add pos.Positions once) twice rest
+                        else
+                            findRep once twice rest
+
+                yield!
+                    findRep Set.empty Set.empty h
+                    |> Seq.choose ( Seq.tryFind (fun p -> p.Player = opponent ) )
+                    |> Seq.map (fun p -> p.Player, p.TractorPos)
+                    |> Seq.toList ]
+
+
+
+                
+
+
         
 
 
@@ -2296,65 +2326,151 @@ module Board =
         | _ -> board, events
 
 
+    module Configurations =
+        module P2 =
+            let classicpos = 
+                Parcel.center + 2 * Axe.N,
+                Parcel.center + 2 * Axe.S 
+            let classic  =
+                classicpos,
+                Barns.create
+                    [ Axe.zero
+                      3 * Axe.N 
+                      3 * Axe.S 
+                      3 * Axe.NE 
+                      3 * Axe.NW 
+                      3 * Axe.SE 
+                      3 * Axe.SW 
+                      Axe.W2
+                      Axe.E2
+                      Axe.N + Axe.NE
+                      Axe.N + Axe.NW
+                      Axe.S + Axe.SE
+                      Axe.S + Axe.SW ] 
+
+            let snake =
+                classicpos,
+                Barns.create
+                    [ Axe.zero
+                      2 * Axe.N + Axe.NW
+                      Axe.N + Axe.NE
+                      Axe.NE
+                      3 * Axe.NE
+                      2 * Axe.NW
+                      3 * Axe.NW
+                      Axe.SW
+                      3 * Axe.SW
+                      Axe.S + Axe.SW
+                      2*Axe.S + Axe.SE
+                      2* Axe.SE
+                      3* Axe.SE ]
+
+
+        module P3 =
+            let classicpos =
+                Parcel.center + 2 * Axe.N,
+                Parcel.center + 2 * Axe.SW,
+                Parcel.center + 2 * Axe.SE
+
+            let classic = 
+                classicpos,
+                Barns.create
+                    [ Axe.zero
+                      3 * Axe.N 
+                      3 * Axe.S 
+                      3 * Axe.NE 
+                      3 * Axe.NW 
+                      3 * Axe.SE 
+                      3 * Axe.SW 
+                      Axe.W2
+                      Axe.E2
+                      Axe.N + Axe.NE
+                      Axe.N + Axe.NW
+                      Axe.S + Axe.SE
+                      Axe.S + Axe.SW ]
+            let galaxy = 
+                classicpos,
+                Barns.create
+                    [ Axe.zero
+                      Axe.N
+                      Axe.SW
+                      Axe.SE
+                      2 * Axe.S
+                      2 * Axe.S + Axe.SW
+                      Axe.S + 2 * Axe.SE
+                      Axe.W2 + Axe.SW
+                      Axe.E2 + Axe.NE
+                      2 * Axe.NE
+                      2 * Axe.NW
+                      2 * Axe.NW + Axe.N
+                      2 * Axe.N + Axe.NE ]
+
         
+        module P4 =
+            let classicpos =
+                Parcel.center + Axe.N + Axe.NE,
+                Parcel.center + 2 * Axe.NW,
+                Parcel.center + Axe.SW + Axe.S,
+                Parcel.center + 2 * Axe.SE
+
+            let classic =
+                classicpos,
+                Barns.create
+                      [ Axe.zero
+                        Axe.N + Axe.NW
+                        Axe.S + Axe.SE
+                        2 * Axe.NE
+                        2 * Axe.SW
+                        2 * Axe.N + Axe.NE
+                        2 * Axe.S + Axe.SW
+                        Axe.E2 + Axe.SE
+                        Axe.W2 + Axe.NW ]
+
+            let xwing =
+                classicpos,
+                Barns.create
+                      [ Axe.zero
+                        Axe.NW
+                        Axe.SW
+                        Axe.NE
+                        Axe.SE
+                        3 * Axe.S
+                        3 * Axe.N
+                        Axe.S + 2 * Axe.SW
+                        Axe.S + 2 * Axe.SE
+                        Axe.N + 2 * Axe.NW
+                        Axe.N + 2 * Axe.NE
+                        Axe.W2 + Axe.SW
+                        Axe.E2 + Axe.NE ]
+
+
     let decide cmd (state: UndoableBoard) =
         match state.Board, cmd with
         | InitialState, Start cmd ->
-            let players, barns, goal =
+            let players, barns =
                 match cmd.Players with
                 | [ c1,u1,n1; c2,u2,n2 ] ->
-                    [ c1, u1, n1, Parcel.center + 2 * Axe.N 
-                      c2, u2, n2, Parcel.center + 2 * Axe.S  ],
-                      [ Parcel.center
-                        Parcel.center + 3 * Axe.N 
-                        Parcel.center + 3 * Axe.S 
-                        Parcel.center + 3 * Axe.NE 
-                        Parcel.center + 3 * Axe.NW 
-                        Parcel.center + 3 * Axe.SE 
-                        Parcel.center + 3 * Axe.SW 
-                        Parcel.center + Axe.W2
-                        Parcel.center + Axe.E2
-                        Parcel.center + Axe.N + Axe.NE
-                        Parcel.center + Axe.N + Axe.NW
-                        Parcel.center + Axe.S + Axe.SE
-                        Parcel.center + Axe.S + Axe.SW
-                    ], cmd.Goal // Goal.Common 27
+                    let (p1, p2), barns = Configurations.P2.snake
+                    [ c1, u1, n1, p1
+                      c2, u2, n2, p2  ],
+                      barns
 
 
                 | [ c1,u1,n1; c2,u2,n2; c3,u3,n3 ] ->
-                    [ c1, u1, n1, Parcel.center + 2 * Axe.N
-                      c2, u2, n2, Parcel.center + 2 * Axe.SW
-                      c3, u3, n3, Parcel.center + 2 * Axe.SE ],
-                        [ Parcel.center
-                          Parcel.center + 3 * Axe.N 
-                          Parcel.center + 3 * Axe.S 
-                          Parcel.center + 3 * Axe.NE 
-                          Parcel.center + 3 * Axe.NW 
-                          Parcel.center + 3 * Axe.SE 
-                          Parcel.center + 3 * Axe.SW 
-                          Parcel.center + Axe.W2
-                          Parcel.center + Axe.E2
-                          Parcel.center + Axe.N + Axe.NE
-                          Parcel.center + Axe.N + Axe.NW
-                          Parcel.center + Axe.S + Axe.SE
-                          Parcel.center + Axe.S + Axe.SW ],
-                          cmd.Goal // Goal.Individual 11
+                    let (p1,p2,p3), barns = Configurations.P3.galaxy
+                    [ c1, u1, n1, p1
+                      c2, u2, n2, p2
+                      c3, u3, n3, p3 ],
+                      barns
+                        
 
                 | [ c1,u1,n1; c2,u2,n2; c3,u3,n3; c4,u4,n4 ] ->
-                    [ c1, u1, n1, Parcel.center + Axe.N + Axe.NE
-                      c2, u2, n2, Parcel.center + 2 * Axe.NW
-                      c3, u3, n3, Parcel.center + Axe.SW + Axe.S
-                      c4, u4, n4, Parcel.center + 2 * Axe.SE ],
-                      [  Parcel.center
-                         Parcel.center + Axe.N + Axe.NW
-                         Parcel.center + Axe.S + Axe.SE
-                         Parcel.center + 2 * Axe.NE
-                         Parcel.center + 2 * Axe.SW
-                         Parcel.center + 2 * Axe.N + Axe.NE
-                         Parcel.center + 2 * Axe.S + Axe.SW
-                         Parcel.center + Axe.E2 + Axe.SE
-                         Parcel.center + Axe.W2 + Axe.NW ],
-                         cmd.Goal // Goal.Individual 9
+                    let (p1,p2,p3,p4), barns = Configurations.P4.xwing
+                    [ c1, u1, n1, p1
+                      c2, u2, n2, p2
+                      c3, u3, n3, p3
+                      c4, u4, n4, p4 ],
+                      barns
                 | _ ->
                     let playerCount = List.length cmd.Players
                     if playerCount < 2 then
@@ -2365,7 +2481,7 @@ module Board =
                 Players = players
                 DrawPile = DrawPile.shuffle cmd.UseGameOver DrawPile.cards
                 Barns = barns 
-                Goal = goal
+                Goal = cmd.Goal
                 Undo = cmd.Undo
                 UseGameOver = cmd.UseGameOver} ] 
         | Board board, Play(playerId, Player.EndTurn) ->

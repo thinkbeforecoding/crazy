@@ -188,8 +188,18 @@ let barn (Parcel pos) occupied =
                    ]] 
         []
 
+let key (Crossroad(Axe(q,r),s)) =
+    sprintf "c-%d-%d-%s" q r (match s with CLeft -> "l" | CRight -> "r")
+
 let drawplayer selected (x,y) =
     div [ classBaseList "player" ["selected", selected]
+          Style [ Left (sprintf "%f%%" x)
+                  Top (sprintf "%f%%" y)
+                   ]] 
+        []
+
+let drawplayerOnCrossroad pos selected (x,y) =
+    div [ classBaseList "player" [key pos, true; "selected", selected]
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y)
                    ]] 
@@ -198,15 +208,14 @@ let drawplayer selected (x,y) =
 let player active pos =
     Pix.ofPlayer pos
     |> Pix.rotate
-    |> drawplayer active
-
-
+    |> drawplayerOnCrossroad pos active
 
 let drawcrossroad pos f =
     let x,y = Pix.ofPlayer pos |> Pix.rotate
-    let (Crossroad(Axe(q,r),s)) = pos
-    div [ classBaseList "crossroad" ["cf-click", match f with Ok _ -> true | _ -> false  ]
-          Key (sprintf "c-%d-%d-%s" q r (match s with CLeft -> "l" | CRight -> "r") )
+    let key = key pos
+
+    div [ classBaseList "crossroad" [key, true; "cf-click", match f with Ok _ -> true | _ -> false  ]
+          Key key
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y) ]
           match f with
@@ -221,16 +230,26 @@ let drawcrossroad pos f =
           | Error HighVoltageProtection -> tooltip (translate "The fence is under High Voltage. You'd be reduced to ashes !")
         ]
 
-let highlightCrossroad pos  =
+let warnPlayer currentPlayer color pos  =
     let x,y = Pix.ofPlayer pos |> Pix.rotate
-    let (Crossroad(Axe(q,r),s)) = pos
-    let key = sprintf "c-%d-%d-%s" q r (match s with CLeft -> "l" | CRight -> "r")
-    div [ ClassName ("crossroad warn " + key ) 
-          Key key
-          Style [ Left (sprintf "%f%%" x)
-                  Top (sprintf "%f%%" y) ]
-          ] 
-        []
+    let key = key pos
+    div [ ClassName (colorName color)]
+        [ div [ ClassName ("player warn " + key)
+                Style [ Left (sprintf "%f%%" x)
+                        Top (sprintf "%f%%" y) ]] 
+                      [
+                         ]
+          div [ ClassName ("warntip " + key)
+                Style [ Left (sprintf "%f%%" x)
+                        Top (sprintf "%f%%" y) ]] 
+                      [
+                           if currentPlayer then 
+                                tooltip (translate ("If you end the turn here, the game finishes in a draw"))
+                           else
+                                tooltip (translate ("If you stay in current position and this player finishes their turn on this crossroad, the game finishes in a draw "))
+                      ]
+              ]
+         
 
 let crossroad pos f = drawcrossroad pos (Ok f)
 
@@ -337,7 +356,7 @@ let playerTractor selected p =
             [ Pix.ofTile p
               |> Pix.rotate
               |> Pix.translate (3.3,3.3)
-              |> drawplayer selected  ]
+              |> drawplayer selected ]
     | Ko _ -> null
 
 
@@ -543,8 +562,14 @@ let hayBalesView cardAction board =
         ]
 
 let boardView cardAction board =
-   [ for _,p in Map.toSeq board.Players do
+   [ 
+
+   
+     for _,p in Map.toSeq board.Players do
          playerField p
+
+
+
 
      lazyView barnsView board.Barns
 
@@ -552,7 +577,11 @@ let boardView cardAction board =
          lazyViewWith sameFence playerFences  p
 
      for playerid,p in Map.toSeq board.Players do
-         playerTractor (Table.isCurrent playerid board.Table)  p
+
+             for opp, cross in History.findDangerousPositions playerid (History.createPos board) board.History  do
+               warnPlayer (opp = board.Table.Player) (Player.color board.Players.[opp]) cross
+
+             playerTractor (Table.isCurrent playerid board.Table)  p 
          
      hayBalesView cardAction  board ]
 

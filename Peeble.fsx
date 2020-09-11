@@ -1454,7 +1454,7 @@ let compOptions =
       CompilerOptions.precompiledLib = None
       CompilerOptions.verbosity = Verbosity.Normal
       CompilerOptions.classTypes = false
-      CompilerOptions.typescript = false}
+      CompilerOptions.typescript = false }
 
 let asts =
     [ for file in files do

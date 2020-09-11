@@ -287,7 +287,10 @@ let view (model : Model) (dispatch : Msg -> unit) =
             [ playersDashboard model dispatch
               div [ ClassName "board" ]
                 [ yield! boardView model.CardAction board
-
+                  //for q in -4..4 do
+                  //for r in -4..4-q do
+                  //    highlightCrossroad (Crossroad(Axe(q,r), CLeft))
+                  //    highlightCrossroad (Crossroad(Axe(q,r), CRight))
                   for m in model.Moves do
                     moveView dispatch m
 
@@ -296,10 +299,6 @@ let view (model : Model) (dispatch : Msg -> unit) =
 
                   yield! boardCardActionView dispatch board model.CardAction 
 
-                  for q in -4..4 do
-                  for r in -4..4-q do
-                      highlightCrossroad (Crossroad(Axe(q,r), CLeft))
-                      highlightCrossroad (Crossroad(Axe(q,r), CRight))
 
                 ]
               lazyViewWith (fun x y -> x = y) (playedCard dispatch) model.PlayedCard
