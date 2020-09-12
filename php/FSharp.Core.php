@@ -8,13 +8,18 @@ include "Map.php";
 
 $equals = function ($x,$y) { return $x == $y; };
 
-
+interface iComparable {
+    public function CompareTo($Other);
+}
 
 
 
 class Util {
-
-    static function equals($x,$y) { return $x == $y; }
+    static function equals($x,$y) { 
+        if ( $x instanceof iComparable)
+            return $x->CompareTo($y) == 0;
+        
+        return $x == $y; }
 
     static function max($comparer, $x, $y) {
         return $comparer($x,$y) >= 0 ? $x : $y;
@@ -62,7 +67,10 @@ class Util {
             else
                 return 1;
         }
-        else
+        elseif ($x instanceof iComparable )
+        {
+            return $x->CompareTo($y);
+        }
         {
             if (is_array($y))
                 return -1;

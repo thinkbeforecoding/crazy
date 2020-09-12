@@ -51,6 +51,7 @@ let bgaUpdateState events (board: UndoableBoard) (zombie: bool) (state: string) 
             | Board.Next -> changeState "next"
             | Board.GameWon _ -> changeState "endGame"
             | Board.GameEnded _ -> changeState "endGame"
+            | Board.GameEndedByRepetition -> changeState "endGame"
             | Board.Played(_,Player.FirstCrossroadSelected _) ->
                 changeState "selectFirstCrossroad"
             | Board.Played(p, Player.Eliminated) ->
@@ -137,6 +138,12 @@ let bgaProgression (board: UndoableBoard) =
 let bgaScore events (board: UndoableBoard) updateScore =
     match board.Board with
     | Board b
+    | Won([],b) ->
+        // this game is draw due by repetition
+        for pid, player in Map.toSeq b.Players do
+            match player with
+            | Ko _ -> updateScore(pid, 0, 0);
+            | _ -> updateScore(pid, 1, 0);
     | Won(_,b)->
         for e in events do
             match e with
@@ -222,7 +229,8 @@ let textAction (previous: UndoableBoard) (b: UndoableBoard)  e =
             Php.clienttranslate "${player} wins the game !", Map.ofList ["player" ==> playerName p ]
         | Board.GameEnded ps ->
             Php.clienttranslate "${players} end the game in a draw !", Map.ofList ["players" ==> String.concat " / " [| for p in ps ->  playerName p |]  ]
-            
+        | Board.GameEndedByRepetition ->
+            Php.clienttranslate "After being 3 times in the same state, the game ended in a draw !", Map.empty            
 
         | _ -> null, Map.empty
     | _ ->

@@ -1,6 +1,6 @@
 <?php
 
-abstract class FSharpList implements IteratorAggregate {
+abstract class FSharpList implements IteratorAggregate, iComparable {
     
     abstract function isEmpty();
 
@@ -418,6 +418,18 @@ abstract class FSharpList implements IteratorAggregate {
         }
         return false;
     }
+
+    public function CompareTo($other)
+    {
+        if ($this instanceof Nil)
+            return $other instanceof Nil ? 0 : -1;
+        if ($other instanceof Nil)
+            return 1;
+        $c = Util::compare($this->value,$other->value);
+        if ($c != 0)
+            return $c;
+        return $this->next->CompareTo($other->next);
+    } 
 
     public function getIterator() {
         $list = $this;

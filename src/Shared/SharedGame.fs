@@ -1233,6 +1233,11 @@ module Player =
         | Ko _ -> true
         | _ -> false
 
+    let moves player =
+        match player with
+        | Playing p -> p.Moves
+        | _ -> Moves.empty
+
 
     let toPrivate player =
         match player with
@@ -1694,31 +1699,7 @@ module History =
             history.PlayersHistory
             |> Map.add player (boardPos :: playerHistory) }
                                
-    
-    let findRepeatedPositions player (boardPos: BoardPosition) (history: History) =
-        match Map.tryFind player history.PlayersHistory with
-        | Some h ->
-            let posOfOtherPlayers = boardPos.Positions |> Set.filter (fun p -> p.Player <> player)
-
-            let rec findRep once twice positions =
-                match positions with
-                | [] -> twice
-                | pos :: rest ->
-                    if Set.isSubset posOfOtherPlayers pos.Positions then
-                        if Set.contains pos.Positions once then
-                            findRep once (Set.add pos.Positions twice) rest
-                        else
-                            findRep (Set.add pos.Positions once) twice rest
-                    else
-                        findRep once twice rest
-
-            findRep Set.empty Set.empty h
-            |> Seq.choose ( Seq.tryFind (fun p -> p.Player = player ) )
-            |> Seq.map (fun p -> p.TractorPos)
-            |> Seq.toList
-
-        | None -> []
-
+   
     let findDangerousPositions player (boardPos: BoardPosition) (history: History) =
         [ for KeyValue(opponent, h) in history.PlayersHistory do
             if opponent <> player then
@@ -1740,7 +1721,6 @@ module History =
                     |> Seq.choose ( Seq.tryFind (fun p -> p.Player = opponent ) )
                     |> Seq.map (fun p -> p.Player, p.TractorPos)
                     |> Seq.toList ]
-
 
 
                 

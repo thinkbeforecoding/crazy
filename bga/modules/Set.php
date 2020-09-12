@@ -433,6 +433,70 @@ class SetTree {
             throw new Exception("Set contains no elements");
         return $result;
     }
+
+    static function compareStacks($comparer,$l1,$l2) 
+    {
+        if (!($l1 instanceof Cons) && !($l2 instanceof Cons))
+            return 0;
+        if (!($l1 instanceof Cons))
+            return -1;
+        if (!($l2 instanceof Cons))
+            return 1;
+
+        if ($l1->value instanceof SetEmpty && $l2->value instanceof SetEmpty)
+            return SetTree::compareStacks($comparer, $l1->next, $l2->next);
+        if ($l1->value instanceof SetOne && $l2->value instanceof SetOne)
+        {
+            $c = Util::compare($l1->value->value, $l2->value->value);
+            if ($c != 0) 
+                return $c;
+            else
+                return SetTree::compareStacks($comparer, $l1->next, $l2->next);
+        }
+        if ($l1->value instanceof SetOne && $l2->value instanceof SetNode && $l2->value->left instanceof SetEmpty)
+        {
+            $c = Util::compare($l1->value->value, $l2->value->value);
+            if ($c != 0)
+                return $c;
+            else
+                return SetTree::compareStacks($comparer, new Cons(new SetEmpty(), $l1->next), new Cons($l2->value->right, $l2->next));
+        }
+        if ($l1->value instanceof SetNode && $l1->value->left instanceof SetEmpty && $l2->value instanceof SetOne)
+        {
+            $c = Util::compare($l1->value->value, $l2->value->value);
+            if ($c != 0)
+                return $c;
+            else
+                return SetTree::compareStacks($comparer, new Cons($l1->value->right, $l1->next), new Cons(new SetEmpty(), $l2->next));
+        }
+        if ($l1->value instanceof SetNode && $l1->value->left instanceof SetEmpty && $l2->value instanceof SetNode && $l2->value->left instanceof SetEmpty)
+        {
+            $c = Util::compare($l1->value->value, $l2->value->value);
+            if ($c != 0)
+                return $c;
+            else
+                return SetTree::compareStacks($comparer, new Cons($l1->value->right, $l1->next), new Cons($l2->value->right, $l2->next));
+        }
+        if ($l1->value instanceof SetOne)
+            return SetTree::compareStacks($comparer, new Cons(new SetEmpty(), new Cons (new SetOne($l1->value->value), $l1->next)), $l2);
+        if ($l1->value instanceof SetNode)
+            return SetTree::compareStacks($comparer, new Cons($l1->value->left, new Cons (new SetNode($l1->value->value, new SetEmpty(), $l1->value->right, 0), $l1->next)), $l2);
+        if ($l2->value instanceof SetOne)
+            return SetTree::compareStacks($comparer, $l1, new Cons(new SetEmpty(), new Cons (new SetOne($l2->value->value), $l2->next)));
+        
+        return SetTree::compareStacks($comparer, $l1, new Cons($l2->value->left, new Cons (new SetNode($l2->value->value, new SetEmpty(), $l2->value->right, 0), $l2->next)));
+    }
+
+    static function compare($comparer, $s1, $s2)  
+    {
+        if ($s1 instanceof SetEmpty)
+                return $s2 instanceof SetEmpty ? 0 : -1;
+        if ($s2 instanceof SetEmpty)
+            return 1;
+        
+        return SetTree::compareStacks($comparer, new Cons($s1, FSharpList::get_Nil()), new Cons($s2, FSharpList::get_Nil()) );
+    }
+
 }
 
 class SetEmpty extends SetTree { }
@@ -460,7 +524,7 @@ class SetOne extends SetTree {
 }
 
 
-class Set implements IteratorAggregate {
+class Set implements IteratorAggregate, iComparable {
     public $Comparer;
     public $Tree;
 
@@ -597,5 +661,9 @@ class Set implements IteratorAggregate {
         }
     } 
     
+    public function CompareTo($Other)
+    {
+        return SetTree::compare($this->Comparer, $this->Tree, $Other->Tree);
+    }
 
 }

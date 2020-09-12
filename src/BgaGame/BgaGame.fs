@@ -449,6 +449,17 @@ let undoView (model: Model) dispatch =
     else
         null
 
+let warningView (model: Model) dispatch =
+    match model.Board.Board with
+    | Board board 
+        when model.PlayerId = Some board.Table.Player
+             && Board.currentPlayer board |> Player.moves |> Moves.canMove |> not -> 
+        let boardPos = History.createPos board
+        match History.repetitions board.Table.Player boardPos board.History with
+        | 1 -> fragment [] [ br [] ; str (Globalization.translate "The game has already been exactly in this same position once at the end of your turn."); br []; str (Globalization.translate "On the third time, the game ends in a draw.")]
+        | 2 -> fragment [] [ br [] ;  str (Globalization.translate "Warning! The game has already been exactly in this same position twice at the end of your turn."); br[]; str (Globalization.translate "If you end your turn now, the game ends in a draw.") ]
+        | _ -> null
+    | _ -> null
 
 let playersboard model dispatch =
     match model.Board.Board with
@@ -469,12 +480,20 @@ let playersboard model dispatch =
             ReactDom.render( score player,  document.getElementById("player_score_" + pid))
 
         let undobtn = document.getElementById("crazy_undo")
-        if undobtn = null then
+        if isNull undobtn then
             let parent = document.getElementById("generalactions")
             let bdiv = document.createElement "span" :?> Browser.Types.HTMLSpanElement
             bdiv.id <- "crazy_undo"
             parent.appendChild(bdiv) |> ignore
             ReactDom.render(undoView model dispatch, document.getElementById ("crazy_undo"))
+
+        let warning = document.getElementById("draw_warning")
+        if isNull warning then
+            let parent = document.getElementById("generalactions")
+            let bdiv = document.createElement "span" :?> Browser.Types.HTMLSpanElement
+            bdiv.id <- "draw_warning"
+            parent.appendChild(bdiv) |> ignore
+            ReactDom.render(warningView model dispatch, document.getElementById ("draw_warning"))
 
     | _ -> ()
 
@@ -559,7 +578,13 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                               [ div [ ClassName "player"] [] ]
                                          p [] [ str board.Table.Names.[winner] ] 
                                     | _ -> 
-                                        let players = List.map (fun p -> board.Players.[p]) winners
+                                        let players = 
+                                            match winners with
+                                            | [] -> board.Table.Players
+                                                    |> Array.map (fun p -> board.Players.[p]) 
+                                                    |> Array.toList
+                                            | _ -> List.map (fun p -> board.Players.[p]) winners
+                                        
                                         p [] [ str (Globalization.translate "Draw game between")]
                                         div [] [
                                             for player in players ->
