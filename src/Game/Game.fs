@@ -370,6 +370,48 @@ let chatView dispatch playerId (board: PlayingBoard) chat =
         
        ]
 
+//let showCrossroad pos  =
+//    let x,y = Pix.ofPlayer pos |> Pix.rotate
+//    let key = key pos
+
+//    div [ classBaseList "crossroad" [key, true  ]
+//          Key key
+//          Style [ Left (sprintf "%f%%" x)
+//                  Top (sprintf "%f%%" y)
+//                  BackgroundColor "#ff000080"
+//                  BorderRadius "50%"
+//                  ]
+//          ]
+//        []
+
+//let showFence path =
+//    let x,y = Pix.ofFence path |> Pix.rotate
+//    let rot =
+//        match path with
+//        | Path(_,BN) -> "rotate(4deg)"
+//        | Path(_,BNW) -> "rotate(-56deg)"
+//        | Path(_,BNE) -> "rotate(64deg)"
+
+    
+//    div [ ClassName ("fence " + fenceClass path)
+//          Style [ Transform rot
+//                  Left (sprintf "%f%%" x)
+//                  Top (sprintf "%f%%" y) ]
+                  
+//                  ] 
+//        []
+
+//let showTile (Parcel pos) = 
+//    let x,y = Pix.ofTile pos |> Pix.rotate
+//    div ([ ClassName "tile"
+//           Style [ Left (sprintf "%f%%" x)
+//                   Top (sprintf "%f%%" y)
+//                   Opacity "0.5"
+//                   ]
+//           ]   )
+          
+//        []
+
 
 
 let view (model : Model) (dispatch : Msg -> unit) =
@@ -384,10 +426,21 @@ let view (model : Model) (dispatch : Msg -> unit) =
             [ playersDashboard model dispatch
               div [ ClassName "board" ]
                 [ yield! boardView model.CardAction board
-                  //for q in -4..4 do
-                  //for r in -4..4-q do
-                  //    highlightCrossroad (Crossroad(Axe(q,r), CLeft))
-                  //    highlightCrossroad (Crossroad(Axe(q,r), CRight))
+                  //div [ ClassName ("yellow") ]
+                  //     [
+                  //        for q in -4..4 do
+                  //        for r in -4..4-q do
+                  //            let a = Axe(q,r)
+                  //            showCrossroad (Crossroad(a, CLeft))
+                  //            showCrossroad (Crossroad(a, CRight))
+                  //            showFence (Path (a, BNW))
+                  //            showFence (Path (a, BN))
+                  //            showFence (Path (a, BNE))
+                  //            //showTile (Parcel a)
+                              
+                  //      ]
+
+
                   for m in model.Moves do
                     moveView dispatch m
 

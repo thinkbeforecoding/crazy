@@ -230,6 +230,9 @@ let drawcrossroad pos f =
           | Error HighVoltageProtection -> tooltip (translate "The fence is under High Voltage. You'd be reduced to ashes !")
         ]
 
+
+
+
 let warnPlayer currentPlayer color pos  =
     let x,y = Pix.ofPlayer pos |> Pix.rotate
     let key = key pos
@@ -255,6 +258,15 @@ let crossroad pos f = drawcrossroad pos (Ok f)
 
 let blockedCrossroad pos e = drawcrossroad pos (Error e)
 
+let fenceClass (Path(Axe(q,r), side)) =
+    let s =
+        match side with
+        | BNW -> "w"
+        | BN -> "n"
+        | BNE -> "e"
+
+    sprintf "b-%d-%d-%s" q r s
+
 let singleFence path =
     let x,y = Pix.ofFence path |> Pix.rotate
     let rot =
@@ -264,7 +276,7 @@ let singleFence path =
         | Path(_,BNE) -> "rotate(64deg)"
 
     
-    div [ ClassName "fence"
+    div [ ClassName ("fence " + fenceClass path)
           Style [ Transform rot
                   Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y) ]] 
