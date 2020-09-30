@@ -419,6 +419,22 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
         return false;
     }
 
+    static function map2($projection, $list1, $list2)
+    {
+        $lst = NULL;
+        $p = &$lst;
+        while($list1 instanceof Cons and $list2 instanceof Cons)
+        {
+            $p = new Cons($projection($list1->value, $list2->value), NULL); 
+            $p = &$p->next;
+            $list1 = $list1->next;
+            $list2 = $list2->next;
+        }
+
+        $p = FSharpList::get_Nil();
+        return $lst;
+    }
+
     public function CompareTo($other)
     {
         if ($this instanceof Nil)

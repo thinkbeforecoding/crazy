@@ -2430,39 +2430,39 @@ module Board =
                         Axe.E2 + Axe.NE ]
 
 
+    let shufflePlayers players parcels =
+        let rand = System.Random()
+        parcels
+        |> List.sortBy (fun _ -> rand.Next())
+        |> List.map2 (fun (c,u,n) p -> c,u,n,p) players
     let decide cmd (state: UndoableBoard) =
         match state.Board, cmd with
         | InitialState, Start cmd ->
             let players, barns =
+
+
                 match cmd.Players with
-                | [ c1,u1,n1; c2,u2,n2 ] ->
+                | [ _; _ ] ->
                     let (p1, p2), barns = Configurations.P2.snake
-                    [ c1, u1, n1, p1
-                      c2, u2, n2, p2  ],
+                    
+                    shufflePlayers cmd.Players [  p1; p2  ],
                       barns
 
-
-                | [ c1,u1,n1; c2,u2,n2; c3,u3,n3 ] ->
+                | [ _;_;_] ->
                     let (p1,p2,p3), barns = Configurations.P3.galaxy
-                    [ c1, u1, n1, p1
-                      c2, u2, n2, p2
-                      c3, u3, n3, p3 ],
+                    shufflePlayers cmd.Players [ p1; p2; p3 ],
                       barns
-                        
 
-                | [ c1,u1,n1; c2,u2,n2; c3,u3,n3; c4,u4,n4 ] ->
+                | [_;_;_;_] ->
                     let (p1,p2,p3,p4), barns = Configurations.P4.xwing
-                    [ c1, u1, n1, p1
-                      c2, u2, n2, p2
-                      c3, u3, n3, p3
-                      c4, u4, n4, p4 ],
+                    shufflePlayers cmd.Players [ p1; p2; p3; p4 ],
                       barns
                 | _ ->
                     let playerCount = List.length cmd.Players
                     if playerCount < 2 then
-                        failwith "To few players"
+                        failwith "Too few players"
                     else
-                        failwith "To many players"
+                        failwith "Too many players"
             [ Started {
                 Players = players
                 DrawPile = DrawPile.shuffle cmd.UseGameOver DrawPile.cards

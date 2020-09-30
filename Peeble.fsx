@@ -1179,6 +1179,8 @@ let rec convertExpr (ctx: PhpCompiler) (expr: Fable.Expr) =
         convertExpr ctx expr
     | Fable.Expr.Sequential([Fable.Value(Fable.UnitConstant, _) ; body]) ->
         convertExpr ctx body
+    | _ ->
+        failwithf "Unknown expr:\n%A" expr
         
 
 
@@ -1509,10 +1511,19 @@ let fs =
     [ 
       for ast in asts do
           for i,decl in List.indexed ast.Declarations do
-            for d in convertDecl phpComp decl do
+            let decls =
+                try 
+                    convertDecl phpComp decl
+
+
+                with
+                | ex -> 
+                    eprintfn "Error while transpiling decl %d" i
+                    reraise()
+            for d in decls  do
                 i,d
     ]
-convertDecl phpComp asts.[1].Declarations.[216]
+convertDecl phpComp asts.[1].Declarations.[243]
 
 let w = new StringWriter()
 let ctx = Output.Writer.create w
