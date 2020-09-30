@@ -133,6 +133,8 @@ class CrazyFarmers extends Table
         self::initStat( "table", "nitro1_number", 0);
         self::initStat( "table", "nitro2_number", 0);
         self::initStat( "table", "ruts_number", 0);
+        self::initStat( "table", "repetition_number", 0);
+        self::initStat( "table", "draw_number", 0);
 
         self::initStat( "player", "fences_drawn", 0);
         self::initStat( "player", "fences_cut", 0);
@@ -152,6 +154,7 @@ class CrazyFarmers extends Table
         self::initStat( "player", "nitro2_number", 0);
         self::initStat( "player", "ruts_number", 0);
         self::initStat( "player", "rutted_number", 0);
+        self::initStat( "player", "repetition_number", 0);
 
         switch ($this->gamestate->table_globals[100])
         {

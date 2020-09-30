@@ -111,6 +111,12 @@ $stats_type = array(
         "ruts_number" => ["id" => 28,
                     "name" => totranslate("Number of Ruts played"),
                     "type" => "int"],
+        "repetition_number" => [ "id" => 29,
+                    "name" => totranslate("Number of turn ended in a previously seen position"),
+                    "type" => "int" ],
+        "draw_number" => [ "id" => 30,
+                    "name" => totranslate("The game ended in a draw due to repetitions"),
+                    "type" => "int" ],                    
 /*
         Examples:
 
@@ -184,7 +190,9 @@ $stats_type = array(
         "rutted_number" => ["id" => 29,
                     "name" => totranslate("Number of Ruts played against you"),
                     "type" => "int"],
-
+        "repetition_number" => [ "id" => 30,
+                    "name" => totranslate("Number of turn ended in a previously seen position"),
+                    "type" => "int" ],
                 
 /*
         Examples:    

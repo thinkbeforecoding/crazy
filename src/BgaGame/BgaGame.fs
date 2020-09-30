@@ -456,8 +456,8 @@ let warningView (model: Model) dispatch =
              && Board.currentPlayer board |> Player.moves |> Moves.canMove |> not -> 
         let boardPos = History.createPos board
         match History.repetitions board.Table.Player boardPos board.History with
-        | 1 -> fragment [] [ br [] ; str (Globalization.translate "The game has already been exactly in this same position once at the end of your turn."); br []; str (Globalization.translate "On the third time, the game ends in a draw.")]
-        | 2 -> fragment [] [ br [] ;  str (Globalization.translate "Warning! The game has already been exactly in this same position twice at the end of your turn."); br[]; str (Globalization.translate "If you end your turn now, the game ends in a draw.") ]
+        | 1 -> fragment [] [ br [] ; str (Globalization.translate "This is the SECOND time the game has been in this position."); br []; str (Globalization.translate "On the THIRD exact repetition, the game ends in a tie!")]
+        | 2 -> fragment [] [ br [] ;  str (Globalization.translate "Warning, it's the THIRD repetition of this position."); br[]; str (Globalization.translate "If you end your turn now, the game ends in a tie!") ]
         | _ -> null
     | _ -> null
 

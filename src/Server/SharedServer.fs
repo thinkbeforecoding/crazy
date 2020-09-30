@@ -194,13 +194,13 @@ let textAction (previous: UndoableBoard) (b: UndoableBoard)  e =
             Php.clienttranslate "${player} cut ${cut}'s fence",  Map.ofList [ "player" ==> playerName p; "cut" ==> playerName e.Player ]
         | Board.PlayerDrewCards e ->
             if Hand.contains GameOver e.Cards then
-                Php.clienttranslate "${icon} ${player} draws the Game Over card. The game ends now !", Map.ofList ["player" ==> playerName e.Player;  "icon" ==> cardIcon GameOver ]
+                Php.clienttranslate "${icon} ${player} draws the Game Over card. The game ends now!", Map.ofList ["player" ==> playerName e.Player;  "icon" ==> cardIcon GameOver ]
             else
                 Php.clienttranslate "${player} draws ${cardcount} card(s)", Map.ofList [  "player" ==> playerName e.Player; "cardcount" ==> Hand.count e.Cards]
         | Board.Played(p, Player.Event.Bribed e) ->
             Php.clienttranslate "${icon} ${player} takes one of ${bribed}'s parcel", Map.ofList ["player" ==> playerName p; "bribed" ==> playerName e.Victim;  "icon" ==> cardIcon Bribe  ]
         | Board.Played(p, Player.Event.Eliminated) ->
-            Php.clienttranslate "${player} is eliminated !", Map.ofList ["player" ==> playerName p ]
+            Php.clienttranslate "${player} is eliminated!", Map.ofList ["player" ==> playerName p ]
         | Board.Played(p, Player.Event.CardPlayed(PlayHelicopter _)) ->
             Php.clienttranslate "${icon} ${player} is heliported to new crossroad", Map.ofList ["player" ==> playerName p; "icon" ==> cardIcon Helicopter ]
         | Board.Played(p, Player.Event.CardPlayed(PlayHighVoltage)) ->
@@ -226,12 +226,13 @@ let textAction (previous: UndoableBoard) (b: UndoableBoard)  e =
             | Some (Playing p) -> Php.clienttranslate "${player} ends turn after ${moves} moves", Map.ofList ["player" ==> playerName player; "moves" ==> p.Moves.Done ] 
             | _ -> null, Map.empty
         | Board.GameWon p ->
-            Php.clienttranslate "${player} wins the game !", Map.ofList ["player" ==> playerName p ]
+            Php.clienttranslate "${player} wins the game!", Map.ofList ["player" ==> playerName p ]
         | Board.GameEnded ps ->
-            Php.clienttranslate "${players} end the game in a draw !", Map.ofList ["players" ==> String.concat " / " [| for p in ps ->  playerName p |]  ]
+            Php.clienttranslate "${players} end the game in a tie!", Map.ofList ["players" ==> String.concat " / " [| for p in ps ->  playerName p |]  ]
         | Board.GameEndedByRepetition ->
-            Php.clienttranslate "After being 3 times in the same state, the game ended in a draw !", Map.empty            
-
+            Php.clienttranslate "After being 3 times in the same state, the game ended in a tie!", Map.empty            
+        | Board.RepetitionDetected player ->
+            Php.clienttranslate "At the end of ${player}'s turn, the board was in the exact same position as a previous turn.", Map.ofList ["player" ==> playerName player]
         | _ -> null, Map.empty
     | _ ->
         null, Map.empty
@@ -270,6 +271,8 @@ module Stats =
     let nitro2_number = "nitro2_number"
     let ruts_number = "ruts_number"
     let rutted_number = "rutted_number"
+    let repetition_number = "repetition_number"
+    let draw_number = "draw_number"
 
     let empty =
         let stats =
@@ -293,11 +296,12 @@ module Stats =
                 nitro1_number, 0
                 nitro2_number, 0
                 ruts_number, 0
+                repetition_number, 0
+                draw_number, 0
                 ]
               PlayerStats = Map.empty }
         { Stats = stats
-          UndoPoint = stats
-           }
+          UndoPoint = stats }
 
 
 
@@ -373,6 +377,17 @@ module Stats =
                 stats.Stats 
                 |> incStat 1 turns_number None
             { Stats = newStats; UndoPoint = newStats }
+        | Board.RepetitionDetected p ->
+            let newStats =
+                stats.Stats
+                |> incStat 1 repetition_number None 
+                |> incStat 1 repetition_number (Some p) 
+            { stats with Stats = newStats}
+        | Board.GameEndedByRepetition ->
+            let newStats =
+                stats.Stats
+                |> incStat 1 draw_number None 
+            { stats with Stats = newStats}
         | Board.UndoCheckPointed ->
             { stats with UndoPoint = stats.Stats }
             

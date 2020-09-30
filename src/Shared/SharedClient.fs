@@ -226,8 +226,8 @@ let drawcrossroad pos f =
           | Error Tractor -> tooltip (translate "The crossroad is occupied by another tractor")
           | Error HayBaleOnPath -> tooltip (translate "The path is blocked by a hay bale")
           | Error PhytosanitaryProducts -> tooltip (translate "You cannot cut a fence just after using an Helicopter: with phytosanitary products, it could explode")
-          | Error Protection -> tooltip (translate "You cannot cut on the two fences behind a tractor. Too close, you'd be shotgunned !")
-          | Error HighVoltageProtection -> tooltip (translate "The fence is under High Voltage. You'd be reduced to ashes !")
+          | Error Protection -> tooltip (translate "You cannot cut on the two fences behind a tractor. Too close, you'd be shotgunned!")
+          | Error HighVoltageProtection -> tooltip (translate "The fence is under High Voltage. You'd be reduced to ashes!")
         ]
 
 
@@ -506,7 +506,7 @@ let handView dispatch title playerId board cardAction hand =
                                         [ str (translate "It wasn't clear on the plan... slipping a small bill should do the trick. The choose a plot of an opponent's field that has a common edge with yours... now it belongs to you! Careful, it needs to be discreet. You cannot take a plot of land from which a fence starts, it would cut it off, hence a bit conspicuous... You cannot take a barn either, hard to hide... You cannot place your last plot using this bonus, it would be a bit much!")
                                           match Board.bribeParcels board with
                                           | Ok _ -> str (translate "Select a parcel on the border of your field to take over")
-                                          | Error Board.InstantVictory -> str (translate "You cannot bribe to take the last parcel ! That would be too visible !")
+                                          | Error Board.InstantVictory -> str (translate "You cannot bribe to take the last parcel! That would be too visible!")
                                           | Error Board.NoParcelsToBribe -> str (translate "There is no parcel to bribe")
                                         ]
                                         [ go 
@@ -590,19 +590,10 @@ let boardView cardAction board =
 
      let boardPos = History.createPos board
      for playerid,p in Map.toSeq board.Players do
-
-             for opp, cross in History.findDangerousPositions playerid boardPos board.History  do
-               warnPlayer (opp = board.Table.Player) (Player.color board.Players.[opp]) cross
-
              playerTractor (Table.isCurrent playerid board.Table)  p 
          
      hayBalesView cardAction  board
 
-     //if not (Board.currentPlayer board |> Player.moves |> Moves.canMove) then
-     //    match History.positionRepetitions board.Table.Player boardPos board.History with
-     //    | 1 -> div [] [ str "Danger ! Deja une fois" ]
-     //    | 2 -> div [] [ str "Danger ! Deja deux fois" ]
-     //    | _ -> null
      ]
 
 let goalView board =

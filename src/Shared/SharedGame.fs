@@ -1757,6 +1757,7 @@ module Board =
         | GameWon of string
         | GameEnded of string list
         | GameEndedByRepetition
+        | RepetitionDetected of player:string
         | HayBalesPlaced of added: Path list * removed: Path list
         | HayBaleDynamited of Path
         | DiscardPileShuffled of Card list
@@ -1833,7 +1834,7 @@ module Board =
             else
                 Lead leadsids
 
-    let next shouldShuffle state =
+    let next shouldShuffle repeated state =
         let playerId = state.Table.Player
         let player = Map.tryFind playerId state.Players
         let nextPlayerId = state.Table.Next.Player 
@@ -1853,6 +1854,8 @@ module Board =
             | PrivateHand _ -> ()
 
           yield Next
+          if repeated then
+            yield RepetitionDetected playerId
           yield! 
            Bonus.startTurn (Player.bonus nextPlayer)
            |> List.map (fun c -> Played(nextPlayerId, Player.BonusDiscarded c))
@@ -2140,6 +2143,9 @@ module Board =
                     Board = won
                     UndoPoint = won
                     AtUndoPoint = true }
+        | Board _, RepetitionDetected _ ->
+            state
+
                 
 
         | Board board, Played (_, Player.CutFence { Player = playerid }) ->
@@ -2470,11 +2476,11 @@ module Board =
                 match player with
                 | Playing p when not (Player.canMove (Some playerId) state.Board || Hand.shouldDiscard p.Hand ) -> 
                     let boardPos = History.createPos board
-                                           
-                    if History.repetitions playerId boardPos board.History = 2 then
-                        [ GameEndedByRepetition ]
-                    else
-                        next state.ShouldShuffle board
+
+                    match  History.repetitions playerId boardPos board.History with
+                    | n when n >= 2 -> [ GameEndedByRepetition ]
+                    | 1 -> next state.ShouldShuffle true board
+                    | _ -> next state.ShouldShuffle false board
                 | _ -> []
             else
                 []
@@ -2489,14 +2495,8 @@ module Board =
                 let others = Player.otherPlayers playerId board
                 let events =
                     Player.decide others board.Barns board.HayBales (fun() -> bribeParcels board) cmd player
-
                 [ for e in events do
-                    Played(playerId, e)
-
-                  match player with
-                  | Playing p when List.exists (function Player.CardDiscarded _ -> true | _ -> false) events && not (Hand.shouldDiscard (Hand.remove card p.Hand)) && not (Moves.canMove p.Moves) && state.UndoType = NoUndo ->
-                      yield! next state.ShouldShuffle board 
-                  | _ -> () ]
+                    Played(playerId, e) ]
             else
                 []
         | Board board,Play (playerid, cmd) ->
@@ -2648,12 +2648,6 @@ module Board =
                                                     elif state.UndoType = DontUndoCards then
                                                         UndoCheckPointed
                                             | PrivateHand _ -> ()
-                                        else
-                                            let player = board.Players.[playerid]
-                                            match player with
-                                            | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) && state.UndoType = NoUndo ->
-                                                yield! next state.ShouldShuffle board 
-                                            | _ -> ()
                                     ]
                                 | _ -> 
                                     let player = board.Players.[playerid]
@@ -2664,10 +2658,7 @@ module Board =
                                                   |> List.map (fun c -> Played(nextPlayerId, Player.BonusDiscarded c))
                                           yield UndoCheckPointed ] 
                                     else
-                                        match player with
-                                        | Playing p when not (Moves.canMove p.Moves || Hand.canPlay p.Hand) && state.UndoType = NoUndo ->
-                                              next state.ShouldShuffle board 
-                                        | _ -> []
+                                        []
                 )
                 |> fun (_,es) -> es
             else

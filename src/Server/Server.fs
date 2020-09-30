@@ -426,6 +426,7 @@ let serialize =
     | Board.Event.GameWon e  -> "GameWon" , box e
     | Board.Event.GameEnded e  -> "GameWon" , box (List.toArray e)
     | Board.Event.GameEndedByRepetition  -> "GameEndedByRepetition" , null
+    | Board.Event.RepetitionDetected player -> "RepetitionDetected", box player
 
 
 let deserialize data =
@@ -496,6 +497,7 @@ let deserialize data =
         | "GameWon", JObj e -> [ Board.GameWon e ]
         | "GameEnded", JObj e -> [ Board.GameEnded (Array.toList e) ]
         | "GameEndedByRepetition", _ -> [ Board.GameEndedByRepetition ]
+        | "RepetitionDetected", JObj e -> [ Board.RepetitionDetected e ]
         | _ -> []
     with
     | _ -> []
