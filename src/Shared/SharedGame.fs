@@ -2351,6 +2351,23 @@ module Board =
                       2* Axe.SE
                       3* Axe.SE ]
 
+            let star =
+                classicpos,
+                Barns.create
+                    [ Axe.zero
+                      Axe.N
+                      Axe.S
+                      3 * Axe.N
+                      3 * Axe.S
+                      2 * Axe.NW
+                      3 * Axe.NW
+                      2 * Axe.NE
+                      3 * Axe.NE
+                      2 * Axe.SW
+                      3 * Axe.SW
+                      2 * Axe.SE
+                      3 * Axe.SE ]
+
 
         module P3 =
             let classicpos =
@@ -2391,6 +2408,19 @@ module Board =
                       2 * Axe.NW + Axe.N
                       2 * Axe.N + Axe.NE ]
 
+            let famine =
+                classicpos,
+                Barns.create
+                    [ Axe.NW
+                      2 * Axe.NW + Axe.SW
+                      2 * Axe.NW + Axe.N
+                      Axe.NE
+                      2 * Axe.NE + Axe.SE
+                      2 * Axe.NE + Axe.N
+                      Axe.S
+                      2 * Axe.S + Axe.SE
+                      2 * Axe.S + Axe.SW ]
+
         
         module P4 =
             let classicpos =
@@ -2429,6 +2459,14 @@ module Board =
                         Axe.W2 + Axe.SW
                         Axe.E2 + Axe.NE ]
 
+            let windmill =
+                classicpos,
+                Barns.create
+                      [ Axe.zero
+                        Axe.N; 2 * Axe.N; 3 * Axe.N
+                        Axe.S; 2 * Axe.S; 3 * Axe.S
+                        Axe.NW;Axe.NW+Axe.SW;Axe.NW+2*Axe.SW
+                        Axe.SE;Axe.SE+Axe.NE;Axe.SE+2*Axe.NE ]
 
     let shufflePlayers players parcels =
         let rand = System.Random()
@@ -2443,18 +2481,18 @@ module Board =
 
                 match cmd.Players with
                 | [ _; _ ] ->
-                    let (p1, p2), barns = Configurations.P2.snake
+                    let (p1, p2), barns = Configurations.P2.star
                     
                     shufflePlayers cmd.Players [  p1; p2  ],
                       barns
 
                 | [ _;_;_] ->
-                    let (p1,p2,p3), barns = Configurations.P3.galaxy
+                    let (p1,p2,p3), barns = Configurations.P3.famine
                     shufflePlayers cmd.Players [ p1; p2; p3 ],
                       barns
 
                 | [_;_;_;_] ->
-                    let (p1,p2,p3,p4), barns = Configurations.P4.xwing
+                    let (p1,p2,p3,p4), barns = Configurations.P4.windmill
                     shufflePlayers cmd.Players [ p1; p2; p3; p4 ],
                       barns
                 | _ ->
@@ -2590,6 +2628,10 @@ module Board =
                             let start = Fence.start player.Tractor player.Fence
                             if not (Crossroad.isInField player.Field start) then
                                 Played(playerid, Player.CutFence { Player = pid })
+                                // If the player is in field (fallow land) while being cut
+                                // they're reconnected instantly after losing fence
+                                if Crossroad.isInField player.Field player.Tractor then
+                                    Played(pid, Player.PoweredUp)
                         | _ -> () ])
                 |> cont (fun board  _ ->
                         let remainingPlayers =
