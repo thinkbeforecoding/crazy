@@ -1,12 +1,5 @@
 <?php
 
-
-
-class MapEmpty extends MapTree {
-    function __construct() {
-
-    }
-}
 class MapOne extends MapTree {
     public $key;
     public $value;
@@ -17,17 +10,14 @@ class MapOne extends MapTree {
     }
 } 
 
-class MapNode extends MapTree {
-    public $key;
-    public $value;
+class MapNode extends MapOne {
     public $left;
     public $right;
     public $height;
 
     function __construct($key, $value, $left, $right, $height)
     {
-        $this->key = $key;
-        $this->value = $value;
+        parent::__construct($key, $value);
         $this->left = $left;
         $this->right = $right;
         $this->height = $height;
@@ -37,15 +27,11 @@ class MapNode extends MapTree {
 class MapTree {
     static function sizeAux($acc,$m)
     { 
-        switch(get_class($m))
-        {
-            case 'MapEmpty':
-                return $acc;
-            case 'MapOne':
-                return $acc + 1;
-            default:
+        if (is_null($m))
+            return $acc;
+        if ($m instanceof MapNode)
                 return MapTree::sizeAux(MapTree::sizeAux($acc+1, $m->left), $m->right); 
-        }
+        return $acc + 1;
     }
 
     static function size($x) {
@@ -54,25 +40,21 @@ class MapTree {
     
     static function height ($m)
     { 
-        switch(get_class($m))
-        {
-            case 'MapEmpty':
+        if (is_null($m))
                 return 0;
-            case 'MapOne':
-                return 1;
-            default:
+        if ($m instanceof MapNode)
                 return $m->height;
-        }
+        return 1;
     }
 
     static function isEmpty($m)
     { 
-        return $m instanceof MapEmpty; 
+        return is_null($m); 
     }
 
     static function mk($l, $k, $v, $r)
     { 
-        if($l instanceof MapEmpty && $r instanceof MapEmpty)
+        if(is_null($l) && is_null($r))
             return new MapOne ($k, $v);
         $hl = MapTree::height($l); 
         $hr = MapTree::height($r); 
@@ -97,17 +79,13 @@ class MapTree {
                 if (MapTree::height($t2l) > $t1h + 1)
                 {
                     // balance left: combination 
-                    if ($t2l instanceof MapNode)
-                    { 
-                        $t2lk = $t2l->key;
-                        $t2lv = $t2l->value;
-                        $t2ll = $t2l->left;
-                        $t2lr = $t2l->right;
-                        return MapTree::mk(MapTree::mk($t1, $k, $v, $t2ll), $t2lk, $t2lv, MapTree::mk($t2lr, $t2k, $t2v, $t2r)); 
-                    } else
-                    {
+                    if (!($t2l instanceof MapNode))
                         throw new Error("rebalance");
-                    }
+                    $t2lk = $t2l->key;
+                    $t2lv = $t2l->value;
+                    $t2ll = $t2l->left;
+                    $t2lr = $t2l->right;
+                    return MapTree::mk(MapTree::mk($t1, $k, $v, $t2ll), $t2lk, $t2lv, MapTree::mk($t2lr, $t2k, $t2v, $t2r)); 
                 }
                 else
                 { 
@@ -135,18 +113,13 @@ class MapTree {
                     if (MapTree::height($t1r) > $t2h + 1) 
                     {
                         // balance right: combination 
-                        if ($t1r instanceof MapNode)
-                        {
-                            $t1rk = $t1r->key;
-                            $t1rv = $t1r->value;
-                            $t1rl = $t1r->left;
-                            $t1rr = $t1r->right;
-                            return MapTree::mk(MapTree::mk($t1l, $t1k, $t1v, $t1rl), $t1rk, $t1rv, MapTree::mk($t1rr, $k, $v, $t2));
-                        }
-                        else
-                        {
+                        if (!($t1r instanceof MapNode))
                             throw new Error("rebalance");
-                        }
+                        $t1rk = $t1r->key;
+                        $t1rv = $t1r->value;
+                        $t1rl = $t1r->left;
+                        $t1rr = $t1r->right;
+                        return MapTree::mk(MapTree::mk($t1l, $t1k, $t1v, $t1rl), $t1rk, $t1rv, MapTree::mk($t1rr, $k, $v, $t2));
                     }
                     else
                         return MapTree::mk($t1l, $t1k, $t1v, MapTree::mk($t1r, $k, $v, $t2));
@@ -165,66 +138,62 @@ class MapTree {
 
     static function add($comparer, $k, $v, $m)
     { 
-        switch(get_class($m))
+        if (is_null($m))
+            return new MapOne($k, $v);
+        if ($m instanceof MapNode)
         {
-            case 'MapEmpty':
-                return new MapOne($k, $v);
-            case 'MapOne':
-                $k2 = $m->key; 
-                $c = $comparer['Compare']($k, $k2); 
-                if ($c < 0) 
-                    return new MapNode($k, $v, new MapEmpty(), $m, 2);
-                elseif ($c == 0)
-                    return new MapOne($k, $v);
-                else
-                    return new MapNode($k, $v, $m, new MapEmpty(), 2);
-            default:
-                $k2 = $m->key;
-                $v2 = $m->value;
-                $l = $m->left;
-                $r = $m->right;
-                $h = $m->height;
-                $c = $comparer['Compare']($k, $k2); 
-                if ($c < 0) 
-                    return MapTree::rebalance(MapTree::add($comparer, $k, $v, $l), $k2, $v2, $r);
-                elseif ($c == 0) 
-                    return new MapNode($k, $v, $l, $r, $h);
-                else
-                    return MapTree::rebalance($l, $k2, $v2, MapTree::add($comparer, $k, $v, $r)); 
+            $k2 = $m->key;
+            $v2 = $m->value;
+            $l = $m->left;
+            $r = $m->right;
+            $h = $m->height;
+            $c = $comparer['Compare']($k, $k2); 
+            if ($c < 0) 
+                return MapTree::rebalance(MapTree::add($comparer, $k, $v, $l), $k2, $v2, $r);
+            elseif ($c == 0) 
+                return new MapNode($k, $v, $l, $r, $h);
+            else
+                return MapTree::rebalance($l, $k2, $v2, MapTree::add($comparer, $k, $v, $r)); 
         }
+        $k2 = $m->key; 
+        $c = $comparer['Compare']($k, $k2); 
+        if ($c < 0) 
+            return new MapNode($k, $v, NULL, $m, 2);
+        elseif ($c == 0)
+            return new MapOne($k, $v);
+        else
+            return new MapNode($k, $v, $m, NULL, 2);
     }
 
 
     static function tryGetValue($comparer, $k, &$v, $m)
     { 
-        switch(get_class($m))
-        { 
-            case 'MapEmpty':
-                return false;
-            case 'MapOne':
-                $k2 = $m->key;
-                $v2 = $m->value;
-                $c = $comparer['Compare']($k, $k2); 
-                if ($c == 0)
-                    { $v = $v2;
-                       return true;
-                    }
-                else
-                    return false;
-            default:
-                $k2= $m->key;
-                $v2= $m->value;
-                $l= $m->left;
-                $r= $m->right;
-                $c = $comparer['Compare']($k, $k2); 
-                if ($c < 0) 
-                    return MapTree::tryGetValue($comparer, $k, $v, $l);
-                elseif ($c == 0) 
-                    { $v = $v2; 
-                      return true; }
-                else 
-                    return MapTree::tryGetValue($comparer, $k, $v, $r);
+        if (is_null($m))
+            return false;
+        if ($m instanceof MapNode)
+        {
+            $k2= $m->key;
+            $v2= $m->value;
+            $l= $m->left;
+            $r= $m->right;
+            $c = $comparer['Compare']($k, $k2); 
+            if ($c < 0) 
+                return MapTree::tryGetValue($comparer, $k, $v, $l);
+            elseif ($c == 0) 
+                { $v = $v2; 
+                    return true; }
+            else 
+                return MapTree::tryGetValue($comparer, $k, $v, $r);
         }
+        $k2 = $m->key;
+        $v2 = $m->value;
+        $c = $comparer['Compare']($k, $k2); 
+        if ($c == 0)
+            { $v = $v2;
+                return true;
+            }
+        else
+            return false;
     }
 
     static function find($comparer, $k, $m)
@@ -245,50 +214,46 @@ class MapTree {
 
     static function fold($f, $x, $m)
     {
-        switch (get_class($m))
+        if (is_null($m))
+            return $x;
+
+        if ($m instanceof MapNode)
         {
-            case 'MapEmpty': 
-                return $x;
-            case 'MapOne':
-                return $f($x, $m->key, $m->value);
-            default:
-                $x = MapTree::fold($f, $x, $m->left);
-                $x = $f($x, $m->key, $m->value);
-                return MapTree::fold($f, $x, $m->right);
+            $x = MapTree::fold($f, $x, $m->left);
+            $x = $f($x, $m->key, $m->value);
+            return MapTree::fold($f, $x, $m->right);
         }
+        return $f($x, $m->key, $m->value);
     }
 
     static function exists($f, $m)
     { 
-        switch (get_class($m))
+        if (is_null($m))
+            return false;
+        if ($m instanceof MapNode)
         {
-            case 'MapEmpty': 
-                return false;
-            case 'MapOne':
-                return $f($m->key, $m->value);
-            default:
-                return 
-                    MapTree::exists($f, $m->left)
-                    || $f($m->key, $m->value)
-                    || MapTree::exists($f, $m->right);
+            return 
+                MapTree::exists($f, $m->left)
+                || $f($m->key, $m->value)
+                || MapTree::exists($f, $m->right);
+
         }
+        return $f($m->key, $m->value);
     }
 
     static function mapi($f,$m)
     {
-        switch(get_class($m))
+        if (is_null($m))
+            return $m;
+        if ($m instanceof MapNode)
         {
-            case 'MapEmpty';
-                return $m;
-            case 'MapOne':
-                return new MapOne ($m->key, $f($m->key, $m->value));
-            default: 
-                $k = $m->key;
-                $l2 = MapTree::mapi($f, $m->left); 
-                $v2 = $f($k, $m->value); 
-                $r2 = MapTree::mapi($f, $m->right); 
-                return new MapNode ($k, $v2, $l2, $r2, $m->height);
+            $k = $m->key;
+            $l2 = MapTree::mapi($f, $m->left); 
+            $v2 = $f($k, $m->value); 
+            $r2 = MapTree::mapi($f, $m->right); 
+            return new MapNode ($k, $v2, $l2, $r2, $m->height);
         }
+        return new MapOne ($m->key, $f($m->key, $m->value));
     }
 }
 
@@ -310,7 +275,7 @@ class Map implements IteratorAggregate
 
     static function empty($comparer) 
     {
-        return new Map($comparer, new MapEmpty());
+        return new Map($comparer, NULL);
     } 
 
     static function count($table)
@@ -320,7 +285,7 @@ class Map implements IteratorAggregate
 
     static function ofList($list)
     {
-        $tree = new MapEmpty();
+        $tree = NULL;
         $comparer = [ 'Compare' => 'Util::compare' ];
 
         while ($list instanceof Cons)
@@ -334,7 +299,7 @@ class Map implements IteratorAggregate
     
     static function ofSeq($seq)
     {
-        $tree = new MapEmpty();
+        $tree = NULL;
         $comparer = [ 'Compare' => 'Util::compare' ];
 
         foreach ($seq as $item)
@@ -347,7 +312,7 @@ class Map implements IteratorAggregate
 
     static function ofArray($seq)
     {
-        $tree = new MapEmpty();
+        $tree = NULL;
         $comparer = [ 'Compare' => 'Util::compare' ];
 
         foreach ($seq as $item)
@@ -378,7 +343,6 @@ class Map implements IteratorAggregate
         return $table;
     }
 
-    
     static function toList($table)
     {
         return FSharpList::ofSeq($table);
@@ -405,28 +369,20 @@ class Map implements IteratorAggregate
     public function getIterator() {
         $stack = [];
         $tree = $this->Tree;
-        while(!is_null($tree))
+        while(!(is_null($tree) && empty($stack)))
         {
-            switch(get_class($tree))
+            if (is_null($tree))
+                $tree = array_pop($stack);
+            elseif ($tree instanceof MapNode)
             {
-                case 'MapOne':
+                array_push($stack, $tree->right);
+                array_push($stack, new MapOne($tree->key, $tree->value));
+                $tree = $tree->left;
+            }
+            else {
                     yield [$tree->key, $tree->value];
                     $tree = array_pop($stack);
-                break;
-                case 'MapNode':
-                    array_push($stack, $tree->right);
-                    array_push($stack, new MapOne($tree->key, $tree->value));
-                    $tree = $tree->left;
-                break;
-                default:
-                    $tree = array_pop($stack);
-                break;
             }
         }
     } 
-    
-    
-
 }
-
-

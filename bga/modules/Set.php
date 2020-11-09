@@ -5,17 +5,12 @@ class SetTree {
 
 
     static function countAux($s, $acc)
-    { 
-        switch(get_class($s))
-        {
-            case 'SetNode':
-                return SetTree::countAux($s->left, SetTree::countAux($s->right, $acc+1));
-            case 'SetOne':
-                return $acc+1;
-            default:
-                return $acc;
-
-        }
+    {
+        if (is_null($s))
+            return $acc;
+        if ($s instanceof SetNode)
+            return SetTree::countAux($s->left, SetTree::countAux($s->right, $acc+1));
+        return $acc+1;
     }
 
     static function count($s) 
@@ -25,21 +20,18 @@ class SetTree {
 
     static function height($t)
     { 
-        switch(get_class($t))
-        {
-            case 'SetEmpty':
-                return 0;
-            case 'SetOne':
-                return 1;
-            default:
-                return $t->height;
-        }
+        if (is_null($t))
+            return 0;
+        if ($t instanceof SetNode)
+            return $t->height;
+
+        return 1;
     }
 
 
     static function mk($l,$k,$r) 
     {
-        if ($l instanceof SetEmpty && $r instanceof SetEmpty)
+        if (is_null($l) && is_null($r))
         {
             return new SetOne($k);
         }
@@ -123,8 +115,10 @@ class SetTree {
 
     static function add($comparer, $k, $t)
     { 
-        switch(get_class($t))
-        { case 'SetNode':
+        if (is_null($t))
+            return new SetOne($k);
+        if ($t instanceof SetNode)
+        {
             $k2 = $t->value;
             $l = $t->left;
             $r = $t->right;
@@ -135,19 +129,17 @@ class SetTree {
                 { return $t; }
             else 
                 { return SetTree::rebalance($l, $k2, SetTree::add($comparer, $k, $r));}
-        case 'SetOne': 
-            $k2 = $t->value;
-            // nb. no check for rebalance needed for small trees, also be sure to reuse node already allocated 
-            $c = $comparer['Compare']($k, $k2); 
-            if ($c < 0) 
-                { return new SetNode($k, new SetEmpty(), $t, 2); }
-            elseif ($c == 0) 
-                { return $t; }
-            else 
-                { return new SetNode ($k, $t, new SetEmpty(), 2); }
-        default:
-            return new SetOne($k);
+
         }
+        $k2 = $t->value;
+        // nb. no check for rebalance needed for small trees, also be sure to reuse node already allocated 
+        $c = $comparer['Compare']($k, $k2); 
+        if ($c < 0) 
+            { return new SetNode($k, NULL, $t, 2); }
+        elseif ($c == 0) 
+            { return $t; }
+        else 
+            { return new SetNode ($k, $t, NULL, 2); }
     }
 
     static function balance($comparer, $t1, $k, $t2)
@@ -155,13 +147,13 @@ class SetTree {
         // Given t1 < k < t2 where t1 and t2 are "balanced", 
         // return a balanced tree for <t1, k, t2>.
         // Recall: balance means subtrees heights differ by at most "TOLERANCE"
-        if ($t1 instanceof SetEmpty)
+        if (is_null($t1))
             return SetTree::add($comparer, $k, $t2); // drop t1 = empty 
-        if ($t2 instanceof SetEmpty)
+        if (is_null($t2))
             return SetTree::add($comparer, $k, $t1); // drop t2 = empty 
-        if ($t1 instanceof SetOne)
+        if (!($t1 instanceof SetNode))
             return SetTree::add($comparer, $k, SetTree::add($comparer, $t1->value, $t2));
-        if ($t2 instanceof SetOne)
+        if (!($t2 instanceof SetNode))
             return SetTree::add($comparer, $k, SetTree::add($comparer, $t2->value, $t1));
         $k1 = $t1->value;
         $t11 = $t1->left;
@@ -192,9 +184,11 @@ class SetTree {
     {
         // Given a pivot and a set t
         // Return { x in t s.t. x < pivot }, pivot in t?, { x in t s.t. x > pivot } 
-        switch(get_class($t))
+        if (is_null($t))
+            return [NULL , false, NULL];
+
+        if ($t instanceof SetNode)
         {
-        case 'SetNode':
             $k1 = $t->value;
             $t11 = $t->left;
             $t12 = $t->right;
@@ -211,50 +205,39 @@ class SetTree {
                 [$t12Lo, $havePivot, $t12Hi] = SetTree::split($comparer, $pivot, $t12);
                 return [ SetTree::balance($comparer, $t11, $k1, $t12Lo), $havePivot, $t12Hi];
             }
-        case 'SetOne': 
-            $k1 = $t->value;
-            $c = $comparer['Compare']($k1, $pivot);
-            if  ($c < 0) 
-                return [$t, false, new SetEmpty()]; // singleton under pivot 
-            elseif ($c == 0) 
-                return [new SetEmpty(), true, new SetEmpty()]; // singleton is    pivot 
-            else 
-                return [new SetEmpty(), false, $t];        // singleton over  pivot 
-        default:
-            return [new SetEmpty(), false, new SetEmpty()];
         }
+        $k1 = $t->value;
+        $c = $comparer['Compare']($k1, $pivot);
+        if  ($c < 0) 
+            return [$t, false, NULL]; // singleton under pivot 
+        elseif ($c == 0) 
+            return [NULL, true, NULL]; // singleton is    pivot 
+        else 
+            return [NULL, false, $t];        // singleton over  pivot 
     }
 
     static function spliceOutSuccessor($t)
     { 
-        switch(get_class($t))
+        if (is_null($t))
+            throw new Exception("internal error: Set.spliceOutSuccessor");
+        if ($t instanceof SetNode)
         {
-            case 'SetEmpty':
-                throw new Exception("internal error: Set.spliceOutSuccessor");
-            case 'SetOne':
-                return [$t->value, new SetEmpty()];
-            default:
-                if ($t->left instanceof SetEmpty)
+                if (is_null($t->left))
                     return [$t->value, $t->right];
                 [$k3, $ll] = SetTree::spliceOutSuccessor($t->left);
                 return [$k3, SetTree::mk($ll, $t->value, $t->right)];
         }
+        return [$t->value, NULL];
     }
 
 
     static function remove($comparer, $k, $t)
     { 
-        switch(get_class($t))
+        if (is_null($t))
+            return $t;
+
+        if ($t instanceof SetNode)
         {
-            case 'SetEmpty':
-                return $t;
-            case 'SetOne':
-                $c = $comparer['Compare']($k, $t->value); 
-                if ($c == 0)
-                    return new SetEmpty();
-                else 
-                    return $t;
-            default:
             $k2 = $t->value;
             $l = $t->left;
             $r = $t->right;
@@ -263,9 +246,9 @@ class SetTree {
                 return SetTree::rebalance(SetTree::remove($comparer, $k, $l), $k2, $r);
             elseif ($c == 0)
             {
-                if ($l instanceof SetEmpty)
+                if (is_null($l))
                     return $r;
-                if ($r instanceof SetEmpty)
+                if (is_null($r))
                     return $l;
                     [$sk, $rr] = SetTree::spliceOutSuccessor($r); 
                     return SetTree::mk($l, $sk, $rr);
@@ -273,28 +256,34 @@ class SetTree {
             else 
                 return SetTree::rebalance($l, $k2, SetTree::remove($comparer, $k, $r));
         }
+
+        $c = $comparer['Compare']($k, $t->value); 
+        if ($c == 0)
+            return NULL;
+        else 
+            return $t;
     }
 
     static function mem($comparer,$k, $t)
     { 
-        switch (get_class($t))
+        if (is_null($t))
+            return false;
+
+        if ($t instanceof SetNode)
         {
-            case 'SetNode':
-                $k2 = $t->value;
-                $l = $t->left;
-                $r = $t->right;
-                $c = $comparer['Compare']($k, $k2); 
-                if ($c < 0) 
-                    return SetTree::mem($comparer, $k, $l);
-                elseif ($c == 0) 
-                    return true;
-                else 
-                    return SetTree::mem($comparer, $k, $r);
-            case 'SetOne':
-                return $comparer['Compare']($k, $t->value) == 0;
-            default:
-                return false;
+            $k2 = $t->value;
+            $l = $t->left;
+            $r = $t->right;
+            $c = $comparer['Compare']($k, $k2); 
+            if ($c < 0) 
+                return SetTree::mem($comparer, $k, $l);
+            elseif ($c == 0) 
+                return true;
+            else 
+                return SetTree::mem($comparer, $k, $r);
         }
+
+        return $comparer['Compare']($k, $t->value) == 0;
     }
 
     static function union($comparer, $t1, $t2)
@@ -324,30 +313,25 @@ class SetTree {
                 return SetTree::balance($comparer, SetTree::union($comparer, $t21, $lo), $k2, SetTree::union($comparer, $t22, $hi));
             }
         }
-        if ($t1 instanceof SetEmpty)
+        if (is_null($t1))
             return $t2;
-        if ($t2 instanceof SetEmpty)
+        if (is_null($t2))
             return $t1;
-        if ($t1 instanceof SetOne)
-            return SetTree::add($comparer, $t1->value, $t2);
-        
-        return SetTree::add($comparer, $t2->value, $t1);
+        if ($t1 instanceof SetNode)
+            return SetTree::add($comparer, $t2->value, $t1);
+        return SetTree::add($comparer, $t1->value, $t2);
     }
     
     
     static function diffAux($comparer, $m, $acc)
     { 
-        if ($acc instanceof SetEmpty)
+        if (is_null($acc) || is_null($m))
             return $acc;
-        switch(get_class($m))
-        {
-            case 'SetNode':
-                return SetTree::diffAux($comparer, $m->left, SetTree::diffAux($comparer, $m->right, SetTree::remove($comparer, $m->value, $acc)));
-            case 'SetOne':
-                return SetTree::remove($comparer, $m->value, $acc);
-            default:
-                return $acc;
-        }
+
+        if ($m instanceof SetNode)
+            return SetTree::diffAux($comparer, $m->left, SetTree::diffAux($comparer, $m->right, SetTree::remove($comparer, $m->value, $acc)));
+        else
+            return SetTree::remove($comparer, $m->value, $acc);
     }
 
     static function diff($comparer, $a, $b) 
@@ -357,42 +341,36 @@ class SetTree {
 
     static function intersectionAux($comparer, $b, $m, $acc)
     { 
-        switch( get_class($m))
+        if (is_null($m))
+            return $acc;
+        if ($m instanceof SetNode)
         {
-            case 'SetNode':
-                $k = $m->value;
-                $l = $m->left;
-                $r = $m->right;
-                $acc = SetTree::intersectionAux($comparer, $b, $r, $acc);
-                $acc = SetTree::mem($comparer, $k, $b) ? SetTree::add($comparer, $k, $acc) : $acc;
-                return SetTree::intersectionAux($comparer, $b, $l, $acc);
-            case 'SetOne': 
-                $k = $m->value; 
-                if (SetTree::mem($comparer, $k, $b))
-                    return SetTree::add($comparer, $k, $acc);
-                else 
-                    return $acc;
-            default:
-                return $acc;
+            $k = $m->value;
+            $l = $m->left;
+            $r = $m->right;
+            $acc = SetTree::intersectionAux($comparer, $b, $r, $acc);
+            $acc = SetTree::mem($comparer, $k, $b) ? SetTree::add($comparer, $k, $acc) : $acc;
+            return SetTree::intersectionAux($comparer, $b, $l, $acc);
         }
+        $k = $m->value; 
+        if (SetTree::mem($comparer, $k, $b))
+            return SetTree::add($comparer, $k, $acc);
+        else 
+            return $acc;
     }
 
     static function intersection($comparer, $a, $b) 
     {
-        return SetTree::intersectionAux($comparer, $b, $a, new SetEmpty());
+        return SetTree::intersectionAux($comparer, $b, $a, NULL);
     }
 
     static function forall($f, $m)
     {
-        switch (get_class($m))
-        {
-            case 'SetNode':
+        if (is_null($m))
+            return true;
+        if ($m instanceof SetNode)
                 return $f($m->value) && SetTree::forall($f, $m->left) && SetTree::forall($f, $m->right);
-            case 'SetOne': 
-                return $f($m->value);
-            default:
-                return true;
-        }
+        return $f($m->value);
     }
 
     static function subset($comparer, $a, $b)
@@ -402,28 +380,22 @@ class SetTree {
 
     static function minimumElementAux($s, $n)
     {
-        switch(get_class($s))
-        {
-            case 'SetNode':
-                return SetTree::minimumElementAux($s->left, $s->value);
-            case 'SetOne':
-                return $s->value;
-            default:
-                return $n;
-        } 
+        if (is_null($s))
+            return $n;
+
+        if ($s instanceof SetNode)
+            return SetTree::minimumElementAux($s->left, $s->value);
+        return $s->value;
     }
     
     static function minimumElementOpt($s)
     {
-        switch(get_class($s))
-        {
-            case 'SetNode':
-                return SetTree::minimumElementAux($s->left, $s->value);
-            case 'SetOne':
-                return $s->value;
-            default:
-                return NULL;
-        } 
+        if (is_null($s))
+            return NULL;
+        if ($s instanceof SetNode)
+            return SetTree::minimumElementAux($s->left, $s->value);
+        else
+            return $s->value;
     }
 
     static function minimumElement($s)
@@ -443,9 +415,9 @@ class SetTree {
         if (!($l2 instanceof Cons))
             return 1;
 
-        if ($l1->value instanceof SetEmpty && $l2->value instanceof SetEmpty)
+        if (is_null($l1->value) && is_null($l2->value))
             return SetTree::compareStacks($comparer, $l1->next, $l2->next);
-        if ($l1->value instanceof SetOne && $l2->value instanceof SetOne)
+        if ((! (is_null($l1->value) || $l1->value instanceof SetNode)) && (! (is_null($l2->value) || $l2->value instanceof SetNode)))
         {
             $c = Util::compare($l1->value->value, $l2->value->value);
             if ($c != 0) 
@@ -453,23 +425,23 @@ class SetTree {
             else
                 return SetTree::compareStacks($comparer, $l1->next, $l2->next);
         }
-        if ($l1->value instanceof SetOne && $l2->value instanceof SetNode && $l2->value->left instanceof SetEmpty)
+        if ((! (is_null($l1->value) || $l1->value instanceof SetNode)) && $l2->value instanceof SetNode && is_null($l2->value->left))
         {
             $c = Util::compare($l1->value->value, $l2->value->value);
             if ($c != 0)
                 return $c;
             else
-                return SetTree::compareStacks($comparer, new Cons(new SetEmpty(), $l1->next), new Cons($l2->value->right, $l2->next));
+                return SetTree::compareStacks($comparer, new Cons(NULL, $l1->next), new Cons($l2->value->right, $l2->next));
         }
-        if ($l1->value instanceof SetNode && $l1->value->left instanceof SetEmpty && $l2->value instanceof SetOne)
+        if ($l1->value instanceof SetNode && is_null($l1->value->left) && (! (is_null($l2->value) || $l2->value instanceof SetNode)))
         {
             $c = Util::compare($l1->value->value, $l2->value->value);
             if ($c != 0)
                 return $c;
             else
-                return SetTree::compareStacks($comparer, new Cons($l1->value->right, $l1->next), new Cons(new SetEmpty(), $l2->next));
+                return SetTree::compareStacks($comparer, new Cons($l1->value->right, $l1->next), new Cons(NULL, $l2->next));
         }
-        if ($l1->value instanceof SetNode && $l1->value->left instanceof SetEmpty && $l2->value instanceof SetNode && $l2->value->left instanceof SetEmpty)
+        if ($l1->value instanceof SetNode && is_null($l1->value->left) && $l2->value instanceof SetNode && is_null($l2->value->left))
         {
             $c = Util::compare($l1->value->value, $l2->value->value);
             if ($c != 0)
@@ -477,38 +449,35 @@ class SetTree {
             else
                 return SetTree::compareStacks($comparer, new Cons($l1->value->right, $l1->next), new Cons($l2->value->right, $l2->next));
         }
-        if ($l1->value instanceof SetOne)
-            return SetTree::compareStacks($comparer, new Cons(new SetEmpty(), new Cons (new SetOne($l1->value->value), $l1->next)), $l2);
+        if (!(is_null($l1->value) || $l1->value instanceof SetNode))
+            return SetTree::compareStacks($comparer, new Cons(NULL, new Cons (new SetOne($l1->value->value), $l1->next)), $l2);
         if ($l1->value instanceof SetNode)
-            return SetTree::compareStacks($comparer, new Cons($l1->value->left, new Cons (new SetNode($l1->value->value, new SetEmpty(), $l1->value->right, 0), $l1->next)), $l2);
-        if ($l2->value instanceof SetOne)
-            return SetTree::compareStacks($comparer, $l1, new Cons(new SetEmpty(), new Cons (new SetOne($l2->value->value), $l2->next)));
+            return SetTree::compareStacks($comparer, new Cons($l1->value->left, new Cons (new SetNode($l1->value->value, NULL, $l1->value->right, 0), $l1->next)), $l2);
+        if (!(is_null($l2->value) || $l2->value instanceof SetNode))
+            return SetTree::compareStacks($comparer, $l1, new Cons(NULL, new Cons (new SetOne($l2->value->value), $l2->next)));
         
-        return SetTree::compareStacks($comparer, $l1, new Cons($l2->value->left, new Cons (new SetNode($l2->value->value, new SetEmpty(), $l2->value->right, 0), $l2->next)));
+        return SetTree::compareStacks($comparer, $l1, new Cons($l2->value->left, new Cons (new SetNode($l2->value->value, NULL, $l2->value->right, 0), $l2->next)));
     }
 
     static function compare($comparer, $s1, $s2)  
     {
-        if ($s1 instanceof SetEmpty)
-                return $s2 instanceof SetEmpty ? 0 : -1;
-        if ($s2 instanceof SetEmpty)
+        if (is_null($s1))
+                return is_null($s2) ? 0 : -1;
+        if (is_null($s2))
             return 1;
         
         return SetTree::compareStacks($comparer, new Cons($s1, FSharpList::get_Nil()), new Cons($s2, FSharpList::get_Nil()) );
     }
-
 }
 
-class SetEmpty extends SetTree { }
-class SetNode extends SetTree {
-    public $value;
+class SetNode extends SetOne {
     public $left;
     public $right;
     public $height;
 
     function __construct($value, $left, $right, $height)
     {
-        $this->value = $value;
+        parent::__construct($value);
         $this->left = $left;
         $this->right = $right;
         $this->height = $height;
@@ -540,9 +509,9 @@ class Set implements IteratorAggregate, iComparable {
 
     static function FSharpSet___op_Addition($set1, $set2)
     {
-        if ($set2->Tree instanceof SetEmpty)
+        if (is_null($set2->Tree))
             return $set1; // (* A U 0 = A *)
-        if ($set1->Tree instanceof SetEmpty)
+        if (is_null($set1->Tree))
             return $set2; //  (* 0 U B = B *)
         return new Set($set1->Comparer, SetTree::union($set1->Comparer, $set1->Tree, $set2->Tree));
 
@@ -550,18 +519,18 @@ class Set implements IteratorAggregate, iComparable {
 
     static function FSharpSet___op_Subtraction($set1, $set2)
     {
-        if ($set1->Tree instanceof SetEmpty)
+        if (is_null($set1->Tree))
             return $set1; //(* 0 - B = 0 *)
-        if ($set2->Tree instanceof SetEmpty)
+        if (is_null($set2->Tree))
             return $set1; //(* A - 0 = A *)
         return new Set($set1->Comparer, SetTree::diff($set1->Comparer, $set1->Tree, $set2->Tree));
     }
 
     static function intersect($a, $b)
     {
-        if ($b->Tree instanceof SetEmpty)
+        if (is_null($b->Tree))
             return $b; //  (* A INTER 0 = 0 *)
-        if ($a->Tree instanceof SetEmpty) 
+        if (is_null($a->Tree)) 
             return $a; // (* 0 INTER B = 0 *)
         return new Set($a->Comparer, SetTree::intersection($a->Comparer, $a->Tree, $b->Tree));
     }
@@ -579,7 +548,7 @@ class Set implements IteratorAggregate, iComparable {
 
     static function ofSeq($seq, $comparer=NULL)
     {
-        $tree = new SetEmpty();
+        $tree = NULL;
         if (is_null($comparer))
             $comparer = [ 'Compare' => 'Util::comparePrimitives'];
 
@@ -593,12 +562,12 @@ class Set implements IteratorAggregate, iComparable {
 
     static function empty($comparer)
     {
-        return new Set($comparer, new SetEmpty());
+        return new Set($comparer, NULL);
     }
 
     static function isEmpty($set)
     {
-        return $set->Tree instanceof SetEmpty;
+        return is_null($set->Tree);
     }
 
     static function count($set)
@@ -641,22 +610,19 @@ class Set implements IteratorAggregate, iComparable {
     public function getIterator() {
         $stack = [];
         $tree = $this->Tree;
-        while(!is_null($tree))
+        while(!(is_null($tree) && empty($stack)))
         {
-            switch(get_class($tree))
+            if (is_null($tree))
+                $tree = array_pop($stack);
+            elseif ($tree instanceof SetNode)
             {
-                case 'SetOne':
-                    yield $tree->value;
-                    $tree = array_pop($stack);
-                break;
-                case 'SetNode':
-                    array_push($stack, $tree->right);
-                    array_push($stack, new SetOne($tree->value));
-                    $tree = $tree->left;
-                break;
-                default:
-                    $tree = array_pop($stack);
-            break;
+                array_push($stack, $tree->right);
+                array_push($stack, new SetOne($tree->value));
+                $tree = $tree->left;
+            }
+            else{
+                yield $tree->value;
+                $tree = array_pop($stack);
             }
         }
     } 
@@ -665,5 +631,4 @@ class Set implements IteratorAggregate, iComparable {
     {
         return SetTree::compare($this->Comparer, $this->Tree, $Other->Tree);
     }
-
 }
