@@ -505,13 +505,13 @@ let playersHand model dispatch =
         | Board board 
         | Won(_,board) ->
             
-            handView dispatch true model.PlayerId board model.CardAction (Player.hand board.Players.[playerId])
+            handView dispatch true model.PlayerId board model.CardAction (Player.hand board.Players.[playerId]) true
         | _ -> null
     | None -> 
         match model.Board.Board with
         | Board board 
         | Won(_,board) ->
-            handView dispatch true model.PlayerId board None Hand.empty
+            handView dispatch true model.PlayerId board None Hand.empty true
         | _ -> null
         
 

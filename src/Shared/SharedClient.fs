@@ -380,7 +380,7 @@ let moveView dispatch move =
     | Move.SelectCrossroad(c) -> crossroad c (fun _ -> dispatch (SelectFirstCrossroad c))
        
 
-let handView dispatch title playerId board cardAction hand =
+let handView dispatch title playerId board cardAction hand showDrawPile =
     let player = Board.currentPlayer board
     let active =  Option.exists (fun p -> p = board.Table.Player) playerId
     let otherPlayers = Board.currentOtherPlayers board
@@ -514,20 +514,22 @@ let handView dispatch title playerId board cardAction hand =
                                 | _ -> ()
                         ]
                     ]
-              let cardCount = Hand.count board.DrawPile
-              if cardCount > 0 then
-                div [ ClassName "drawpile" ]
-                    [ 
-                        h3 [] [ str (translate "Draw pile" ) ]
 
-                        div [ClassName "card-info"]
-                          [ div [ ClassName "card-count" ]
-                                [ 
-                                  div [] [span [][str (string (cardCount))]] 
-                                   ]
-                            tooltip (String.format (Globalization.translate "{cards} cards in the draw pile") (Map.ofList [ "cards" ==> cardCount])) ]
+              if showDrawPile then
+                  let cardCount = Hand.count board.DrawPile
+                  if cardCount > 0 then
+                    div [ ClassName "drawpile" ]
+                        [ 
+                            h3 [] [ str (translate "Draw pile" ) ]
 
-                    ]
+                            div [ClassName "card-info"]
+                              [ div [ ClassName "card-count" ]
+                                    [ 
+                                      div [] [span [][str (string (cardCount))]] 
+                                       ]
+                                tooltip (String.format (Globalization.translate "{cards} cards in the draw pile") (Map.ofList [ "cards" ==> cardCount])) ]
+
+                        ]
            ]
     | PrivateHand cards ->
         div [ ClassName "cards"]
@@ -538,20 +540,21 @@ let handView dispatch title playerId board cardAction hand =
                        [ div [ ClassName (sprintf "card back z%d" c) ] [] ]
               ]
 
-              let cardCount = Hand.count board.DrawPile
-              if cardCount > 0 then
-                 div [ ClassName "drawpile" ]
-                     [ 
-                         h3 [] [ str (translate "Draw pile" ) ]
+              if showDrawPile then
+                  let cardCount = Hand.count board.DrawPile
+                  if cardCount > 0 then
+                     div [ ClassName "drawpile" ]
+                         [ 
+                             h3 [] [ str (translate "Draw pile" ) ]
 
-                         div [ClassName "card-info"]
-                           [ div [ ClassName "card-count" ]
-                                 [ 
-                                   div [] [span [][str (string (cardCount))]] 
-                                    ]
-                             tooltip (String.format (Globalization.translate "{cards} cards in the draw pile") (Map.ofList [ "cards" ==> cardCount])) ]
+                             div [ClassName "card-info"]
+                               [ div [ ClassName "card-count" ]
+                                     [ 
+                                       div [] [span [][str (string (cardCount))]] 
+                                        ]
+                                 tooltip (String.format (Globalization.translate "{cards} cards in the draw pile") (Map.ofList [ "cards" ==> cardCount])) ]
 
-                     ]
+                         ]
 
             ]
 

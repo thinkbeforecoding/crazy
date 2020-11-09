@@ -240,7 +240,7 @@ let playersDashboard model dispatch =
                                             PlayingBoard = board } null dispatch
 
                                if model.DashboardOpen then
-                                   handView dispatch false model.PlayerId board model.CardAction (Player.hand player)
+                                   handView dispatch false model.PlayerId board model.CardAction (Player.hand player) false
 
                                //goalView board
        
@@ -458,7 +458,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                   chatView dispatch playerId board model.Chat
               | None -> () 
 
-              button [ OnClick (fun _ -> dispatch Quit) ] [ str "Quit"] 
+              // button [ OnClick (fun _ -> dispatch Quit) ] [ str "Quit"] 
 
                          ]
     | Won(winners, board) ->
