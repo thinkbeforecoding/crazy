@@ -7485,7 +7485,7 @@ function Shared_002EBoardModule___decide($cmd__5, $state__8) {
                         if ($cmd__6->Players->next->next instanceof Cons) {
                             if ($cmd__6->Players->next->next->next instanceof Cons) {
                                 if ($cmd__6->Players->next->next->next->next instanceof Nil) {
-                                    $patternInput__11 = [ Shared_002EBoardModule___shufflePlayers($cmd__6->Players, new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP4___windmill'][0][0], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP4___windmill'][0][1], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP4___windmill'][0][2], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP4___windmill'][0][3], FSharpList::get_Nil()))))), $GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP4___windmill'][1]];
+                                    $patternInput__11 = [ Shared_002EBoardModule___shufflePlayers($cmd__6->Players, new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP4___classic'][0][0], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP4___classic'][0][1], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP4___classic'][0][2], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP4___classic'][0][3], FSharpList::get_Nil()))))), $GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP4___classic'][1]];
                                 }                                 else {
                                     $playerCount = FSharpList::length($cmd__6->Players);
                                     if ($playerCount < 2) {
@@ -7495,10 +7495,10 @@ function Shared_002EBoardModule___decide($cmd__5, $state__8) {
                                     }
                                 }
                             }                             else {
-                                $patternInput__11 = [ Shared_002EBoardModule___shufflePlayers($cmd__6->Players, new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP3___famine'][0][0], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP3___famine'][0][1], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP3___famine'][0][2], FSharpList::get_Nil())))), $GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP3___famine'][1]];
+                                $patternInput__11 = [ Shared_002EBoardModule___shufflePlayers($cmd__6->Players, new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP3___classic'][0][0], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP3___classic'][0][1], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP3___classic'][0][2], FSharpList::get_Nil())))), $GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP3___classic'][1]];
                             }
                         }                         else {
-                            $patternInput__11 = [ Shared_002EBoardModule___shufflePlayers($cmd__6->Players, new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP2___star'][0][0], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP2___star'][0][1], FSharpList::get_Nil()))), $GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP2___star'][1]];
+                            $patternInput__11 = [ Shared_002EBoardModule___shufflePlayers($cmd__6->Players, new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP2___classic'][0][0], new Cons($GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP2___classic'][0][1], FSharpList::get_Nil()))), $GLOBALS['Shared_002EBoardModule_002EConfigurations_002EP2___classic'][1]];
                         }
                     }                     else {
                         $playerCount = FSharpList::length($cmd__6->Players);
@@ -8477,11 +8477,7 @@ function SharedServer___bgaUpdateState($events__1, $board__1, $zombie, $state, $
                                                         return $changeState('endTurn');
                                                     }
                                                 }                                                 else {
-                                                    if (!Util::equals($board__1->UndoType, new UndoType_NoUndo())) {
-                                                        return $changeState('endTurn');
-                                                    }                                                     else {
-                                                        return NULL;
-                                                    }
+                                                    return $changeState('endTurn');
                                                 }
                                             }
                                         }                                         else {

@@ -84,7 +84,7 @@ let bgaUpdateState events (board: UndoableBoard) (zombie: bool) (state: string) 
                                 changeState "shouldDiscard"
                             else
                                 changeState "endTurn"
-                        elif board.UndoType <> NoUndo then
+                        else
                              changeState "endTurn"
                     | _ -> ()
                 | _ -> ()

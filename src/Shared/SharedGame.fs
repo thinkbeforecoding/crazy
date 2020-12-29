@@ -2481,18 +2481,18 @@ module Board =
 
                 match cmd.Players with
                 | [ _; _ ] ->
-                    let (p1, p2), barns = Configurations.P2.star
+                    let (p1, p2), barns = Configurations.P2.classic
                     
                     shufflePlayers cmd.Players [  p1; p2  ],
                       barns
 
                 | [ _;_;_] ->
-                    let (p1,p2,p3), barns = Configurations.P3.famine
+                    let (p1,p2,p3), barns = Configurations.P3.classic
                     shufflePlayers cmd.Players [ p1; p2; p3 ],
                       barns
 
                 | [_;_;_;_] ->
-                    let (p1,p2,p3,p4), barns = Configurations.P4.windmill
+                    let (p1,p2,p3,p4), barns = Configurations.P4.classic
                     shufflePlayers cmd.Players [ p1; p2; p3; p4 ],
                       barns
                 | _ ->

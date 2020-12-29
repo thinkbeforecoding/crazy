@@ -585,13 +585,11 @@ let boardView cardAction board =
 
 
 
-
      lazyView barnsView board.Barns
 
      for _,p in Map.toSeq board.Players do
          lazyViewWith sameFence playerFences  p
 
-     let boardPos = History.createPos board
      for playerid,p in Map.toSeq board.Players do
              playerTractor (Table.isCurrent playerid board.Table)  p 
          
