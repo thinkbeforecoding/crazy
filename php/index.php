@@ -15,33 +15,33 @@
             
         }
 #        $a = new Axe(2,3);
-#        echo "Axe: ", var_dump(Shared_002EAxe___op_Multiply__Z425F7B5E(2,$a));
+#        echo "Axe: ", var_dump(Axe_op_Multiply__Z425F7B5E(2,$a));
 
 #        $d = new Up();
-#        echo "Rev: ", get_class(Shared_002EDirectionModule___rev($d));
+#        echo "Rev: ", get_class(DirectionModule_rev($d));
         $pc = new PlayCard_PlayNitro(new CardPower_Two());
-        echo "Card: ", var_dump(Shared_002ECardModule___ofPlayCard($pc));
+        echo "Card: ", var_dump(CardModule_ofPlayCard($pc));
         echo "<br/>";
-        $a = [ new Path($Shared_002EAxeModule___N , new BorderSide_BN() ), new Path($Shared_002EAxeModule___NE, new BorderSide_BNE() ) ];
+        $a = [ new Path($AxeModule_N , new BorderSide_BN() ), new Path($AxeModule_NE, new BorderSide_BNE() ) ];
         echo "a: ", var_dump($a), "<br/>";
         $lst = FSharpList::ofArray($a);
         echo "array:", var_dump($lst), "<br/>";
-        $pc2 = new PlayCard_PlayHayBale($lst);
+        $pc2 = new PlayCard_PlayHayBale($lst,NULL);
         echo "Play: ", var_dump($pc2);
         echo "<br/>";
 
-        echo "Card2: ", var_dump(Shared_002ECardModule___ofPlayCard($pc2)), "<br/>";
+        echo "Card2: ", var_dump(CardModule_ofPlayCard($pc2)), "<br/>";
         $hand = new Hand_PublicHand(FSharpList::ofArray([new Card_Bribe(), new Card_HighVoltage(), new Card_Watchdog()]));
-        $result = Shared_002EHandModule___contains(new Card_Rut(), $hand);
+        $result = HandModule_contains(new Card_Rut(), $hand);
         echo "contains: " , var_dump($result),"<br/>";
         $hv = new Card_HighVoltage();
         $rm = FSharpList::tryFindIndex(function($item) { global $hv; return $item == $hv; } , $hand->cards);
         echo "remove: " , var_dump($rm),"<br/>";
-        $rm2 = Shared_002EHandModule___remove(new Card_HighVoltage(), $hand);
+        $rm2 = HandModule_remove(new Card_HighVoltage(), $hand);
         echo "Hand.remove: " , var_dump($rm2),"<br/>"; 
-        $rm3 = Shared_002EHandModule___remove(new Card_Bribe(), $rm2);
-        $rm4 = Shared_002EHandModule___remove(new Card_Watchdog(), $rm3);
-        echo "CanPlay: ", var_dump(Shared_002EHandModule___canPlay($rm3)), "<br/>";
+        $rm3 = HandModule_remove(new Card_Bribe(), $rm2);
+        $rm4 = HandModule_remove(new Card_Watchdog(), $rm3);
+        echo "CanPlay: ", var_dump(HandModule_canPlay($rm3)), "<br/>";
 
         $l0 = FSharpList::ofArray([2,3,4,5]);
         $l = FSharpList::map(function ($x) { return $x + 1;}, $l0 );
@@ -66,13 +66,13 @@
         }
         echo "</ul>";
 
-        $cmd = new BoardCommand_Start(new BoardStart(FSharpList::ofArray([ [new Color_Blue(), "p1", "Player1" ], [new Color_Red(), "p2", "Player2"]]), new Goal_Common(27)));
+        $cmd = new Command_Start(new BoardStart(FSharpList::ofArray([ [new Color_Blue(), "p1", "Player1" ], [new Color_Red(), "p2", "Player2"]]), new Goal_Common(27), new UndoType_FullUndo(), false));
         $s = new Board_InitialState();
-        $es = Shared_002EBoardModule___decide($cmd, $s);
-        $s = FSharpList::fold('Shared_002EBoardModule___evolve', $s, $es);
-        $cmd = new BoardCommand_Play("p1", new Command_SelectFirstCrossroad(new SelectFirstCrossroad(new Crossroad(Shared_002EAxe___op_Multiply__Z425F7B5E(2, $Shared_002EAxeModule___N), new CrossroadSide_CLeft()) )) );
+        $es = BoardModule_decide($cmd, $s);
+        // $s = FSharpList::fold('BoardModule_evolve', $s, $es);
+        // $cmd = new BoardCommand_Play("p1", new Command_SelectFirstCrossroad(new SelectFirstCrossroad(new Crossroad(Axe_op_Multiply__Z425F7B5E(2, $AxeModule_N), new CrossroadSide_CLeft()) )) );
 
-        $es2 =  Shared_002EBoardModule___decide($cmd, $s);
+        $es2 =  BoardModule_decide($cmd, $s);
 
         echo var_dump($es2), "<br/><br/>";
 
@@ -212,7 +212,7 @@
             $e = fromJson($js);
          echo var_dump($e), "<br/><br/>";
 
-         $s2 = Shared_002EBoardModule___evolve($s2,$e);
+         $s2 = BoardModule_evolve($s2,$e);
         }
         
 

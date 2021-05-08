@@ -148,6 +148,7 @@
      
     public function playOneHayBale()
     {
+        global $NIL;
         self::setAjaxMode();
 
         // Retrieve arguments
@@ -163,7 +164,7 @@
         if (!(is_null($rm_q) || is_null($rm_r) ||is_null($rm_side)))
             $rm_path = FSharpList::ofArray([ self::newPath($rm_q,$rm_r,$rm_side)]);
         else
-            $rm_path = FSharpList::get_Nil();
+            $rm_path = $NIL;
 
         $this->game->playCard(new PlayCard_PlayHayBale(FSharpList::ofArray([ self::newPath($q,$r,$side)  ]), $rm_path));
 
@@ -188,6 +189,7 @@
 
     public function playTwoHayBale()
     {
+        global $NIL;
         self::setAjaxMode();
 
         $q1 = self::getArg( "q1", AT_int, true );
@@ -204,7 +206,7 @@
         $rm_r2 = self::getArg( "rm_r2", AT_int, false );
         $rm_side2 = self::getArg( "rm_side2", AT_enum, false, NULL, ["BNW", "BN", "BNE"] );
 
-        $rm_path = FSharpList::get_Nil(); 
+        $rm_path = $NIL; 
         if (!(is_null($rm_q1) || is_null($rm_r1) ||is_null($rm_side1)))
             $rm_path = new Cons(self::newPath($rm_q1,$rm_r1,$rm_side1), $rm_path);
 

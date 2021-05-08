@@ -11,6 +11,15 @@ class Seq {
         }
         return $empty;
     }
+
+    static public function toList($seq) {
+        return FSharpList::ofSeq($seq);
+    }
+
+    static public function toArray($seq) {
+        return FSharpArray::ofSeq($seq);
+    }
+
     public static function filter($filter, $seq)
     {
         foreach($seq as $item)
@@ -42,6 +51,8 @@ class Seq {
 
     public static function collect($projection, $seq)
     {
+        if (is_null($seq))
+            throw new Exception("Seq should not be null");
         foreach($seq as $item)
         {
             foreach($projection($item) as $i)
@@ -105,14 +116,6 @@ class Seq {
         }
     }
 
-    public static function rangeNumber($start, $inc, $end)
-    {
-        while ($start <= $end)
-        {
-            yield $start;
-            $start += $inc;
-        }
-    }
 
     static function maxBy($property, $seq, $comparerArray)
     {
@@ -183,4 +186,24 @@ class DelayedSeq implements IteratorAggregate {
             yield $item;
     } 
     
+}
+
+class Range {
+    public static function rangeNumber($start, $inc, $end)
+    {
+        while ($start <= $end)
+        {
+            yield $start;
+            $start += $inc;
+        }
+    }
+
+    public static function rangeDouble($start, $inc, $end)
+    {
+        while ($start <= $end)
+        {
+            yield $start;
+            $start += $inc;
+        }
+    }
 }

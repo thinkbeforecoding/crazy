@@ -22,14 +22,14 @@
         echo_list("collect", $x);
 
         $x = (function () { 
-            $l = new Cons([ "x", 6], new Cons([ "y", 3], FSharpList::get_Nil()));
+            $l = new Cons([ "x", 6], new Cons([ "y", 3], NULL));
 
             return FSharpList::collect(
                     function ($t) {     
                         return FSharpList::ofSeq(Seq::delay(function ($unitVar__28) use ($t) { 
                             return Seq::collect(function ($matchValue__23) use ($t) {  
                                     return Seq::singleton($t[0]);
-         }, Seq::rangeNumber(1, 1, $t[1]));
+         }, Range::rangeNumber(1, 1, $t[1]));
         }));
          }, $l);
         })();
@@ -486,12 +486,12 @@ function echo_field($name,$field)
         return convertFromJson($js);
         }, $Events);
     
-    $board = $GLOBALS['Shared_002EBoardModule___initialState'];
-    $newBoard = Seq::fold('Shared_002EBoardModule___evolve', $board, $es);
+    $board = $BoardModule_initialState;
+    $newBoard = Seq::fold('BoardModule_evolve', $board, $es);
 
     $cmd = new BoardCommand_Play("2323673", new Command_Move(new PlayerMove(new Direction_Up(), new Crossroad(new Axe(-1,2), new CrossroadSide_CRight() ))));
     
-    $results = Shared_002EBoardModule___decide($cmd, $newBoard);
+    $results = BoardModule_decide($cmd, $newBoard);
 
     echo_list("events", $results);
 
@@ -604,12 +604,12 @@ function echo_field($name,$field)
         return convertFromJson($js);
         }, $Events);
     
-    $board = $GLOBALS['Shared_002EBoardModule___initialState'];
-    $newBoard = Seq::fold('Shared_002EBoardModule___evolve', $board, $es);
+    $board = $BoardModule_initialState;
+    $newBoard = Seq::fold('BoardModule_evolve', $board, $es);
 
     $cmd = new BoardCommand_Play("2323674", new Command_Move(new PlayerMove(new Direction_Horizontal(), new Crossroad(new Axe(-2,2), new CrossroadSide_CRight() ))));
     
-    $results = Shared_002EBoardModule___decide($cmd, $newBoard);
+    $results = BoardModule_decide($cmd, $newBoard);
 
     echo_list("events", $results);
 

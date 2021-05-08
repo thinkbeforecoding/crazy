@@ -87,11 +87,11 @@
             return convertFromJson($js);
             }, $Events);
         
-        $board = $GLOBALS['Shared_002EBoardModule___initialState'];
-        $newBoard = Seq::fold('Shared_002EBoardModule___evolve', $board, $es);
+        $board = $BoardModule_initialState;
+        $newBoard = Seq::fold('BoardModule_evolve', $board, $es);
     
         $cmd = new BoardCommand_Play("2323673", new Command_EndTurn());
         
-        $results = Shared_002EBoardModule___decide($cmd, $newBoard);
+        $results = BoardModule_decide($cmd, $newBoard);
     
         echo_list("events", $results);

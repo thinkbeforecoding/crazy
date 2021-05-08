@@ -371,7 +371,7 @@
             array('id' => '351','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_CardPlayed","fields":[{"_case":"PlayCard_PlayHelicopter","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"0"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]}]'),
             array('id' => '352','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_Heliported","fields":[{"_type":"Crossroad","tile":{"_type":"Axe","q":"2","r":"0"},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}]}]'),
             array('id' => '353','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":"2","r":"0"},"border":{"_case":"BorderSide_BNW","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":1,"r":0},"side":{"_case":"CrossroadSide_CRight","fields":[]}}}]}]'),
-            #array('id' => '354','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":-1},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
+            // #array('id' => '354','type' => 'BoardEvent_Played','body' => '["84193640",{"_case":"Event_FenceDrawn","fields":[{"_type":"Moved","Move":{"_case":"Direction_Up","fields":[]},"Path":{"_type":"Path","tile":{"_type":"Axe","q":1,"r":0},"border":{"_case":"BorderSide_BNE","fields":[]}},"Crossroad":{"_type":"Crossroad","tile":{"_type":"Axe","q":2,"r":-1},"side":{"_case":"CrossroadSide_CLeft","fields":[]}}}]}]'),
      
           );
 
@@ -382,11 +382,13 @@
             return convertFromJson($js);
             }, $Events);
         
-        $board = $GLOBALS['Shared_002EBoardModule___initialState'];
-        $newBoard = Seq::fold('Shared_002EBoardModule___evolve', $board, $es);
+        $board = $BoardModule_initialState;
+
+        $newBoard = Seq::fold('BoardModule_evolve', $board, $es);
+
     
         $cmd = new BoardCommand_Play("84193640", new Command_Move(new PlayerMove(new Direction_Up(), new Crossroad(new Axe(2,-1), new CrossroadSide_CLeft() ))));
         
-        $results = Shared_002EBoardModule___decide($cmd, $newBoard);
+        $results = BoardModule_decide($cmd, $newBoard);
     
         echo_list("events", $results);

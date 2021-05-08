@@ -466,7 +466,7 @@ class SetTree {
         if (is_null($s2))
             return 1;
         
-        return SetTree::compareStacks($comparer, new Cons($s1, FSharpList::get_Nil()), new Cons($s2, FSharpList::get_Nil()) );
+        return SetTree::compareStacks($comparer, new Cons($s1, NULL), new Cons($s2, NULL) );
     }
 }
 
@@ -507,7 +507,7 @@ class Set implements IteratorAggregate, iComparable {
         return [$this->Tree];
     }
 
-    static function FSharpSet___op_Addition($set1, $set2)
+    static function FSharpSet_op_Addition($set1, $set2)
     {
         if (is_null($set2->Tree))
             return $set1; // (* A U 0 = A *)
@@ -517,7 +517,7 @@ class Set implements IteratorAggregate, iComparable {
 
     }
 
-    static function FSharpSet___op_Subtraction($set1, $set2)
+    static function FSharpSet_op_Subtraction($set1, $set2)
     {
         if (is_null($set1->Tree))
             return $set1; //(* 0 - B = 0 *)

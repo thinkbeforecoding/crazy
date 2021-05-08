@@ -267,14 +267,20 @@ class Map implements IteratorAggregate
 
     function __construct($comparer, $tree)
     {
+        if (is_null($comparer))
+        {
+            throw new Exception("Comparer is NULL");
+        }
         $this->Comparer = $comparer;
         $this->Tree = $tree;
     }
 
     static $empty;
 
-    static function empty($comparer) 
+    static function empty()  
     {
+        $comparer = [ 'Compare' => 'Util::compare' ];
+
         return new Map($comparer, NULL);
     } 
 
@@ -330,6 +336,7 @@ class Map implements IteratorAggregate
 
     static function find($key, $table)
     {
+
         return MapTree::find($table->Comparer,$key,$table->Tree);
     }
     static function tryFind($key, $table)
@@ -361,8 +368,9 @@ class Map implements IteratorAggregate
     {
         return new Map($table->Comparer, MapTree::mapi($f, $table->Tree));
     }
-    static function FSharpMap__get_Item__2B595($table, $key)
+    static function FSharpMap__get_Item($key, $table)
     {
+
         return MapTree::find($table->Comparer, $key, $table->Tree);
     }
 

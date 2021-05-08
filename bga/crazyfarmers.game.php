@@ -75,6 +75,7 @@ class CrazyFarmers extends Table
 
     protected function setupNewGame( $players, $options = array() )
     {    
+        global $BoardModule_initialState;
         // Set the colors of the players with HTML color code
         // The default below is red/green/blue/orange/brown
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
@@ -191,7 +192,7 @@ class CrazyFarmers extends Table
 
 
 
-        $goal = Shared_002EGoalModule___fromType(count($players), $goalType);
+        $goal = GoalModule_fromType(count($players), $goalType);
 
         $cmd = new BoardCommand_Start(
                 new BoardStart(
@@ -199,8 +200,8 @@ class CrazyFarmers extends Table
                         $goal,
                         $undoType,
                         $useGameOver));
-        $board = $GLOBALS['Shared_002EBoardModule___initialState'];
-        $es = Shared_002EBoardModule___decide($cmd, $board);
+        $board = $BoardModule_initialState;
+        $es = BoardModule_decide($cmd, $board);
         
         self::saveEvents($es);
         
@@ -239,11 +240,11 @@ class CrazyFarmers extends Table
   
         $r = self::loadState();
         $board = $r[1];
-        $pboard = SharedServer___privateUndoableBoard($current_player_id, $board);
+        $pboard = privateUndoableBoard($current_player_id, $board);
 
 
 
-        $result['board'] = convertToSimpleJson(Shared_002EBoardModule___toUndoState($pboard));
+        $result['board'] = convertToSimpleJson(BoardModule_toUndoState($pboard));
         $result['version'] = $r[0];
 
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
@@ -265,7 +266,7 @@ class CrazyFarmers extends Table
     {
         $r = self::loadState();
 
-        return SharedServer___bgaProgression($r[1]);
+        return bgaProgression($r[1]);
     }
 
 
@@ -275,7 +276,7 @@ class CrazyFarmers extends Table
 
     function fold($board, $es)
     {
-        return FSharpList::fold('Shared_002EBoardModule___evolve', $board, $es);
+        return FSharpList::fold('BoardModule_evolve', $board, $es);
     }
 
     function saveEvent($e)
@@ -330,15 +331,17 @@ class CrazyFarmers extends Table
 
     function loadState()
     {
-        $s = $GLOBALS['Shared_002EBoardModule___initialState'];
+        global $BoardModule_initialState;
+        global $StatsModule_empty;
+        $s = $BoardModule_initialState;
         $v = 0;
-        $stats = $GLOBALS['SharedServer_002EStatsModule___empty'];
+        $stats = $StatsModule_empty;
         foreach(self::loadEvents() as $r)
         {
             $v = $r[0];
             $e = $r[1];
-            $s = Shared_002EBoardModule___evolve($s,$e);
-            $stats = SharedServer_002EStatsModule___update($stats, $e);
+            $s = BoardModule_evolve($s,$e);
+            $stats = StatsModule_update($stats, $e);
         }
 
         return [$v,$s,$stats];
@@ -391,14 +394,14 @@ class CrazyFarmers extends Table
 
         self::saveCommand($cmd, $version);
 
-        $es = Shared_002EBoardModule___decide($cmd, $board);
+        $es = BoardModule_decide($cmd, $board);
 
 
         $newVersion = self::saveEvents($es);
         $board = self::fold($board, $es);
 
         self::updateScore($es,$board);
-        SharedServer___updateStats($es, $stats, function($v,$n,$p) { self::setStat($v,$n,$p); });
+        updateStats($es, $stats, function($v,$n,$p) { self::setStat($v,$n,$p); });
 
         if (!empty($es))
         {
@@ -406,18 +409,18 @@ class CrazyFarmers extends Table
             $args['version'] = $newVersion;
             foreach(self::loadPlayersBasicInfos() as $id => $p)
             {
-                $privateEs = SharedServer___privateEvents((string)$id, $es);
+                $privateEs = privateEvents((string)$id, $es);
                 $args['events'] = convertToSimpleJson($privateEs);
                 self::notifyPlayer($id, "events", "", $args );
             }
 
-            $privateEs = SharedServer___privateEvents("", $es);
+            $privateEs = privateEvents("", $es);
             $args['events'] = convertToSimpleJson($privateEs);
             self::notifyAllPlayers( "specatorEvents", "", $args);
 
             foreach ($es as $e)
             {
-                $result = SharedServer___textAction($previousBoard, $board, $e);
+                $result = textAction($previousBoard, $board, $e);
                 $text = $result[0];
                 if (!is_null($text))
                 {
@@ -437,7 +440,7 @@ class CrazyFarmers extends Table
 
     function updateScore($es, $board)
     {
-        SharedServer___bgaScore($es, $board, function ($args) 
+        bgaScore($es, $board, function ($args) 
         {
             $pid = $args[0];
             $score = $args[1];
@@ -502,7 +505,7 @@ class CrazyFarmers extends Table
 
     function updateState($es,$board, $zombie)
     {
-        SharedServer___bgaUpdateState($es,$board,$zombie,
+        bgaUpdateState($es,$board,$zombie,
             $this->gamestate->state()['name'], 
             function($state) {$this->gamestate->nextState($state);},
             function($player) {  self::eliminatePlayer($player); }
@@ -518,7 +521,7 @@ class CrazyFarmers extends Table
 
         self::giveExtraTime($player_id);
 
-        $s = SharedServer___bgaNextPlayer($board);
+        $s = bgaNextPlayer($board);
 
         $this->gamestate->nextState($s);
     }
@@ -532,7 +535,7 @@ class CrazyFarmers extends Table
         $version = $state[0];
         $board = $state[1];
 
-        SharedServer___bgaUpdateZombieState($board,
+        bgaUpdateZombieState($board,
             function($state) {$this->gamestate->nextState($state);}
         );
     }
