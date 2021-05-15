@@ -121,7 +121,7 @@ class Seq {
     {
         $max = NULL;
         $maxVal = NULL;
-        $comparer = $comparerArray['Compare'];
+        $comparer = $comparerArray['Compare']();
         foreach($seq as $item)
         {
             $prop = $property($item);
@@ -139,7 +139,7 @@ class Seq {
     static function max($seq, $comparerArray)
     {
         $max = NULL;
-        $comparer = $comparerArray['Compare'];
+        $comparer = $comparerArray['Compare']();
         foreach($seq as $item)
         {
             if (is_null($max) || $comparer($item,$max) > 0)

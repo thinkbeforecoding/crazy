@@ -147,7 +147,7 @@ class MapTree {
             $l = $m->left;
             $r = $m->right;
             $h = $m->height;
-            $c = $comparer['Compare']($k, $k2); 
+            $c = $comparer['Compare']()($k, $k2); 
             if ($c < 0) 
                 return MapTree::rebalance(MapTree::add($comparer, $k, $v, $l), $k2, $v2, $r);
             elseif ($c == 0) 
@@ -156,7 +156,7 @@ class MapTree {
                 return MapTree::rebalance($l, $k2, $v2, MapTree::add($comparer, $k, $v, $r)); 
         }
         $k2 = $m->key; 
-        $c = $comparer['Compare']($k, $k2); 
+        $c = $comparer['Compare']()($k, $k2); 
         if ($c < 0) 
             return new MapNode($k, $v, NULL, $m, 2);
         elseif ($c == 0)
@@ -176,7 +176,7 @@ class MapTree {
             $v2= $m->value;
             $l= $m->left;
             $r= $m->right;
-            $c = $comparer['Compare']($k, $k2); 
+            $c = $comparer['Compare']()($k, $k2); 
             if ($c < 0) 
                 return MapTree::tryGetValue($comparer, $k, $v, $l);
             elseif ($c == 0) 
@@ -187,7 +187,7 @@ class MapTree {
         }
         $k2 = $m->key;
         $v2 = $m->value;
-        $c = $comparer['Compare']($k, $k2); 
+        $c = $comparer['Compare']()($k, $k2); 
         if ($c == 0)
             { $v = $v2;
                 return true;
@@ -279,7 +279,7 @@ class Map implements IteratorAggregate
 
     static function empty()  
     {
-        $comparer = [ 'Compare' => 'Util::compare' ];
+        $comparer = [ 'Compare' => function () {     return function ($x, $y) {     return Util::compare($x, $y); }; }];
 
         return new Map($comparer, NULL);
     } 
@@ -292,7 +292,7 @@ class Map implements IteratorAggregate
     static function ofList($list)
     {
         $tree = NULL;
-        $comparer = [ 'Compare' => 'Util::compare' ];
+        $comparer = [ 'Compare' => function () {     return function ($x, $y) {     return Util::compare($x, $y); }; }];
 
         while ($list instanceof Cons)
         {
@@ -306,7 +306,7 @@ class Map implements IteratorAggregate
     static function ofSeq($seq)
     {
         $tree = NULL;
-        $comparer = [ 'Compare' => 'Util::compare' ];
+        $comparer = [ 'Compare' => function () {     return function ($x, $y) {     return Util::compare($x, $y); }; }];
 
         foreach ($seq as $item)
         {
@@ -319,7 +319,7 @@ class Map implements IteratorAggregate
     static function ofArray($seq)
     {
         $tree = NULL;
-        $comparer = [ 'Compare' => 'Util::compare' ];
+        $comparer = [ 'Compare' => function () {     return function ($x, $y) {     return Util::compare($x, $y); }; }];
 
         foreach ($seq as $item)
         {

@@ -22,7 +22,6 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
     }
 
     static function ofArray($a) {
-        global $NIL;
         $list = NULL;
         $p = &$list;
         foreach ($a as $item) {
@@ -30,7 +29,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             $p = new Cons($item, $list);
             $p = &$p->next;
         }
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return $list;
     }
 
@@ -45,7 +44,6 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
     }
 
     static function ofSeq($seq) {
-        global $NIL;
         $list = NULL;
         $p = &$list;
         foreach ($seq as $item) {
@@ -53,7 +51,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             $p = new Cons($item, $list);
             $p = &$p->next;
         }
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return $list;
     }
 
@@ -116,8 +114,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
 
     static function reverse($list)
     {
-        global $NIL;
-        $result = $NIL;
+        $result = $GLOBALS['NIL'];
         while ($list instanceof Cons)
         {
             $result = new Cons($list->value, $result);
@@ -130,7 +127,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
 
     static function splitAt($i, $list)
     {
-        global $NIL;
+        $GLOBALS['NIL'];
         $left = NULL;
         $p = &$left;
 
@@ -140,7 +137,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             $p = &$p->next;
             $list = $list->next;
         }
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
 
         return [ $left, $list];
     }
@@ -184,7 +181,6 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
 
     static function truncate($count, $list)
     {
-        global $NIL;
         $lst = NULL;
         $p = &$lst;
         while ($list instanceof Cons && $count-- > 0)
@@ -193,13 +189,12 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             $p = &$p->next;    
             $list = $list->next;
         }
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return $lst;
     }
     
     static function map($projection, $list)
     {
-        global $NIL;
         $lst = NULL;
         $p = &$lst;
         while ($list instanceof Cons)
@@ -208,13 +203,12 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             $p = &$p->next;    
             $list = $list->next;
         }
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return $lst;
     }
 
     static function choose($projection, $list)
     {
-        global $NIL;
         $lst = NULL;
         $p = &$lst;
         while ($list instanceof Cons)
@@ -227,13 +221,12 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             }
             $list = $list->next;
         }
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return $lst;
     }
 
     static function filter($predicate, $list)
     {
-        global $NIL;
         $lst = NULL;
         $p = &$lst;
         while ($list instanceof Cons)
@@ -245,7 +238,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             }
             $list = $list->next;
         }
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return $lst;
     }
 
@@ -261,7 +254,6 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
 
     static function mapFold($aggregator, $state, $list)
     {
-        global $NIL;
         $lst = NULL;
         $p = &$lst;
         while ($list instanceof Cons)
@@ -273,13 +265,12 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             $state = $v[1];
             $list = $list->next;
         }
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return [$lst,$state];
     }
 
     static function sortBy($projection, $list)
     {
-        global $NIL;
         $array = [];
         while ($list instanceof Cons)
         {
@@ -295,7 +286,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             $p = new Cons($item[0], $list);
             $p = &$p->next;
         }
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return $list;
 
         return FSharpList::ofArray($array);
@@ -309,8 +300,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
 
     static function groupBy($property, $list)
     {
-        global $NIL;
-        $comparer = [ 'Compare' => 'Util::compare' ];
+        $comparer = [ 'Compare' => function () {     return function ($x, $y) {     return Util::compare($x, $y); }; }];
         $map = Map::empty($comparer);
 
         while($list instanceof Cons)
@@ -331,14 +321,13 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             $p = &$p->next;
         }
 
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return $lst;
 
     }
 
     static function chunkBySize($size, $list)
     {
-        global $NIL;
         $lst = NULL;
         $p = &$lst;
 
@@ -355,7 +344,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
 
             if (--$c == 0)
             {
-                $pc = $NIL;
+                $pc = $GLOBALS['NIL'];
                 $p = new Cons($chunk, NULL);
                 $p = &$p->next;
                 $chunk = NULL;
@@ -367,12 +356,12 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
 
         if ($chunk instanceof Cons)
         {
-            $pc = $NIL;
+            $pc = $GLOBALS['NIL'];
             $p = new Cons($chunk, NULL);
             $p = &$p->next;
         }
 
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return $lst;
     }
 
@@ -392,7 +381,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
     {
         $max = NULL;
         $maxVal = NULL;
-        $comparer = $comparerArray['Compare'];
+        $comparer = $comparerArray['Compare']();
         while($list instanceof Cons)
         {
             $prop = $property($list->value);
@@ -434,7 +423,6 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
 
     static function map2($projection, $list1, $list2)
     {
-        global $NIL;
         $lst = NULL;
         $p = &$lst;
         while($list1 instanceof Cons and $list2 instanceof Cons)
@@ -445,7 +433,7 @@ abstract class FSharpList implements IteratorAggregate, iComparable {
             $list2 = $list2->next;
         }
 
-        $p = $NIL;
+        $p = $GLOBALS['NIL'];
         return $lst;
     }
 
@@ -479,7 +467,7 @@ class Nil extends FSharpList {
     function isEmpty() { return true; }
 }
 
-$NIL = new Nil();
+$GLOBALS['NIL'] = new Nil();
 
 class Cons extends FSharpList {
     public $value;

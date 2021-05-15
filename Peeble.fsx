@@ -345,10 +345,10 @@ module Output =
             write ctx "$"
             write ctx v
         | PhpGlobal v -> 
-            //write ctx "$GLOBALS['"
-            write ctx "$"
+            write ctx "$GLOBALS['"
+            //write ctx "$"
             write ctx v
-            //write ctx "']"
+            write ctx "']"
         | PhpProp(l,r, _) ->
             writeExpr ctx l
             write ctx "->"
@@ -615,10 +615,10 @@ module Output =
             write ctx arg
         writeln ctx ") {"
         let bodyCtx = indent ctx
-        for g in f.Globals do
-            writei bodyCtx "global $"
-            write bodyCtx g
-            writeln bodyCtx ";"
+        //for g in f.Globals do
+        //    writei bodyCtx "global $"
+        //    write bodyCtx g
+        //    writeln bodyCtx ";"
 
         for s in f.Matchings do
             writeStatement bodyCtx s
@@ -691,11 +691,11 @@ module Output =
 
 
     let writeAssign ctx n expr =
-        //writei ctx "$GLOBALS['"
-        writei ctx "$"
+        writei ctx "$GLOBALS['"
+        //writei ctx "$"
         write ctx n
-        //write ctx "'] = "
-        write ctx " = "
+        write ctx "'] = "
+        //write ctx " = "
         writeExpr ctx expr
         writeln ctx ";"
 
