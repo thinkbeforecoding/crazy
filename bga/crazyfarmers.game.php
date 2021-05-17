@@ -18,7 +18,6 @@
 
 
 require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
-require_once('modules/FSharp.Core.php');
 require_once('modules/crazyfarmers.php');
 require_once('modules/Serialization.php');
 
@@ -65,17 +64,16 @@ class CrazyFarmers extends Table
         static $colors = NULL;
         if (is_null($colors)) {
             $colors =
-                [ "AEDBDE" => new Color_Blue(),
-                  "EFC54C" => new Color_Yellow(),
-                  "A87BBE" => new Color_Purple(),
-                  "EA222F" => new Color_Red() ];
+                [ "AEDBDE" => new \Shared\Color_Blue(),
+                  "EFC54C" => new \Shared\Color_Yellow(),
+                  "A87BBE" => new \Shared\Color_Purple(),
+                  "EA222F" => new \Shared\Color_Red() ];
         }
         return $colors[$color];
     }
 
     protected function setupNewGame( $players, $options = array() )
     {    
-        global $BoardModule_initialState;
         // Set the colors of the players with HTML color code
         // The default below is red/green/blue/orange/brown
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
@@ -160,25 +158,25 @@ class CrazyFarmers extends Table
         switch ($this->gamestate->table_globals[100])
         {
             case 1:
-                $goalType = new GoalType_Fast();
+                $goalType = new \Shared\GoalType_Fast();
             break;
             case 3:
-                $goalType = new GoalType_Expert();
+                $goalType = new \Shared\GoalType_Expert();
             break;
             default:
-                $goalType = new GoalType_Regular();
+                $goalType = new \Shared\GoalType_Regular();
         }
 
         switch ($this->gamestate->table_globals[101])
         {
             case 2:
-                $undoType = new UndoType_DontUndoCards();
+                $undoType = new \Shared\UndoType_DontUndoCards();
             break;
             case 3:
-                $undoType = new UndoType_NoUndo();
+                $undoType = new \Shared\UndoType_NoUndo();
             break;
             default:
-                $undoType = new UndoType_FullUndo();
+                $undoType = new \Shared\UndoType_FullUndo();
         }
 
         switch ($this->gamestate->table_globals[102])
@@ -194,14 +192,14 @@ class CrazyFarmers extends Table
 
         $goal = GoalModule_fromType(count($players), $goalType);
 
-        $cmd = new BoardCommand_Start(
-                new BoardStart(
-                        FSharpList::ofArray($crazyPlayers),
+        $cmd = new \SharedGame\BoardCommand_Start(
+                new \SharedGame\BoardStart(
+                        \FSharpList\ofArray($crazyPlayers),
                         $goal,
                         $undoType,
                         $useGameOver));
-        $board = $BoardModule_initialState;
-        $es = BoardModule_decide($cmd, $board);
+        $board = $GLOBALS['BoardModule_initialState'];
+        $es = \SharedGame\BoardModule_decide($cmd, $board);
         
         self::saveEvents($es);
         
@@ -240,11 +238,11 @@ class CrazyFarmers extends Table
   
         $r = self::loadState();
         $board = $r[1];
-        $pboard = privateUndoableBoard($current_player_id, $board);
+        $pboard = \SharedServer\privateUndoableBoard($current_player_id, $board);
 
 
 
-        $result['board'] = convertToSimpleJson(BoardModule_toUndoState($pboard));
+        $result['board'] = convertToSimpleJson(\SharedGame\BoardModule_toUndoState($pboard));
         $result['version'] = $r[0];
 
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
@@ -266,7 +264,7 @@ class CrazyFarmers extends Table
     {
         $r = self::loadState();
 
-        return bgaProgression($r[1]);
+        return \SharedServer\bgaProgression($r[1]);
     }
 
 
@@ -276,7 +274,7 @@ class CrazyFarmers extends Table
 
     function fold($board, $es)
     {
-        return FSharpList::fold('BoardModule_evolve', $board, $es);
+        return \FSharpList\fold('\\SharedGame\\BoardModule_evolve', $board, $es);
     }
 
     function saveEvent($e)
@@ -331,17 +329,15 @@ class CrazyFarmers extends Table
 
     function loadState()
     {
-        global $BoardModule_initialState;
-        global $StatsModule_empty;
-        $s = $BoardModule_initialState;
+        $s = $GLOBALS['BoardModule_initialState'];
         $v = 0;
-        $stats = $StatsModule_empty;
+        $stats = $GLOBALS['StatsModule_empty'];
         foreach(self::loadEvents() as $r)
         {
             $v = $r[0];
             $e = $r[1];
-            $s = BoardModule_evolve($s,$e);
-            $stats = StatsModule_update($stats, $e);
+            $s = \SharedGame\BoardModule_evolve($s,$e);
+            $stats = \SharedServer\StatsModule_update($stats, $e);
         }
 
         return [$v,$s,$stats];
@@ -390,18 +386,18 @@ class CrazyFarmers extends Table
         $board = $state[1];
         $stats = $state[2];
         $previousBoard = $board;
-        $cmd = new BoardCommand_Play($player_id, $playerCmd);
+        $cmd = new \SharedGame\BoardCommand_Play($player_id, $playerCmd);
 
         self::saveCommand($cmd, $version);
 
-        $es = BoardModule_decide($cmd, $board);
+        $es = \SharedGame\BoardModule_decide($cmd, $board);
 
 
         $newVersion = self::saveEvents($es);
         $board = self::fold($board, $es);
 
         self::updateScore($es,$board);
-        updateStats($es, $stats, function($v,$n,$p) { self::setStat($v,$n,$p); });
+        \SharedServer\updateStats($es, $stats, function($v,$n,$p) { self::setStat($v,$n,$p); });
 
         if (!empty($es))
         {
@@ -409,23 +405,23 @@ class CrazyFarmers extends Table
             $args['version'] = $newVersion;
             foreach(self::loadPlayersBasicInfos() as $id => $p)
             {
-                $privateEs = privateEvents((string)$id, $es);
+                $privateEs = \SharedServer\privateEvents((string)$id, $es);
                 $args['events'] = convertToSimpleJson($privateEs);
                 self::notifyPlayer($id, "events", "", $args );
             }
 
-            $privateEs = privateEvents("", $es);
+            $privateEs = \SharedServer\privateEvents("", $es);
             $args['events'] = convertToSimpleJson($privateEs);
             self::notifyAllPlayers( "specatorEvents", "", $args);
 
             foreach ($es as $e)
             {
-                $result = textAction($previousBoard, $board, $e);
+                $result = \SharedServer\textAction($previousBoard, $board, $e);
                 $text = $result[0];
                 if (!is_null($text))
                 {
                     $args = [];
-                    foreach(Map::toSeq($result[1]) as $kv)
+                    foreach(\Map\toSeq($result[1]) as $kv)
                     {
                         $args[$kv[0]] = $kv[1];
                     }
@@ -440,7 +436,7 @@ class CrazyFarmers extends Table
 
     function updateScore($es, $board)
     {
-        bgaScore($es, $board, function ($args) 
+        \SharedServer\bgaScore($es, $board, function ($args) 
         {
             $pid = $args[0];
             $score = $args[1];
@@ -453,7 +449,7 @@ class CrazyFarmers extends Table
     {
         self::checkAction('selectFirstCrossroad');
         $player_id = self::getActivePlayerId();
-        $cmd =  new Command_SelectFirstCrossroad(new SelectFirstCrossroad($crossroad));
+        $cmd =  new \SharedGame\Command_SelectFirstCrossroad(new \SharedGame\SelectFirstCrossroad($crossroad));
 
         self::playCommand($player_id, $cmd);
     }
@@ -463,7 +459,7 @@ class CrazyFarmers extends Table
     {
         self::checkAction('move');
         $player_id = self::getActivePlayerId();
-        $cmd = new Command_Move(new PlayerMove($dir, $destination));
+        $cmd = new \SharedGame\Command_Move(new \SharedGame\PlayerMove($dir, $destination));
 
         self::playCommand($player_id, $cmd);
 
@@ -472,7 +468,7 @@ class CrazyFarmers extends Table
     {
         self::checkAction('playCard');
         $player_id = self::getActivePlayerId();
-        $cmd = new Command_PlayCard($card);
+        $cmd = new \SharedGame\Command_PlayCard($card);
 
         self::playCommand($player_id, $cmd);
     }
@@ -480,7 +476,7 @@ class CrazyFarmers extends Table
     {
         self::checkAction('discard');
         $player_id = self::getActivePlayerId();
-        $cmd = new Command_Discard($card);
+        $cmd = new \SharedGame\Command_Discard($card);
 
         self::playCommand($player_id, $cmd);
     }
@@ -489,7 +485,7 @@ class CrazyFarmers extends Table
     {
         self::checkAction('next');
         $player_id = self::getActivePlayerId();
-        $cmd = new Command_EndTurn();
+        $cmd = new \SharedGame\Command_EndTurn();
 
         self::playCommand($player_id, $cmd);
     }
@@ -498,14 +494,14 @@ class CrazyFarmers extends Table
     {
         self::checkAction('undo');
         $player_id = self::getActivePlayerId();
-        $cmd = new Command_Undo();
+        $cmd = new \SharedGame\Command_Undo();
 
         self::playCommand($player_id, $cmd);
     }
 
     function updateState($es,$board, $zombie)
     {
-        bgaUpdateState($es,$board,$zombie,
+        \SharedServer\bgaUpdateState($es,$board,$zombie,
             $this->gamestate->state()['name'], 
             function($state) {$this->gamestate->nextState($state);},
             function($player) {  self::eliminatePlayer($player); }
@@ -521,7 +517,7 @@ class CrazyFarmers extends Table
 
         self::giveExtraTime($player_id);
 
-        $s = bgaNextPlayer($board);
+        $s = \SharedServer\bgaNextPlayer($board);
 
         $this->gamestate->nextState($s);
     }
@@ -535,7 +531,7 @@ class CrazyFarmers extends Table
         $version = $state[0];
         $board = $state[1];
 
-        bgaUpdateZombieState($board,
+        \SharedServer\bgaUpdateZombieState($board,
             function($state) {$this->gamestate->nextState($state);}
         );
     }
@@ -611,7 +607,7 @@ class CrazyFarmers extends Table
     function zombieTurn( $state, $active_player )
     {
         $statename = $state['name'];
-        $cmd = new Command_Quit();
+        $cmd = new \SharedGame\Command_Quit();
         self::playCommand($active_player, $cmd, true);
     	
         // if ($state['type'] === "activeplayer") {

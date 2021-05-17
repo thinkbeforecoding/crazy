@@ -401,7 +401,7 @@ function echo_field($name,$field)
 //     echo_list("cut", $cut);
 
     $array = [ "hello", "test", "world" ];
-    $result = FSharpArray::filter(function($x) { return $x !== "test"; }, $array);
+    $result = \FSharpArray\filter(function($x) { return $x !== "test"; }, $array);
     echo_list("filter", $result);
 
 

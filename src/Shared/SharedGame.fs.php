@@ -1084,10 +1084,8 @@ function HandModule_contains($card, $_arg1) {
         case 0:
             return false;
         default:
-            return \FSharpList\contains($card, $_arg1->cards, [ 'Equals' => function () {             return function ($x, $y) {             return \Util\equals($x, $y);
- };
- }, 'GetHashCode' => function () {             return function ($x) {             return \Util\safeHash($x);
- };
+            return \FSharpList\contains($card, $_arg1->cards, [ 'Equals' => function ($x, $y) {             return \Util\equals($x, $y);
+ }, 'GetHashCode' => function ($x) {             return \Util\safeHash($x);
  }]);
     }
 }
@@ -2425,8 +2423,7 @@ function ParcelModule_dir($n) {
 function ParcelModule_dirs($s, $n) {
     return \Set\ofSeq(\Seq\toList(\Seq\delay(function ($unitVar) use ($n, $s) {     return \Seq\map(function ($i) use ($s) {     return ParcelModule_dir($s + $i);
  }, \Range\rangeDouble(0, 1, $n));
- })), [ 'Compare' => function () {     return function ($x, $y) {     return \Util\compare($x, $y);
- };
+ })), [ 'Compare' => function ($x, $y) {     return \Util\compare($x, $y);
  }]);
 }
 
@@ -2499,8 +2496,7 @@ $GLOBALS['PathModule_allInnerPaths'] = \Set\ofSeq(\Seq\toList(\Seq\delay(functio
  }, \Range\rangeDouble(-2, 1, 3));
  }));
  }));
- })), [ 'Compare' => function () { return function ($x_6, $y_6) { return \Util\compare($x_6, $y_6);
- };
+ })), [ 'Compare' => function ($x_6, $y_6) { return \Util\compare($x_6, $y_6);
  }]);
 
 #94
@@ -2519,8 +2515,7 @@ $GLOBALS['PathModule_boderPaths'] = \Set\ofSeq(\Seq\toList(\Seq\delay(function (
  }, \Range\rangeDouble(0, 1, 3));
  }));
  }));
- })), [ 'Compare' => function () { return function ($x, $y) { return \Util\compare($x, $y);
- };
+ })), [ 'Compare' => function ($x, $y) { return \Util\compare($x, $y);
  }]);
 
 #95
@@ -2841,8 +2836,7 @@ function FenceOps__007CRwd_007C__007C($nextPath, $_arg1) {
 }
 
 #112
-$GLOBALS['FieldModule_empty'] = new Field(\Set\_empty([ 'Compare' => function () { return function ($x, $y) { return \Util\compare($x, $y);
- };
+$GLOBALS['FieldModule_empty'] = new Field(\Set\_empty([ 'Compare' => function ($x, $y) { return \Util\compare($x, $y);
  }]));
 
 #113
@@ -2857,15 +2851,13 @@ function FieldModule_size($_arg1) {
 
 #115
 function FieldModule_create($parcel) {
-    return new Field(\Set\ofSeq(new Cons($parcel, $GLOBALS['NIL']), [ 'Compare' => function () {     return function ($x, $y) {     return \Util\compare($x, $y);
- };
+    return new Field(\Set\ofSeq(new Cons($parcel, $GLOBALS['NIL']), [ 'Compare' => function ($x, $y) {     return \Util\compare($x, $y);
  }]));
 }
 
 #116
 function FieldModule_ofParcels($parcels) {
-    return new Field(\Set\ofSeq($parcels, [ 'Compare' => function () {     return function ($x, $y) {     return \Util\compare($x, $y);
- };
+    return new Field(\Set\ofSeq($parcels, [ 'Compare' => function ($x, $y) {     return \Util\compare($x, $y);
  }]));
 }
 
@@ -2892,16 +2884,14 @@ function FieldModule_intersect($_arg2, $_arg1) {
 #121
 function FieldModule_unionMany($fields) {
     return new Field(\Set\ofSeq(\FSharpList\collect(function ($arg00_0040) {     return FieldModule_parcels($arg00_0040);
- }, $fields), [ 'Compare' => function () {     return function ($x, $y) {     return \Util\compare($x, $y);
- };
+ }, $fields), [ 'Compare' => function ($x, $y) {     return \Util\compare($x, $y);
  }]));
 }
 
 #122
 function FieldModule_crossroads($_arg1) {
     return \Set\ofSeq(\Seq\collect(function ($arg00_0040) {     return ParcelModule_crossroads($arg00_0040);
- }, $_arg1->parcels), [ 'Compare' => function () {     return function ($x, $y) {     return \Util\compare($x, $y);
- };
+ }, $_arg1->parcels), [ 'Compare' => function ($x, $y) {     return \Util\compare($x, $y);
  }]);
 }
 
@@ -2917,12 +2907,9 @@ function FieldModule_fill($paths) {
         default:
             return NULL;
     }
- }, $paths), [ 'Compare' => function () {     return function ($x, $y) {     return \Util\compareArrays($x, $y);
- };
- }]), [ 'Equals' => function () {     return function ($x_1, $y_1) {     return $x_1 === $y_1;
- };
- }, 'GetHashCode' => function () {     return function ($x_1) {     return \Util\numberHash($x_1);
- };
+ }, $paths), [ 'Compare' => function ($x, $y) {     return \Util\compareArrays($x, $y);
+ }]), [ 'Equals' => function ($x_1, $y_1) {     return $x_1 === $y_1;
+ }, 'GetHashCode' => function ($x_1) {     return \Util\numberHash($x_1);
  }]);
     return new Field(\Set\ofSeq(\Seq\toList(\Seq\delay(function ($unitVar) use ($sortedPaths) {     return \Seq\collect(function ($matchValue) {     return \Seq\collect(function ($l) use ($matchValue) {     if ($l instanceof Cons) {
         if ($l->next instanceof Cons) {
@@ -2943,16 +2930,14 @@ function FieldModule_fill($paths) {
     }
  }, \FSharpList\chunkBySize(2, $matchValue[1]));
  }, $sortedPaths);
- })), [ 'Compare' => function () {     return function ($x_2, $y_2) {     return \Util\compare($x_2, $y_2);
- };
+ })), [ 'Compare' => function ($x_2, $y_2) {     return \Util\compare($x_2, $y_2);
  }]));
 }
 
 #124
 function FieldModule_border($neighbors, $_arg1) {
     $parcels = $_arg1->parcels;
-    return new Field(\Set\FSharpSet_op_Subtraction(\Set\ofSeq(\Seq\collect($neighbors, $parcels), [ 'Compare' => function () {     return function ($x, $y) {     return \Util\compare($x, $y);
- };
+    return new Field(\Set\FSharpSet_op_Subtraction(\Set\ofSeq(\Seq\collect($neighbors, $parcels), [ 'Compare' => function ($x, $y) {     return \Util\compare($x, $y);
  }]), $parcels));
 }
 
@@ -3088,10 +3073,8 @@ function FieldModule_findBorder($field, $crossroad) {
     } else {
         return 0;
     }
- }, CrossroadModule_neighborTiles($crossroad), [ 'GetZero' => function () {     return function () {     return 0;
- };
- }, 'Add' => function () {     return function ($x, $y) {     return $x + $y;
- };
+ }, CrossroadModule_neighborTiles($crossroad), [ 'GetZero' => function () {     return 0;
+ }, 'Add' => function ($x, $y) {     return $x + $y;
  }]) < 3) {
         return $crossroad;
     } else {
@@ -3232,8 +3215,7 @@ function HayBales_findCutPaths($hayBales) {
     };
     $start = new Crossroad($GLOBALS['AxeModule_center'], new CrossroadSide_CLeft());
     void($loop($start, $start));
-    return \Set\ofSeq($cut, [ 'Compare' => function () {     return function ($x_2, $y_2) {     return \Util\compare($x_2, $y_2);
- };
+    return \Set\ofSeq($cut, [ 'Compare' => function ($x_2, $y_2) {     return \Util\compare($x_2, $y_2);
  }]);
 }
 
@@ -3242,17 +3224,14 @@ function HayBales_hayBaleDestinations($players, $hayBales) {
     return \Set\FSharpSet_op_Subtraction(\Set\FSharpSet_op_Subtraction(\Set\FSharpSet_op_Subtraction($GLOBALS['PathModule_allInnerPaths'], \Set\unionMany(\Seq\toList(\Seq\delay(function ($unitVar) use ($players) {     return \Seq\collect(function ($matchValue) { 
         $p = $matchValue[1];
         if ($p->get_Tag() == 1) {
-            return \Seq\singleton(\Set\ofSeq(FenceModule_fencePaths($p->Item->Fence), [ 'Compare' => function () {             return function ($x, $y) {             return \Util\compare($x, $y);
- };
+            return \Seq\singleton(\Set\ofSeq(FenceModule_fencePaths($p->Item->Fence), [ 'Compare' => function ($x, $y) {             return \Util\compare($x, $y);
  }]));
         } else {
-            return \Seq\singleton(\Set\_empty([ 'Compare' => function () {             return function ($x_1, $y_1) {             return \Util\compare($x_1, $y_1);
- };
+            return \Seq\singleton(\Set\_empty([ 'Compare' => function ($x_1, $y_1) {             return \Util\compare($x_1, $y_1);
  }]));
         }
     }, $players);
- })), [ 'Compare' => function () {     return function ($x_2, $y_2) {     return \Util\compare($x_2, $y_2);
- };
+ })), [ 'Compare' => function ($x_2, $y_2) {     return \Util\compare($x_2, $y_2);
  }])), $hayBales), HayBales_findCutPaths($hayBales));
 }
 
@@ -3322,17 +3301,14 @@ function HayBales_hayBaleDestinationsWithComment($players, $hayBales) {
     $players_1 = \Set\unionMany(\Seq\toList(\Seq\delay(function ($unitVar) use ($players) {     return \Seq\collect(function ($matchValue) { 
         $p = $matchValue[1];
         if ($p->get_Tag() == 1) {
-            return \Seq\singleton(\Set\ofSeq(FenceModule_fencePaths($p->Item->Fence), [ 'Compare' => function () {             return function ($x, $y) {             return \Util\compare($x, $y);
- };
+            return \Seq\singleton(\Set\ofSeq(FenceModule_fencePaths($p->Item->Fence), [ 'Compare' => function ($x, $y) {             return \Util\compare($x, $y);
  }]));
         } else {
-            return \Seq\singleton(\Set\_empty([ 'Compare' => function () {             return function ($x_1, $y_1) {             return \Util\compare($x_1, $y_1);
- };
+            return \Seq\singleton(\Set\_empty([ 'Compare' => function ($x_1, $y_1) {             return \Util\compare($x_1, $y_1);
  }]));
         }
     }, $players);
- })), [ 'Compare' => function () {     return function ($x_2, $y_2) {     return \Util\compare($x_2, $y_2);
- };
+ })), [ 'Compare' => function ($x_2, $y_2) {     return \Util\compare($x_2, $y_2);
  }]);
     $cutPaths = HayBales_findCutPaths($hayBales);
     return \Seq\toList(\Seq\delay(function ($unitVar_1) use ($cutPaths, $hayBales, $players_1) {     return \Seq\append(\Seq\map(function ($p_2) {     return [ $p_2, new Result_Ok(NULL)];
@@ -3599,13 +3575,11 @@ function DrawPile_shuffle($useGameOver, $cards) {
     $remainingCards = \FSharpList\length($cardsWithoutGameOver);
     if ($remainingCards <= 8 ? true : !$useGameOver) {
         return \FSharpList\sortBy(function ($_arg1_1) {         return \Util\randomNext(0, 2147483647);
- }, $cards, [ 'Compare' => function () {         return function ($x, $y) {         return \Util\comparePrimitives($x, $y);
- };
+ }, $cards, [ 'Compare' => function ($x, $y) {         return \Util\comparePrimitives($x, $y);
  }]);
     } else {
         $list_3 = \FSharpList\sortBy(function ($_arg2) {         return \Util\randomNext(0, 2147483647);
- }, $cardsWithoutGameOver, [ 'Compare' => function () {         return function ($x_1, $y_1) {         return \Util\comparePrimitives($x_1, $y_1);
- };
+ }, $cardsWithoutGameOver, [ 'Compare' => function ($x_1, $y_1) {         return \Util\comparePrimitives($x_1, $y_1);
  }]);
         $patternInput = \FSharpList\splitAt($remainingCards - \Util\randomNext(1, 8) - 1, $list_3);
         return \FSharpList\append($patternInput[0], \FSharpList\append(new Cons(new Card_GameOver(), $GLOBALS['NIL']), $patternInput[1]));
@@ -4627,10 +4601,8 @@ function Player_isCut($tractor, $player) {
     if ($player->get_Tag() == 1) {
         $player_1 = $player->Item;
         if (!$player_1->Bonus->HighVoltage) {
-            return \Seq\contains($tractor, FenceModule_fenceCrossroads($player_1->Tractor, $player_1->Fence), [ 'Equals' => function () {             return function ($x, $y) {             return \Util\equals($x, $y);
- };
- }, 'GetHashCode' => function () {             return function ($x) {             return \Util\safeHash($x);
- };
+            return \Seq\contains($tractor, FenceModule_fenceCrossroads($player_1->Tractor, $player_1->Fence), [ 'Equals' => function ($x, $y) {             return \Util\equals($x, $y);
+ }, 'GetHashCode' => function ($x) {             return \Util\safeHash($x);
  }]);
         } else {
             return false;
@@ -4936,8 +4908,7 @@ function Player_decide($otherPlayers, $barns, $hayBales, $bribeParcels, $command
                                     return \Seq\_empty();
                                 }
                             }, $otherPlayers);
- })), [ 'Compare' => function () {                             return function ($x, $y) {                             return \Util\compare($x, $y);
- };
+ })), [ 'Compare' => function ($x, $y) {                             return \Util\compare($x, $y);
  }]);
                             if ((Player_canUseHelicopter($player) ? CrossroadModule_isInField(Player_field($player), $crossroad) : false) ? !\Set\contains($crossroad, $othersCrossroads) : false) {
                                 return \Seq\toList(\Seq\delay(function ($unitVar_6) use ($card, $crossroad, $p) {                                 return \Seq\append(\Seq\singleton(new Event_CardPlayed($card)), \Seq\delay(function ($unitVar_7) use ($crossroad, $p) {                                 return \Seq\append(\Seq\singleton(new Event_Heliported($crossroad)), \Seq\delay(function ($unitVar_8) use ($crossroad, $p) {                                 if (\Util\equals($p->Power, new Power_PowerDown()) ? CrossroadModule_isInField($p->Field, $crossroad) : false) {
@@ -4956,8 +4927,7 @@ function Player_decide($otherPlayers, $barns, $hayBales, $bribeParcels, $command
                             $hb = $card->path;
                             if (\Util\max(function ($x_1, $y_1) {                             return \Util\comparePrimitives($x_1, $y_1);
  }, \Set\count($hayBales) + \FSharpList\length($hb) - 8, 0) === \FSharpList\length($rm)) {
-                                if (\Set\isSubset(\Set\ofSeq($rm, [ 'Compare' => function () {                                 return function ($x_2, $y_2) {                                 return \Util\compare($x_2, $y_2);
- };
+                                if (\Set\isSubset(\Set\ofSeq($rm, [ 'Compare' => function ($x_2, $y_2) {                                 return \Util\compare($x_2, $y_2);
  }]), $hayBales)) {
                                     $dests = HayBales_hayBaleDestinations(new Cons([ '', $player], $otherPlayers), $hayBales);
                                     if (\FSharpList\forAll(function ($b) use ($dests) {                                     return \Set\contains($b, $dests);
@@ -5221,8 +5191,7 @@ function Player_exec($otherPlayers, $barns, $haybales, $cmd, $state) {
 #188
 function Player_move($dir, $player) {
     if ($player->get_Tag() == 1) {
-        return Player_exec($GLOBALS['NIL'], $GLOBALS['BarnsModule_empty'], \Set\_empty([ 'Compare' => function () {         return function ($x, $y) {         return \Util\compare($x, $y);
- };
+        return Player_exec($GLOBALS['NIL'], $GLOBALS['BarnsModule_empty'], \Set\_empty([ 'Compare' => function ($x, $y) {         return \Util\compare($x, $y);
  }]), new Command_Move(new PlayerMove($dir, $player->Item->Tractor)), $player);
     } else {
         throw new Error('Not playing');
@@ -5232,8 +5201,7 @@ function Player_move($dir, $player) {
 #189
 function Player_start($color, $parcel, $pos) {
     $state = new CrazyPlayer_Starting(new Starting($color, $parcel, new Hand_PublicHand($GLOBALS['NIL']), $GLOBALS['BonusModule_empty']));
-    return Player_exec($GLOBALS['NIL'], $GLOBALS['BarnsModule_empty'], \Set\_empty([ 'Compare' => function () {     return function ($x, $y) {     return \Util\compare($x, $y);
- };
+    return Player_exec($GLOBALS['NIL'], $GLOBALS['BarnsModule_empty'], \Set\_empty([ 'Compare' => function ($x, $y) {     return \Util\compare($x, $y);
  }]), new Command_SelectFirstCrossroad(new SelectFirstCrossroad($pos)), $state);
 }
 
@@ -5549,8 +5517,7 @@ function Player_ofState($p) {
     {
         case 1:
             $p_2 = $p->Item;
-            return new CrazyPlayer_Playing(new Playing($p_2->SColor, $p_2->STractor, $p_2->SFence, new Field(\Set\ofSeq($p_2->SField, [ 'Compare' => function () {             return function ($x, $y) {             return \Util\compare($x, $y);
- };
+            return new CrazyPlayer_Playing(new Playing($p_2->SColor, $p_2->STractor, $p_2->SFence, new Field(\Set\ofSeq($p_2->SField, [ 'Compare' => function ($x, $y) {             return \Util\compare($x, $y);
  }])), $p_2->SPower, $p_2->SMoves, $p_2->SHand, $p_2->SBonus));
         case 2:
             return new CrazyPlayer_Ko($p->Item);
@@ -5573,8 +5540,7 @@ function HistoryModule_createPos($board) {
         } else {
             return NULL;
         }
-    }, \Map\toSeq($board->Players)), [ 'Compare' => function () {     return function ($x, $y) {     return \Util\compare($x, $y);
- };
+    }, \Map\toSeq($board->Players)), [ 'Compare' => function ($x, $y) {     return \Util\compare($x, $y);
  }]));
 }
 
@@ -5612,8 +5578,8 @@ function HistoryModule_addPos($player, $boardPos, $history) {
 #208
 function HistoryModule_findDangerousPositions($player, $boardPos, $history) {
     return \Seq\toList(\Seq\delay(function ($unitVar) use ($boardPos, $history, $player) {     return \Seq\collect(function ($matchValue) use ($boardPos, $player) { 
-        $activePatternResult14557 = $matchValue;
-        $opponent = $activePatternResult14557[0];
+        $activePatternResult1357 = $matchValue;
+        $opponent = $activePatternResult1357[0];
         if ($opponent !== $player) {
             $posOfOtherPlayers = \Set\filter(function ($p) use ($opponent) {             return $p->Player !== $opponent;
  }, $boardPos->Positions);
@@ -5636,11 +5602,9 @@ function HistoryModule_findDangerousPositions($player, $boardPos, $history) {
             return \Seq\toList(\Seq\map(function ($p_2) {             return [ $p_2->Player, $p_2->TractorPos];
  }, \Seq\choose(function ($source) use ($opponent) {             return \Seq\tryFind(function ($p_1) use ($opponent) {             return $p_1->Player === $opponent;
  }, $source);
- }, $findRep(\Set\_empty([ 'Compare' => function () {             return function ($x, $y) {             return \Util\compare($x, $y);
- };
- }]), \Set\_empty([ 'Compare' => function () {             return function ($x_1, $y_1) {             return \Util\compare($x_1, $y_1);
- };
- }]), $activePatternResult14557[1]))));
+ }, $findRep(\Set\_empty([ 'Compare' => function ($x, $y) {             return \Util\compare($x, $y);
+ }]), \Set\_empty([ 'Compare' => function ($x_1, $y_1) {             return \Util\compare($x_1, $y_1);
+ }]), $activePatternResult1357[1]))));
         } else {
             return \Seq\_empty();
         }
@@ -6194,8 +6158,7 @@ function BoardModule_hayBales($board) {
         case 2:
             return $board->Item2->HayBales;
         default:
-            return \Set\_empty([ 'Compare' => function () {             return function ($x, $y) {             return \Util\compare($x, $y);
- };
+            return \Set\_empty([ 'Compare' => function ($x, $y) {             return \Util\compare($x, $y);
  }]);
     }
 }
@@ -6280,12 +6243,9 @@ function BoardModule_tryFindWinner($board) {
  }, \Seq2\List_groupBy(function ($tupledArg) { 
         $p = $tupledArg[1];
         return [ Player_principalFieldSize($p), Player_fieldTotalSize($p)];
-    }, \Map\toList($players), [ 'Equals' => function () {     return function ($x, $y) {     return \Util\equalArrays($x, $y);
- };
- }, 'GetHashCode' => function () {     return function ($x) {     return \Util\arrayHash($x);
- };
- }]), [ 'Compare' => function () {     return function ($x_1, $y_1) {     return \Util\compareArrays($x_1, $y_1);
- };
+    }, \Map\toList($players), [ 'Equals' => function ($x, $y) {     return \Util\equalArrays($x, $y);
+ }, 'GetHashCode' => function ($x) {     return \Util\arrayHash($x);
+ }]), [ 'Compare' => function ($x_1, $y_1) {     return \Util\compareArrays($x_1, $y_1);
  }])[1]);
     $matchValue = $board->Goal;
     switch ($matchValue->get_Tag())
@@ -6852,10 +6812,8 @@ function BoardModule_evolve($state, $event) {
                                     $added = $matchValue[1]->added;
                                     $board_7 = $matchValue[0]->Item;
                                     $removed = $matchValue[1]->removed;
-                                    return new UndoableBoard(new Board_Board(new PlayingBoard($board_7->Players, $board_7->Table, $board_7->DrawPile, $board_7->DiscardPile, $board_7->Barns, \Set\FSharpSet_op_Addition(\Set\FSharpSet_op_Subtraction($board_7->HayBales, \Set\ofSeq($removed, [ 'Compare' => function () {                                     return function ($x_1, $y_1) {                                     return \Util\compare($x_1, $y_1);
- };
- }])), \Set\ofSeq($added, [ 'Compare' => function () {                                     return function ($x_2, $y_2) {                                     return \Util\compare($x_2, $y_2);
- };
+                                    return new UndoableBoard(new Board_Board(new PlayingBoard($board_7->Players, $board_7->Table, $board_7->DrawPile, $board_7->DiscardPile, $board_7->Barns, \Set\FSharpSet_op_Addition(\Set\FSharpSet_op_Subtraction($board_7->HayBales, \Set\ofSeq($removed, [ 'Compare' => function ($x_1, $y_1) {                                     return \Util\compare($x_1, $y_1);
+ }])), \Set\ofSeq($added, [ 'Compare' => function ($x_2, $y_2) {                                     return \Util\compare($x_2, $y_2);
  }])), $board_7->Goal, $board_7->UseGameOver, $board_7->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false);
                                 case 9:
                                     $board_8 = $matchValue[0]->Item;
@@ -6925,8 +6883,7 @@ function BoardModule_evolve($state, $event) {
  }, $s->Players);
  }))), Table_start(\Seq\toList(\Seq\delay(function ($unitVar_1) use ($s) {                     return \Seq\collect(function ($matchValue_2) {                     return \Seq\singleton([ $matchValue_2[1], $matchValue_2[2]]);
  }, $s->Players);
- }))), new Hand_PublicHand($s->DrawPile), $GLOBALS['NIL'], BarnsModule_init($s->Barns), \Set\_empty([ 'Compare' => function () {                     return function ($x, $y) {                     return \Util\compare($x, $y);
- };
+ }))), new Hand_PublicHand($s->DrawPile), $GLOBALS['NIL'], BarnsModule_init($s->Barns), \Set\_empty([ 'Compare' => function ($x, $y) {                     return \Util\compare($x, $y);
  }]), $s->Goal, $s->UseGameOver, $GLOBALS['HistoryModule_empty']));
                     return new UndoableBoard($board, $board, $s->Undo, false, false);
                 case 1:
@@ -7009,8 +6966,7 @@ function BoardModule_shufflePlayers($players, $parcels) {
     $rand = [ ];
     return \FSharpList\map2(function ($tupledArg, $p) {     return [ $tupledArg[0], $tupledArg[1], $tupledArg[2], $p];
  }, $players, \FSharpList\sortBy(function ($_arg1) {     return \Util\randomNext(0, 2147483647);
- }, $parcels, [ 'Compare' => function () {     return function ($x, $y) {     return \Util\comparePrimitives($x, $y);
- };
+ }, $parcels, [ 'Compare' => function ($x, $y) {     return \Util\comparePrimitives($x, $y);
  }]));
 }
 
@@ -7158,10 +7114,8 @@ function BoardModule_decide($cmd, $state) {
                                                                             return \Seq\_empty();
                                                                         default:
                                                                             $cardsDrawn = DrawPile_take($cardsToTake_1, $matchValue_11->cards);
-                                                                            return \Seq\append(\Seq\singleton(new BoardEvent_PlayerDrewCards(new PlayerDrewCards($playerid, new Hand_PublicHand($cardsDrawn)))), \Seq\delay(function ($unitVar_10) use ($cardsDrawn, $leads, $playerid, $state) {                                                                             if (\FSharpList\contains(new Card_GameOver(), $cardsDrawn, [ 'Equals' => function () {                                                                             return function ($x, $y) {                                                                             return \Util\equals($x, $y);
- };
- }, 'GetHashCode' => function () {                                                                             return function ($x) {                                                                             return \Util\safeHash($x);
- };
+                                                                            return \Seq\append(\Seq\singleton(new BoardEvent_PlayerDrewCards(new PlayerDrewCards($playerid, new Hand_PublicHand($cardsDrawn)))), \Seq\delay(function ($unitVar_10) use ($cardsDrawn, $leads, $playerid, $state) {                                                                             if (\FSharpList\contains(new Card_GameOver(), $cardsDrawn, [ 'Equals' => function ($x, $y) {                                                                             return \Util\equals($x, $y);
+ }, 'GetHashCode' => function ($x) {                                                                             return \Util\safeHash($x);
  }])) {
                                                                                 return \Seq\append(\Seq\singleton(new BoardEvent_Played($playerid, new Event_CardPlayed(new PlayCard_PlayGameOver()))), \Seq\delay(function ($unitVar_11) use ($leads) {                                                                                 if ($leads instanceof Cons) {
                                                                                     if ($leads->next instanceof Nil) {
@@ -7325,10 +7279,10 @@ function BoardModule_decide($cmd, $state) {
  }));
  }, $tupledArg_3[0], $tupledArg_3[1]);
  })((function ($tupledArg_2) {                                     return BoardModule_cont(function ($board_8, $_arg3) {                                     return \Seq\toList(\Seq\delay(function ($unitVar_5) use ($board_8) {                                     return \Seq\collect(function ($matchValue_6) { 
-                                        $activePatternResult14789 = $matchValue_6;
-                                        $p_8 = $activePatternResult14789[1];
+                                        $activePatternResult1589 = $matchValue_6;
+                                        $p_8 = $activePatternResult1589[1];
                                         if (FieldModule_isEmpty(Player_field($p_8)) ? !Player_isKo($p_8) : false) {
-                                            return \Seq\append(\Seq\singleton(new BoardEvent_Played($activePatternResult14789[0], new Event_Eliminated())), \Seq\delay(function ($unitVar_6) {                                             return \Seq\singleton(new BoardEvent_UndoCheckPointed());
+                                            return \Seq\append(\Seq\singleton(new BoardEvent_Played($activePatternResult1589[0], new Event_Eliminated())), \Seq\delay(function ($unitVar_6) {                                             return \Seq\singleton(new BoardEvent_UndoCheckPointed());
  }));
                                         } else {
                                             return \Seq\_empty();
@@ -7478,8 +7432,8 @@ function BoardModule_toState($board) {
             $board_2 = $board->Item2;
             return new BoardState(\Seq\toArray(\Seq\map(function ($tupledArg_1) {             return [ $tupledArg_1[0], Player_toState($tupledArg_1[1])];
  }, \Map\toSeq($board_2->Players))), new STable($board_2->Table->Players, $board_2->Table->AllPlayers, \Seq\toArray(\Seq\delay(function ($unitVar_4) use ($board_2) {             return \Seq\collect(function ($matchValue_2) { 
-                $activePatternResult14838 = $matchValue_2;
-                return \Seq\singleton([ $activePatternResult14838[0], $activePatternResult14838[1]]);
+                $activePatternResult1638 = $matchValue_2;
+                return \Seq\singleton([ $activePatternResult1638[0], $activePatternResult1638[1]]);
             }, $board_2->Table->Names);
  })), $board_2->Table->Current), \FSharpList\toArray($board_2->DiscardPile), HandModule_count($board_2->DrawPile), \FSharpList\toArray(FieldModule_parcels($board_2->Barns->Free)), \FSharpList\toArray(FieldModule_parcels($board_2->Barns->Occupied)), \Set\toArray($board_2->HayBales), $board_2->Goal, ($winners instanceof Cons ? ($winners->next instanceof Nil ? (function ($winner) {             return $winner;
  })($winners->value) : NULL) : NULL), ($winners instanceof Cons ? ($winners->next instanceof Nil ? [ ] : \FSharpList\toArray($winners)) : [ ]), $board_2->UseGameOver, [ ]);
@@ -7487,15 +7441,15 @@ function BoardModule_toState($board) {
             $board_1 = $board->Item;
             return new BoardState(\Seq\toArray(\Seq\map(function ($tupledArg) {             return [ $tupledArg[0], Player_toState($tupledArg[1])];
  }, \Map\toSeq($board_1->Players))), new STable($board_1->Table->Players, $board_1->Table->AllPlayers, \Seq\toArray(\Seq\delay(function ($unitVar) use ($board_1) {             return \Seq\collect(function ($matchValue) { 
-                $activePatternResult14827 = $matchValue;
-                return \Seq\singleton([ $activePatternResult14827[0], $activePatternResult14827[1]]);
+                $activePatternResult1627 = $matchValue;
+                return \Seq\singleton([ $activePatternResult1627[0], $activePatternResult1627[1]]);
             }, $board_1->Table->Names);
  })), $board_1->Table->Current), \FSharpList\toArray($board_1->DiscardPile), HandModule_count($board_1->DrawPile), \FSharpList\toArray(FieldModule_parcels($board_1->Barns->Free)), \FSharpList\toArray(FieldModule_parcels($board_1->Barns->Occupied)), \Set\toArray($board_1->HayBales), $board_1->Goal, NULL, [ ], $board_1->UseGameOver, \Seq\toArray(\Seq\delay(function ($unitVar_1) use ($board_1) {             return \Seq\collect(function ($matchValue_1) { 
-                $activePatternResult14834 = $matchValue_1;
-                return \Seq\singleton([ $activePatternResult14834[0], \Seq\toArray(\Seq\delay(function ($unitVar_2) use ($activePatternResult14834) {                 return \Seq\map(function ($boardpos) {                 return \Seq\toArray(\Seq\delay(function ($unitVar_3) use ($boardpos) {                 return \Seq\map(function ($pos) {                 return [ $pos->Player, $pos->TractorPos, $pos->FencePos, FieldModule_parcels($pos->FieldPos)];
+                $activePatternResult1634 = $matchValue_1;
+                return \Seq\singleton([ $activePatternResult1634[0], \Seq\toArray(\Seq\delay(function ($unitVar_2) use ($activePatternResult1634) {                 return \Seq\map(function ($boardpos) {                 return \Seq\toArray(\Seq\delay(function ($unitVar_3) use ($boardpos) {                 return \Seq\map(function ($pos) {                 return [ $pos->Player, $pos->TractorPos, $pos->FencePos, FieldModule_parcels($pos->FieldPos)];
  }, $boardpos->Positions);
  }));
- }, $activePatternResult14834[1]);
+ }, $activePatternResult1634[1]);
  }))]);
             }, $board_1->History->PlayersHistory);
  })));
@@ -7524,12 +7478,10 @@ function BoardModule_ofState($board) {
         return new Board_InitialState();
     } else {
         $state = new PlayingBoard(\Map\ofSeq(\Seq\map(function ($tupledArg) {         return [ $tupledArg[0], Player_ofState($tupledArg[1])];
- }, $board->SPlayers)), new GameTable($board->STable->SPlayers, $board->STable->SAllPlayers, \Map\ofArray($board->STable->SNames), $board->STable->SCurrent), new Hand_PrivateHand(\Option\defaultArg($board->SDrawPile, 0)), \FSharpList\ofArray($board->SDiscardPile), new Barns(FieldModule_ofParcels($board->SFreeBarns), FieldModule_ofParcels($board->SOccupiedBarns)), \Set\ofSeq($board->SHayBales, [ 'Compare' => function () {         return function ($x_1, $y_1) {         return \Util\compare($x_1, $y_1);
- };
+ }, $board->SPlayers)), new GameTable($board->STable->SPlayers, $board->STable->SAllPlayers, \Map\ofArray($board->STable->SNames), $board->STable->SCurrent), new Hand_PrivateHand(\Option\defaultArg($board->SDrawPile, 0)), \FSharpList\ofArray($board->SDiscardPile), new Barns(FieldModule_ofParcels($board->SFreeBarns), FieldModule_ofParcels($board->SOccupiedBarns)), \Set\ofSeq($board->SHayBales, [ 'Compare' => function ($x_1, $y_1) {         return \Util\compare($x_1, $y_1);
  }]), $board->SGoal, \Option\defaultArg($board->SUseGameOver, false), new History(\Map\ofList(\Seq\toList(\Seq\delay(function ($unitVar) use ($board) {         return \Seq\collect(function ($matchValue_1) {         return \Seq\singleton([ $matchValue_1[0], \Seq\toList(\Seq\delay(function ($unitVar_1) use ($matchValue_1) {         return \Seq\map(function ($h) {         return new BoardPosition(\Set\ofSeq(\Seq\toList(\Seq\delay(function ($unitVar_2) use ($h) {         return \Seq\collect(function ($matchValue_2) {         return \Seq\singleton(new PlayerPosition($matchValue_2[0], $matchValue_2[1], $matchValue_2[2], FieldModule_ofParcels($matchValue_2[3])));
  }, $h);
- })), [ 'Compare' => function () {         return function ($x_2, $y_2) {         return \Util\compare($x_2, $y_2);
- };
+ })), [ 'Compare' => function ($x_2, $y_2) {         return \Util\compare($x_2, $y_2);
  }]));
  }, $matchValue_1[1]);
  }))]);

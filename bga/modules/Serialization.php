@@ -6,7 +6,7 @@ function convertToJson($obj) {
     if (is_null($obj)) {
         return NULL;
     }
-    else if ($obj instanceof FSharpList)
+    else if ($obj instanceof \FSharpList)
     {
         $array = [];
         foreach($obj as $value)
@@ -17,7 +17,7 @@ function convertToJson($obj) {
         return [ '_list' => $array];
 
     }
-    else if ($obj instanceof Union)
+    else if ($obj instanceof \Union)
     {
         $props = [];
         foreach(get_object_vars($obj) as $prop => $value)
@@ -49,6 +49,27 @@ function convertToJson($obj) {
         return $obj;
 } 
 
+function fixNamespace($name)
+{
+    switch($name)
+    {
+        case 'Color_Purple': 
+        case 'Color_Yellow':
+        case 'Color_Red': 
+        case 'Color_Blue': 
+        case 'Goal_Common': 
+        case 'Goal_Individual': 
+        case 'UndoType_NoUndo': 
+        case 'UndoType_FullUndo':
+        case 'UndoType_DontUndoCards':
+        case 'GoalType_Fast':
+        case 'GoalType_Regular':
+        case 'GoalType_Expert':
+             return '\\Shared\\'.$name;
+        default: return '\\SharedGame\\'.$name;
+    }
+
+}
 
 // converts a json parsed object tree
 // to an actual F# object tree
@@ -61,7 +82,7 @@ function convertFromJson($json) {
     {
         if (property_exists($json, '_case'))
         {
-            $case = $json->_case;
+            $case = fixNamespace($json->_case);
 
             $args=[];
             foreach($json->fields as $value)
@@ -74,7 +95,7 @@ function convertFromJson($json) {
         }
         if (property_exists($json, '_type'))
         {
-            $type = $json->_type;
+            $type = fixNamespace($json->_type);
             $args=[];
             foreach(get_object_vars($json) as $prop => $value)
             {
@@ -92,7 +113,7 @@ function convertFromJson($json) {
             {
                 $array[] = convertFromJson($value);
             }
-            return FSharpList::ofArray($array);
+            return \FSharpList\ofArray($array);
         }
         
         $props = [];
@@ -124,7 +145,7 @@ function convertToSimpleJson($obj) {
     if (is_null($obj)) {
         return NULL;
     }
-    else if ($obj instanceof FSharpList)
+    else if ($obj instanceof \FSharpList)
     {
         $array = [];
         foreach($obj as $value)
@@ -135,7 +156,7 @@ function convertToSimpleJson($obj) {
         return $array;
 
     }
-    else if ($obj instanceof FSharpUnion)
+    else if ($obj instanceof \FSharpUnion)
     {
         $vars = get_object_vars($obj);
         if (empty($vars))

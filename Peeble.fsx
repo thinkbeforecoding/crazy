@@ -1531,7 +1531,7 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
     | Fable.ObjectExpr(members, t, baseCall) ->
         PhpArray [
             for m in members do
-                PhpArrayString m.Name , convertFunction com ctx m.Body m.Args
+                PhpArrayString m.Name , convertExpr com ctx m.Body
         ]
     | Fable.Expr.Lambda(arg,body,_) ->
         convertFunction com ctx body [arg]
@@ -1935,7 +1935,7 @@ let compOptions = CompilerOptionsHelper.Make(optimizeFSharpAst=true)
 
 let phpComp = PhpCompiler.create()
 (*
-let file = files.[0]
+let file = files.[1]
 *)
 let asts =
     [ for file in files do
@@ -1945,7 +1945,7 @@ let asts =
             |> Fable.Transforms.FableTransforms.transformFile com 
 
 (*
-        let decl = ast.Declarations.[0]
+        let decl = ast.Declarations.[40]
 *)
         phpComp.ClearRequire(__SOURCE_DIRECTORY__ + @"/src/")
         phpComp.SetFile(file + ".php")
@@ -2001,16 +2001,19 @@ for file in asts do
 
     IO.File.WriteAllText(file.Filename, fix)
 
-let root = __SOURCE_DIRECTORY__ + "/src"
-let phpDir = __SOURCE_DIRECTORY__ + "/php"
-for phpFile in Directory.EnumerateFiles(root, "*.fs.php", SearchOption.AllDirectories) do
-    let dest = Path.GetFullPath(Path.Combine(phpDir, Path.getRelativePath root phpFile))
-    printfn "%s" dest
-    let dir = Path.GetDirectoryName dest
-    if not (Directory.Exists dir) then
-        Directory.CreateDirectory(dir) |> ignore
 
-    File.Copy(phpFile, dest, true)
+
+let deployTo phpDir root = 
+    for phpFile in Directory.EnumerateFiles(root, "*.fs.php", SearchOption.AllDirectories) do
+        let dest = Path.GetFullPath(Path.Combine(phpDir, Path.getRelativePath root phpFile))
+        printfn "%s" dest
+        let dir = Path.GetDirectoryName dest
+        if not (Directory.Exists dir) then
+            Directory.CreateDirectory(dir) |> ignore
+
+        File.Copy(phpFile, dest, true)
 
         
+deployTo (__SOURCE_DIRECTORY__ + "/php") (__SOURCE_DIRECTORY__ + "/src")
+deployTo (__SOURCE_DIRECTORY__ + "/bga/modules") (__SOURCE_DIRECTORY__ + "/src")
 

@@ -20,7 +20,9 @@
  * this.ajaxcall( "/crazyfarmers/crazyfarmers/myAction.html", ...)
  *
  */
-  
+use \SharedGame\Axe, \SharedGame\Crossroad, \SharedGame\CrossroadSide_CRight ,\SharedGame\CrossroadSide_CLeft;
+use \SharedGame\Direction_Up , \SharedGame\Direction_Down, \SharedGame\Direction_Horizontal;
+use \FSharpList\Cons;
   
   class action_crazyfarmers extends APP_GameAction
   { 
@@ -122,13 +124,13 @@
         switch ($pow)
         {
             case "Two": 
-                $power = new CardPower_Two();
+                $power = new \SharedGame\CardPower_Two();
             break;
             default:
-                $power =  new CardPower_One();
+                $power =  new \SharedGame\CardPower_One();
         }
 
-        $this->game->playCard(new PlayCard_PlayNitro($power));
+        $this->game->playCard(new \SharedGame\PlayCard_PlayNitro($power));
 
         self::ajaxResponse(); 
     }
@@ -141,7 +143,7 @@
         // Note: these arguments correspond to what has been sent through the javascript "ajaxcall" method
         $victim = self::getArg( "victim", AT_alphanum, true);
 
-        $this->game->playCard(new PlayCard_PlayRut($victim));
+        $this->game->playCard(new \SharedGame\PlayCard_PlayRut($victim));
 
         self::ajaxResponse(); 
     }
@@ -161,11 +163,11 @@
         $rm_side = self::getArg( "rm_side", AT_enum, false, NULL, ["BNW", "BN", "BNE"] );
       
         if (!(is_null($rm_q) || is_null($rm_r) ||is_null($rm_side)))
-            $rm_path = FSharpList::ofArray([ self::newPath($rm_q,$rm_r,$rm_side)]);
+            $rm_path = \FSharpList\ofArray([ self::newPath($rm_q,$rm_r,$rm_side)]);
         else
             $rm_path = $GLOBALS['NIL'];
 
-        $this->game->playCard(new PlayCard_PlayHayBale(FSharpList::ofArray([ self::newPath($q,$r,$side)  ]), $rm_path));
+        $this->game->playCard(new \SharedGame\PlayCard_PlayHayBale(\FSharpList\ofArray([ self::newPath($q,$r,$side)  ]), $rm_path));
 
         self::ajaxResponse(); 
     }
@@ -175,15 +177,15 @@
         switch ($side)
         {
             case "BNW":
-                $side = new BorderSide_BNW();
+                $side = new \SharedGame\BorderSide_BNW();
             break;
             case "BN":
-                $side = new BorderSide_BN();
+                $side = new \SharedGame\BorderSide_BN();
             break;
             default:
-                $side = new BorderSide_BNE();
+                $side = new \SharedGame\BorderSide_BNE();
         }
-        return new Path(new Axe($q,$r), $side);
+        return new \SharedGame\Path(new Axe($q,$r), $side);
     }
 
     public function playTwoHayBale()
@@ -211,7 +213,7 @@
         if (!(is_null($rm_q2) || is_null($rm_r2) ||is_null($rm_side2)))
             $rm_path = new Cons(self::newPath($rm_q2,$rm_r2,$rm_side2),$rm_path);
 
-        $this->game->playCard(new PlayCard_PlayHayBale(FSharpList::ofArray([
+        $this->game->playCard(new \SharedGame\PlayCard_PlayHayBale(\FSharpList\ofArray([
                 self::newPath($q1,$r1,$side1), 
                 self::newPath($q2,$r2,$side2) ]),
                 $rm_path
@@ -228,7 +230,7 @@
         $r = self::getArg( "r", AT_int, true );
         $side = self::getArg( "side", AT_enum, true, "BN", ["BNW", "BN", "BNE"] );
 
-        $this->game->playCard(new PlayCard_PlayDynamite(self::newPath($q,$r,$side)));
+        $this->game->playCard(new \SharedGame\PlayCard_PlayDynamite(self::newPath($q,$r,$side)));
 
         self::ajaxResponse(); 
     }
@@ -237,7 +239,7 @@
     {
         self::setAjaxMode();
 
-        $this->game->playCard(new PlayCard_PlayHighVoltage());
+        $this->game->playCard(new \SharedGame\PlayCard_PlayHighVoltage());
 
         self::ajaxResponse(); 
     }
@@ -248,7 +250,7 @@
         self::setAjaxMode();
 
 
-        $this->game->playCard(new PlayCard_PlayWatchdog());
+        $this->game->playCard(new \SharedGame\PlayCard_PlayWatchdog());
 
         self::ajaxResponse(); 
     }
@@ -261,7 +263,7 @@
         $r = self::getArg( "r", AT_int, true );
         $side = self::getArg( "side", AT_enum, true, "CLeft", ["CLeft", "CRight"] );
 
-        $this->game->playCard(new PlayCard_PlayHelicopter(self::newCrossroad($q,$r,$side)));
+        $this->game->playCard(new \SharedGame\PlayCard_PlayHelicopter(self::newCrossroad($q,$r,$side)));
 
         self::ajaxResponse(); 
     } 
@@ -272,7 +274,7 @@
         $q = self::getArg( "q", AT_int, true );
         $r = self::getArg( "r", AT_int, true );
 
-        $this->game->playCard(new PlayCard_PlayBribe(new Parcel(new Axe($q,$r))));
+        $this->game->playCard(new \SharedGame\PlayCard_PlayBribe(new \SharedGame\Parcel(new Axe($q,$r))));
 
         self::ajaxResponse(); 
     } 
@@ -306,34 +308,34 @@
         switch($card)
         {
             case 'Nitro1': 
-                $card = new Card_Nitro(new CardPower_One());
+                $card = new \SharedGame\Card_Nitro(new \SharedGame\CardPower_One());
                 break;
             case 'Nitro2': 
-                $card = new Card_Nitro(new CardPower_Two());
+                $card = new \SharedGame\Card_Nitro(new \SharedGame\CardPower_Two());
                 break;
             case 'Rut': 
-                $card =  new Card_Rut();
+                $card =  new \SharedGame\Card_Rut();
             break;
             case 'HayBale1': 
-                $card = new Card_HayBale(new CardPower_One());
+                $card = new \SharedGame\Card_HayBale(new \SharedGame\CardPower_One());
                 break;
             case 'HayBale2': 
-                $card = new Card_HayBale(new CardPower_Two());
+                $card = new \SharedGame\Card_HayBale(new \SharedGame\CardPower_Two());
                 break;
             case 'Dynamite': 
-                $card = new Card_Dynamite();
+                $card = new \SharedGame\Card_Dynamite();
                 break;
             case 'HighVoltage': 
-                $card = new Card_HighVoltage();
+                $card = new \SharedGame\Card_HighVoltage();
                 break;
             case 'Watchdog': 
-                $card = new Card_Watchdog();
+                $card = new \SharedGame\Card_Watchdog();
                 break;
             case 'Helicopter': 
-                $card = new Card_Helicopter();
+                $card = new \SharedGame\Card_Helicopter();
                 break;
             case 'Bribe': 
-                $card = new Card_Bribe();
+                $card = new \SharedGame\Card_Bribe();
                 break;
         }
 

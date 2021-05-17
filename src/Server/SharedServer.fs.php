@@ -69,95 +69,105 @@ function bgaUpdateState($events, $board, $zombie, $state, $changeState, $elimina
     if ($zombie) {
         return $changeState('zombiepass');
     } else {
-        for ($idx = 0; $idx <= count($events) - 1; $idx++) {
-            $e = $events[$idx];
-            if ($e->get_Tag() == 2) {
-                return $changeState('next');
-            } else {
-                if ($e->get_Tag() == 4) {
-                    return $changeState('endGame');
+        $enumerator = \Util\getEnumerator($events);
+        try {
+            while ($enumerator->MoveNext()) {
+                $e = $enumerator->get_Current();
+                if ($e->get_Tag() == 2) {
+                    return $changeState('next');
                 } else {
-                    if ($e->get_Tag() == 5) {
+                    if ($e->get_Tag() == 4) {
                         return $changeState('endGame');
                     } else {
-                        if ($e->get_Tag() == 6) {
+                        if ($e->get_Tag() == 5) {
                             return $changeState('endGame');
                         } else {
-                            if ($e->get_Tag() == 0) {
-                                if ($e->Item2->get_Tag() == 0) {
-                                    return $changeState('selectFirstCrossroad');
-                                } else {
-                                    if ($e->Item2->get_Tag() == 19) {
-                                        $p = $e->Item1;
-                                        return $eliminatePlayer($p);
+                            if ($e->get_Tag() == 6) {
+                                return $changeState('endGame');
+                            } else {
+                                if ($e->get_Tag() == 0) {
+                                    if ($e->Item2->get_Tag() == 0) {
+                                        return $changeState('selectFirstCrossroad');
                                     } else {
-                                        switch ($e->Item2->get_Tag())
-                                        {
-                                            case 20:
-                                                $p_1 = $e->Item1;
-                                                $matchValue = $board->Board;
-                                                if ($matchValue->get_Tag() == 1) {
-                                                    $matchValue_1 = \Map\FSharpMap__get_Item($p_1, $matchValue->Item->Players);
-                                                    switch ($matchValue_1->get_Tag())
-                                                    {
-                                                        case 0:
-                                                            return $changeState('restart');
-                                                        case 1:
-                                                            $player = $matchValue_1->Item;
-                                                            if (\SharedGame\Player_canMove($p_1, $board->Board)) {
+                                        if ($e->Item2->get_Tag() == 19) {
+                                            $p = $e->Item1;
+                                            return $eliminatePlayer($p);
+                                        } else {
+                                            switch ($e->Item2->get_Tag())
+                                            {
+                                                case 20:
+                                                    $p_1 = $e->Item1;
+                                                    $matchValue = $board->Board;
+                                                    if ($matchValue->get_Tag() == 1) {
+                                                        $matchValue_1 = \Map\FSharpMap__get_Item($p_1, $matchValue->Item->Players);
+                                                        switch ($matchValue_1->get_Tag())
+                                                        {
+                                                            case 0:
+                                                                return $changeState('restart');
+                                                            case 1:
+                                                                $player = $matchValue_1->Item;
+                                                                if (\SharedGame\Player_canMove($p_1, $board->Board)) {
+                                                                    return $changeState('canMove');
+                                                                } else {
+                                                                    if (\SharedGame\HandModule_canPlay($player->Hand)) {
+                                                                        if (\SharedGame\HandModule_shouldDiscard($player->Hand)) {
+                                                                            return $changeState('shouldDiscard');
+                                                                        } else {
+                                                                            return $changeState('endTurn');
+                                                                        }
+                                                                    } else {
+                                                                        return NULL;
+                                                                    }
+                                                                }
+                                                            default:
+                                                                return NULL;
+                                                        }
+                                                    } else {
+                                                        return NULL;
+                                                    }
+                                                default:
+                                                    $p_2 = $e->Item1;
+                                                    $matchValue_2 = $board->Board;
+                                                    if ($matchValue_2->get_Tag() == 1) {
+                                                        $matchValue_3 = \Map\FSharpMap__get_Item($p_2, $matchValue_2->Item->Players);
+                                                        if ($matchValue_3->get_Tag() == 1) {
+                                                            $player_1 = $matchValue_3->Item;
+                                                            if (\SharedGame\Player_canMove($p_2, $board->Board)) {
                                                                 return $changeState('canMove');
                                                             } else {
-                                                                if (\SharedGame\HandModule_canPlay($player->Hand)) {
-                                                                    if (\SharedGame\HandModule_shouldDiscard($player->Hand)) {
+                                                                if (\SharedGame\HandModule_canPlay($player_1->Hand)) {
+                                                                    if (\SharedGame\HandModule_shouldDiscard($player_1->Hand)) {
                                                                         return $changeState('shouldDiscard');
                                                                     } else {
                                                                         return $changeState('endTurn');
                                                                     }
                                                                 } else {
-                                                                    return NULL;
-                                                                }
-                                                            }
-                                                        default:
-                                                            return NULL;
-                                                    }
-                                                } else {
-                                                    return NULL;
-                                                }
-                                            default:
-                                                $p_2 = $e->Item1;
-                                                $matchValue_2 = $board->Board;
-                                                if ($matchValue_2->get_Tag() == 1) {
-                                                    $matchValue_3 = \Map\FSharpMap__get_Item($p_2, $matchValue_2->Item->Players);
-                                                    if ($matchValue_3->get_Tag() == 1) {
-                                                        $player_1 = $matchValue_3->Item;
-                                                        if (\SharedGame\Player_canMove($p_2, $board->Board)) {
-                                                            return $changeState('canMove');
-                                                        } else {
-                                                            if (\SharedGame\HandModule_canPlay($player_1->Hand)) {
-                                                                if (\SharedGame\HandModule_shouldDiscard($player_1->Hand)) {
-                                                                    return $changeState('shouldDiscard');
-                                                                } else {
                                                                     return $changeState('endTurn');
                                                                 }
-                                                            } else {
-                                                                return $changeState('endTurn');
                                                             }
+                                                        } else {
+                                                            return NULL;
                                                         }
                                                     } else {
                                                         return NULL;
                                                     }
-                                                } else {
-                                                    return NULL;
-                                                }
+                                            }
                                         }
                                     }
+                                } else {
+                                    return NULL;
                                 }
-                            } else {
-                                return NULL;
                             }
                         }
                     }
                 }
+            }
+        }
+        finally {
+            if ($enumerator instanceof IDisposable) {
+                return $enumerator->Dispose();
+            } else {
+                return NULL;
             }
         }
     }
@@ -241,8 +251,7 @@ function bgaProgression($board) {
                     $g_1 = $matchValue_1->Item;
                     return \Util\min(function ($x_2, $y_2) {                     return \Util\comparePrimitives($x_2, $y_2);
  }, $g_1, \Seq\max(\Seq\map(function ($tupledArg) {                     return \SharedGame\Player_principalFieldSize($tupledArg[1]);
- }, \Map\toSeq($b->Players)), [ 'Compare' => function () {                     return function ($x_1, $y_1) {                     return \Util\comparePrimitives($x_1, $y_1);
- };
+ }, \Map\toSeq($b->Players)), [ 'Compare' => function ($x_1, $y_1) {                     return \Util\comparePrimitives($x_1, $y_1);
  }])) * 100 / $g_1;
                 default:
                     $g = $matchValue_1->Item;
@@ -662,11 +671,9 @@ $GLOBALS['StatsModule_empty'] = (function ($stats) { return new UndoableStats($s
 
 #38
 function StatsModule_diff($x, $y) {
-    $sx = \Set\ofSeq(\Map\toSeq($x), [ 'Compare' => function () {     return function ($x_1, $y_1) {     return \Util\compareArrays($x_1, $y_1);
- };
+    $sx = \Set\ofSeq(\Map\toSeq($x), [ 'Compare' => function ($x_1, $y_1) {     return \Util\compareArrays($x_1, $y_1);
  }]);
-    return \Set\FSharpSet_op_Subtraction(\Set\ofSeq(\Map\toSeq($y), [ 'Compare' => function () {     return function ($x_2, $y_2) {     return \Util\compareArrays($x_2, $y_2);
- };
+    return \Set\FSharpSet_op_Subtraction(\Set\ofSeq(\Map\toSeq($y), [ 'Compare' => function ($x_2, $y_2) {     return \Util\compareArrays($x_2, $y_2);
  }]), $sx);
 }
 
