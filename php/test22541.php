@@ -2,9 +2,10 @@
     <body>
     <?php
         function bga_rand($min,$max) { return rand($min,$max); }
-        include 'FSharp.Core.php';
+        require 'lib.php';
         include 'Serialization.php';
-        include 'lib.php';
+
+        use \SharedGame\BoardCommand_Play, \SharedGame\Command_Move, \SharedGame\PlayerMove, \SharedGame\Direction_Up, \SharedGame\Direction_Down, \SharedGame\Crossroad, \SharedGame\Axe, \SharedGame\CrossroadSide_CLeft, \SharedGame\CrossroadSide_CRight;
 
         function echo_list ($name, $l)
         {
@@ -377,18 +378,18 @@
 
 
           
-        $es = Seq::map(function ($row) { $js = (object)[ '_case' => $row['type'],
+        $es = \Seq\map(function ($row) { $js = (object)[ '_case' => $row['type'],
             'fields' => json_decode($row['body'])];
             return convertFromJson($js);
             }, $Events);
         
-        $board = $BoardModule_initialState;
+        $board = $GLOBALS['BoardModule_initialState'];
 
-        $newBoard = Seq::fold('BoardModule_evolve', $board, $es);
+        $newBoard = \Seq\fold('\\SharedGame\\BoardModule_evolve', $board, $es);
 
     
         $cmd = new BoardCommand_Play("84193640", new Command_Move(new PlayerMove(new Direction_Up(), new Crossroad(new Axe(2,-1), new CrossroadSide_CLeft() ))));
         
-        $results = BoardModule_decide($cmd, $newBoard);
+        $results = \SharedGame\BoardModule_decide($cmd, $newBoard);
     
         echo_list("events", $results);

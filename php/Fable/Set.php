@@ -1,4 +1,6 @@
 <?php
+namespace Set;
+use \IteratorAggregate, \IComparable;
 
 const TOLERANCE = 2;
 class SetTree {
@@ -419,7 +421,7 @@ class SetTree {
             return SetTree::compareStacks($comparer, $l1->next, $l2->next);
         if ((! (is_null($l1->value) || $l1->value instanceof SetNode)) && (! (is_null($l2->value) || $l2->value instanceof SetNode)))
         {
-            $c = Util::compare($l1->value->value, $l2->value->value);
+            $c = \Util\compare($l1->value->value, $l2->value->value);
             if ($c != 0) 
                 return $c;
             else
@@ -427,7 +429,7 @@ class SetTree {
         }
         if ((! (is_null($l1->value) || $l1->value instanceof SetNode)) && $l2->value instanceof SetNode && is_null($l2->value->left))
         {
-            $c = Util::compare($l1->value->value, $l2->value->value);
+            $c = \Util\compare($l1->value->value, $l2->value->value);
             if ($c != 0)
                 return $c;
             else
@@ -435,7 +437,7 @@ class SetTree {
         }
         if ($l1->value instanceof SetNode && is_null($l1->value->left) && (! (is_null($l2->value) || $l2->value instanceof SetNode)))
         {
-            $c = Util::compare($l1->value->value, $l2->value->value);
+            $c = \Util\compare($l1->value->value, $l2->value->value);
             if ($c != 0)
                 return $c;
             else
@@ -443,7 +445,7 @@ class SetTree {
         }
         if ($l1->value instanceof SetNode && is_null($l1->value->left) && $l2->value instanceof SetNode && is_null($l2->value->left))
         {
-            $c = Util::compare($l1->value->value, $l2->value->value);
+            $c = \Util\compare($l1->value->value, $l2->value->value);
             if ($c != 0)
                 return $c;
             else
@@ -493,7 +495,7 @@ class SetOne extends SetTree {
 }
 
 
-class Set implements IteratorAggregate, iComparable {
+class Set implements IteratorAggregate, IComparable {
     public $Comparer;
     public $Tree;
 
@@ -507,105 +509,7 @@ class Set implements IteratorAggregate, iComparable {
         return [$this->Tree];
     }
 
-    static function FSharpSet_op_Addition($set1, $set2)
-    {
-        if (is_null($set2->Tree))
-            return $set1; // (* A U 0 = A *)
-        if (is_null($set1->Tree))
-            return $set2; //  (* 0 U B = B *)
-        return new Set($set1->Comparer, SetTree::union($set1->Comparer, $set1->Tree, $set2->Tree));
 
-    }
-
-    static function FSharpSet_op_Subtraction($set1, $set2)
-    {
-        if (is_null($set1->Tree))
-            return $set1; //(* 0 - B = 0 *)
-        if (is_null($set2->Tree))
-            return $set1; //(* A - 0 = A *)
-        return new Set($set1->Comparer, SetTree::diff($set1->Comparer, $set1->Tree, $set2->Tree));
-    }
-
-    static function intersect($a, $b)
-    {
-        if (is_null($b->Tree))
-            return $b; //  (* A INTER 0 = 0 *)
-        if (is_null($a->Tree)) 
-            return $a; // (* 0 INTER B = 0 *)
-        return new Set($a->Comparer, SetTree::intersection($a->Comparer, $a->Tree, $b->Tree));
-    }
-
-    static function remove($item,$table)
-    {
-        return new Set($table->Comparer, SetTree::remove($table->Comparer,$item, $table->Tree));
-    }
-
-
-    static function contains($value, $s)
-    {
-        return SetTree::mem($s->Comparer, $value, $s->Tree);
-    }
-
-    static function ofSeq($seq, $comparer=NULL)
-    {
-        $tree = NULL;
-        if (is_null($comparer))
-            $comparer = [ 'Compare' => 'Util::comparePrimitives'];
-
-        foreach($seq as $item)
-        {
-            $tree = SetTree::add($comparer, $item, $tree);
-        }
-
-        return new Set($comparer, $tree);
-    }
-
-    static function empty($comparer)
-    {
-        return new Set($comparer, NULL);
-    }
-
-    static function isEmpty($set)
-    {
-        return is_null($set->Tree);
-    }
-
-    static function count($set)
-    {
-        return SetTree::count($set->Tree);
-    }
-
-    static function toList($set)
-    {
-        return FSharpList::ofSeq($set);
-    }
-
-    static function toArray($set)
-    {
-        return iterator_to_array($set);
-    }
-
-    static function union($x,$y)
-    {
-        return new Set($x->Comparer, SetTree::union($x->Comparer, $x->Tree, $y->Tree));
-    }
-
-    static function unionMany($sets)
-    {
-        $comparer = [ 'Compare' => 'Util::comparePrimitives'];
-
-        return Seq::fold(function($acc,$s) { return Set::union($acc,$s); }, Set::empty($comparer), $sets);
-    }
-
-    static function isSubset($set1, $set2) 
-    {
-        return SetTree::subset($set1->Comparer, $set1->Tree, $set2->Tree); 
-    }
-
-    static function minElement($set)
-    {
-        return SetTree::minimumElement($set->Tree);
-    }
 
     public function getIterator() {
         $stack = [];
@@ -631,4 +535,105 @@ class Set implements IteratorAggregate, iComparable {
     {
         return SetTree::compare($this->Comparer, $this->Tree, $Other->Tree);
     }
+}
+
+
+function FSharpSet_op_Addition($set1, $set2)
+{
+    if (is_null($set2->Tree))
+        return $set1; // (* A U 0 = A *)
+    if (is_null($set1->Tree))
+        return $set2; //  (* 0 U B = B *)
+    return new Set($set1->Comparer, SetTree::union($set1->Comparer, $set1->Tree, $set2->Tree));
+
+}
+
+function FSharpSet_op_Subtraction($set1, $set2)
+{
+    if (is_null($set1->Tree))
+        return $set1; //(* 0 - B = 0 *)
+    if (is_null($set2->Tree))
+        return $set1; //(* A - 0 = A *)
+    return new Set($set1->Comparer, SetTree::diff($set1->Comparer, $set1->Tree, $set2->Tree));
+}
+
+function intersect($a, $b)
+{
+    if (is_null($b->Tree))
+        return $b; //  (* A INTER 0 = 0 *)
+    if (is_null($a->Tree)) 
+        return $a; // (* 0 INTER B = 0 *)
+    return new Set($a->Comparer, SetTree::intersection($a->Comparer, $a->Tree, $b->Tree));
+}
+
+function remove($item,$table)
+{
+    return new Set($table->Comparer, SetTree::remove($table->Comparer,$item, $table->Tree));
+}
+
+
+function contains($value, $s)
+{
+    return SetTree::mem($s->Comparer, $value, $s->Tree);
+}
+
+function ofSeq($seq, $comparer=NULL)
+{
+    $tree = NULL;
+    if (is_null($comparer))
+        $comparer = [ 'Compare' => '\\Util\\comparePrimitives'];
+
+    foreach($seq as $item)
+    {
+        $tree = SetTree::add($comparer, $item, $tree);
+    }
+
+    return new Set($comparer, $tree);
+}
+
+function _empty($comparer)
+{
+    return new Set($comparer, NULL);
+}
+
+ function isEmpty($set)
+{
+    return is_null($set->Tree);
+}
+
+function count($set)
+{
+    return SetTree::count($set->Tree);
+}
+
+function toList($set)
+{
+    return \FSharpList\ofSeq($set);
+}
+
+function toArray($set)
+{
+    return iterator_to_array($set);
+}
+
+function union($x,$y)
+{
+    return new Set($x->Comparer, SetTree::union($x->Comparer, $x->Tree, $y->Tree));
+}
+
+function unionMany($sets)
+{
+    $comparer = [ 'Compare' => '\\Util\\comparePrimitives'];
+
+    return \Seq\fold(function($acc,$s) { return union($acc,$s); }, _empty($comparer), $sets);
+}
+
+function isSubset($set1, $set2) 
+{
+    return SetTree::subset($set1->Comparer, $set1->Tree, $set2->Tree); 
+}
+
+function minElement($set)
+{
+    return SetTree::minimumElement($set->Tree);
 }

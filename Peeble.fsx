@@ -7,7 +7,6 @@
 #I @"..\Fable\src\fcs-fable\src\fsharp\symbols\"
 #I @"..\Fable\src\fcs-fable\src\fsharp\"
 #load @"Fable.Core.Types.fs" @"Global\Prelude.fs" @"Common.fs" @"Fable.fs" @"Plugins.fs" @"Global\Compiler.fs" @"MonadicTrampoline.fs" @"Transforms.Util.fs" @"OverloadSuffix.fs" "FSharp2Fable.Util.fs" @"ReplacementsInject.fs" @"Replacements.fs" @"Inject.fs" @"FSharp2Fable.fs" @"Inject.fs" @"FableTransforms.fs" "Global/Metadata.fs" "State.fs"
-#load "Global/Babel.fs" "Fable2Babel.fs"
 open System
 open Fable
 open Fable.AST
@@ -166,6 +165,7 @@ and PhpStatement =
     | Throw of string * PhpExpr list
     | TryCatch of body: PhpStatement list * catch: (string * PhpStatement list) option * finallizer: PhpStatement list 
     | WhileLoop of guard: PhpExpr * body: PhpStatement list
+    | ForLoop of ident: string * start: PhpExpr * limit: PhpExpr * isUp: bool * body: PhpStatement list
     | Do of PhpExpr
 and PhpCase =
     | IntCase of int
@@ -179,19 +179,20 @@ and PhpTypeRef =
 and PhpFun = 
     { Name: string
       Args: string list
-      Globals: string list
       Matchings: PhpStatement list
       Body: PhpStatement list
       Static: bool
     }
 
 and PhpType =
-    { Name: string
+    { Namespace: string option
+      Name: string
       Fields: PhpField list;
       Methods: PhpFun list
       Abstract: bool
       BaseType: PhpType option
       Interfaces: PhpType list
+      File: string
     }
 
 
@@ -201,21 +202,27 @@ type PhpDecl =
     | PhpType of PhpType
 
 type PhpFile =
-    { Decls: (int * PhpDecl) list }
+    { Filename: string
+      Namespace: string option
+      Require: (string option * string) list
+      Uses: PhpType list
+      Decls: (int * PhpDecl) list }
 
 
 module Output =
     type Writer =
         { Writer: TextWriter
           Indent: int
-          Precedence: int }
+          Precedence: int
+          UsedTypes: PhpType Set
+          CurrentNamespace: string option }
 
     let indent ctx =
         { ctx with Indent = ctx.Indent + 1}
 
     module Writer =
         let create w =
-            { Writer = w; Indent = 0; Precedence = Int32.MaxValue }
+            { Writer = w; Indent = 0; Precedence = Int32.MaxValue; UsedTypes = Set.empty; CurrentNamespace = None }
 
     let writeIndent  ctx =
         for _ in 1 .. ctx.Indent do
@@ -313,6 +320,11 @@ module Output =
             writeTypeRef ctx t
             write ctx "[]"
 
+    let writeStr ctx (str: string) =
+        write ctx "'"
+        write ctx (str.Replace(@"\",@"\\").Replace("'",@"\'"))
+        write ctx "'"
+
 
     let rec writeExpr ctx expr =
         match expr with
@@ -333,10 +345,7 @@ module Output =
         | PhpConst cst -> 
             match cst with
             | PhpConstNumber n -> write ctx (string n)
-            | PhpConstString s -> 
-                write ctx "'"
-                write ctx (s.Replace("'",@"\'"))
-                write ctx "'"
+            | PhpConstString s -> writeStr ctx s
             | PhpConstBool true -> write ctx "true"
             | PhpConstBool false -> write ctx "false"
             | PhpConstNull -> write ctx "NULL"
@@ -355,17 +364,27 @@ module Output =
             match r with
             | Field r -> write ctx r.Name
             | StrField r -> write ctx r
-        | PhpIdent(c,i) ->
-            match c with
-            | Some c ->
-                write ctx c
-                write ctx "::"
+        | PhpIdent(ns,i) ->
+            match ns with
+            | Some ns ->
+                write ctx @"\"
+                write ctx ns
+                write ctx @"\"
             | None -> ()
             write ctx i
         | PhpNew(t,args) ->
             withPrecedence ctx (Precedence._new)
                 (fun subCtx ->
                     write subCtx "new "
+
+                    if not (Set.contains t ctx.UsedTypes) then
+                        match t.Namespace with
+                        | None -> ()
+                        | Some ns  ->
+                            if t.Namespace <> ctx.CurrentNamespace then
+                                write subCtx @"\"
+                                write subCtx ns
+                                write subCtx @"\"
                     write subCtx t.Name
                     write subCtx "("
                     writeArgs subCtx args
@@ -595,6 +614,27 @@ module Output =
             for st in body do
                 writeStatement bodyctx st
             writeiln ctx "}"
+        | PhpStatement.ForLoop(ident, start, limit, isUp, body) ->
+            writei ctx "for ($"
+            write ctx ident
+            write ctx " = "
+            writeExpr ctx start
+            write ctx "; $"
+            write ctx ident 
+            write ctx " <= "
+            writeExpr ctx limit
+            write ctx "; $"
+            write ctx ident
+            if isUp then
+                write ctx "++"
+            else
+                write ctx "--"
+            writeln ctx ") {"
+            let bodyctx = indent ctx
+            for st in body do
+                writeStatement bodyctx st
+            writeiln ctx "}"
+
 
 
     let writeFunc ctx (f: PhpFun) =
@@ -615,10 +655,6 @@ module Output =
             write ctx arg
         writeln ctx ") {"
         let bodyCtx = indent ctx
-        //for g in f.Globals do
-        //    writei bodyCtx "global $"
-        //    write bodyCtx g
-        //    writeln bodyCtx ";"
 
         for s in f.Matchings do
             writeStatement bodyCtx s
@@ -692,10 +728,8 @@ module Output =
 
     let writeAssign ctx n expr =
         writei ctx "$GLOBALS['"
-        //writei ctx "$"
         write ctx n
         write ctx "'] = "
-        //write ctx " = "
         writeExpr ctx expr
         writeln ctx ";"
 
@@ -708,6 +742,47 @@ module Output =
 
     let writeFile ctx (file: PhpFile) =
         writeln ctx "<?php"
+        file.Namespace |> Option.iter (fun ns ->
+            write ctx "namespace "
+            write ctx ns
+            writeln ctx ";"
+            writeln ctx ""
+        )
+
+
+        if not (List.isEmpty file.Require) then
+            //writeln ctx "define('__ROOT__',dirname(__FILE__));"
+            for v,r in file.Require do
+                write ctx "require_once("
+                match v with
+                | Some var -> 
+                    write ctx var
+                    write ctx "."
+                | None -> ()
+
+                writeStr ctx r
+                writeln ctx ");"
+            writeln ctx ""
+       
+        if not (List.isEmpty file.Uses) then
+            for u in file.Uses do
+                write ctx "use "
+                match u.Namespace with
+                | Some ns ->
+                    write ctx @"\"
+                    write ctx ns
+                | None -> ()
+                write ctx @"\"
+                write ctx u.Name
+                writeln ctx ";"
+            writeln ctx ""
+            
+        let ctx =
+            { ctx with 
+                UsedTypes = set file.Uses
+                CurrentNamespace = file.Namespace }
+
+
         for i,d in file.Decls do
             writeln ctx ( "#" + string i)
             writeDecl ctx d
@@ -715,32 +790,32 @@ module Output =
 
 
 
-
 open Fable.AST
 
 module PhpList =
-    let list  = { Name = "List"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = [] }
+    let list  = { Namespace = Some "FSharpList"; Name = "FSharpList"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []; File = "fable-library/List.php" }
     let value = { Name = "value"; Type = "" }
     let next = { Name = "next"; Type = "FSharpList" }
-    let cons = { Name = "Cons"; Fields = [ value; next ]; Methods = []; Abstract = false; BaseType = Some list; Interfaces = [] } 
-    let nil = { Name = "Nil"; Fields = []; Methods = []; Abstract = false; BaseType = Some list; Interfaces = [] }
+    let cons = { Namespace = Some "FSharpList"; Name = "Cons"; Fields = [ value; next ]; Methods = []; Abstract = false; BaseType = Some list; Interfaces = []; File = "fable-library/List.php" } 
+    let nil = { Namespace = Some "FSharpList"; Name = "Nil"; Fields = []; Methods = []; Abstract = false; BaseType = Some list; Interfaces = []; File = "fable-library/List.php" }
 
 module PhpResult =
-    let result = { Name = "Result"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
+    let result = { Namespace = None; Name = "Result"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []; File = "fable-library/FSharp.Core.php"}
     let okValue = { Name = "ResultValue"; Type = ""}
-    let ok = { Name = "Result_Ok"; Fields = [okValue]; Methods = []; Abstract = true; BaseType = Some result; Interfaces = [] }
+    let ok = { Namespace = None; Name = "Result_Ok"; Fields = [okValue]; Methods = []; Abstract = true; BaseType = Some result; Interfaces = []; File = "fable-library/FSharp.Core.php" }
     let errorValue = { Name = "ErrorValue"; Type = ""}
-    let error = { Name = "Result_Error"; Fields = [errorValue] ; Methods = []; Abstract = true; BaseType = Some result; Interfaces = [] }
+    let error = { Namespace = None; Name = "Result_Error"; Fields = [errorValue] ; Methods = []; Abstract = true; BaseType = Some result; Interfaces = []; File = "fable-library/FSharp.Core.php" }
 
 module PhpUnion =
-    let union = { Name = "Union"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
-    let fSharpUnion = { Name = "FSharpUnion"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []}
+    let union = { Namespace = None; Name = "Union"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []; File = "fable-library/FSharp.Core.php"}
+    let fSharpUnion = { Namespace = None; Name = "FSharpUnion"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []; File = "fable-library/FSharp.Core.php"}
 
 module Core =
-    let icomparable = { Name = "iComparable"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = [] }
+    let icomparable = { Namespace = None; Name = "IComparable"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = [] ; File = "fable-library/FSharp.Core.php"}
 
 
 
+let fixExt path = Path.ChangeExtension(path, Path.GetExtension(path).Replace("js", "php").Replace("fs", "fs.php"))
 
 type PhpCompiler =
     { mutable Types: Map<string,PhpType> 
@@ -751,7 +826,11 @@ type PhpCompiler =
       mutable Id: int
       mutable IsImportValue: Map<string, bool>
       mutable ClassNames: Map<string,string>
-      mutable GlobalsUse: string Set
+      mutable BasePath: string
+      mutable Require: Set<string option * string>
+      mutable NsUse: Set<PhpType>
+      mutable File: string
+      mutable Namespace: string
     }
     static member create() =
 
@@ -763,6 +842,7 @@ type PhpCompiler =
                     PhpResult.error ] 
                   |> List.map (fun t -> t.Name, t)
                   |> Map.ofList
+          
           DecisionTargets = []
           LocalVars = Set.empty
           CapturedVars = Set.empty
@@ -770,7 +850,11 @@ type PhpCompiler =
           Id = 0
           IsImportValue = Map.empty
           ClassNames = Map.empty
-          GlobalsUse = Set.empty
+          BasePath = ""
+          Require = Set.empty
+          NsUse = Set.empty
+          Namespace = ""
+          File = ""
           }
     member this.AddType(phpType: PhpType) =
         this.Types <- Map.add phpType.Name phpType this.Types
@@ -824,12 +908,46 @@ type PhpCompiler =
         | Some n -> n
         | None -> e.DisplayName
 
+    member this.AddRequire(file: string) =
 
-    member this.UseGlobal(glob: string) =
-        this.GlobalsUse <- Set.add glob this.GlobalsUse
-    member this.ClearGlobalsUse() =
-        this.GlobalsUse <- Set.empty
+        if file.Contains "fable-library" then
+            let path = Path.GetFileName (fixExt file)
+            this.Require <- Set.add (Some "__FABLE_LIBRARY__",  "/" + path) this.Require
 
+        else
+            let fullPhpPath = 
+                let p = fixExt file
+                if Path.IsPathRooted p then
+                    p
+                else
+                    Path.GetFullPath(Path.Combine(Path.GetDirectoryName(this.File), p))
+
+            if fullPhpPath <> this.File then
+                let path = 
+                    let p = Path.getRelativePath this.BasePath fullPhpPath
+                    if p.StartsWith "./" then
+                        p.Substring 2
+                    else
+                        p
+
+                this.Require <- Set.add (Some "__ROOT__" , "/" + path) this.Require
+
+    member this.AddRequire(typ: PhpType) =
+        this.AddRequire(typ.File)
+
+    member this.ClearRequire(basePath) =
+        this.BasePath <- basePath
+        this.Require <- Set.empty
+        this.NsUse <- Set.empty
+
+    member this.AddUse(typ: PhpType) =
+        this.AddRequire(typ)
+        this.NsUse <- Set.add typ this.NsUse;
+
+    member this.SetFile(file) =
+        this.File <- file
+    member this.SetNamespace(ns) =
+        this.Namespace <- ns
 
 let rec convertType (com: Fable.Compiler) (ctx: PhpCompiler) (t: Fable.Type) =
     match t with
@@ -858,7 +976,10 @@ let rec convertType (com: Fable.Compiler) (ctx: PhpCompiler) (t: Fable.Type) =
        
 
 let fixName (name: string) =
-    name.Replace('$','_')
+    match name.Replace('$','_') with
+    | "empty" -> "_empty"
+    | n -> n
+
 
 let caseName (ctx: PhpCompiler) (entity: Fable.Entity) (case: Fable.UnionCase) =
     if entity.UnionCases.Length = 1 then
@@ -886,7 +1007,8 @@ let convertUnion (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) =
     if info.UnionCases.Length = 1 then
         let case = info.UnionCases.[0] 
         [ let t =
-            { Name = case.Name
+            { Namespace = Some (ctx.Namespace)
+              Name = case.Name
               Fields = [ for e in case.UnionCaseFields do 
                             { Name = e.Name 
                               Type  = convertType com ctx e.FieldType } ]
@@ -894,21 +1016,18 @@ let convertUnion (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) =
                   { PhpFun.Name = "get_FSharpCase"
                     PhpFun.Args = []
                     PhpFun.Matchings = []
-                    PhpFun.Globals = []
                     PhpFun.Static = false
                     PhpFun.Body = 
                       [ PhpStatement.Return(PhpConst(PhpConstString(case.Name)))] } 
                   { PhpFun.Name = "get_Tag"
                     PhpFun.Args = []
                     PhpFun.Matchings = []
-                    PhpFun.Globals = []
                     PhpFun.Static = false
                     PhpFun.Body =
                       [ PhpStatement.Return(PhpConst(PhpConstNumber(0.)))] }
                   { PhpFun.Name = "CompareTo"
                     PhpFun.Args = ["other"]
                     PhpFun.Matchings = []
-                    PhpFun.Globals = []
                     PhpFun.Static = false
                     PhpFun.Body =
                                       [ for e in case.UnionCaseFields do 
@@ -947,49 +1066,54 @@ let convertUnion (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) =
               Abstract = false
               BaseType = None
               Interfaces = [ PhpUnion.fSharpUnion; Core.icomparable  ]
+              File = ctx.File
               }
+          ctx.AddUse(Core.icomparable)
+          ctx.AddUse(PhpUnion.fSharpUnion )
           ctx.AddType(t) |> PhpType ]
     else
     [ let baseType =
-            { Name = ctx.GetEntityName(info)
+            { Namespace = Some ctx.Namespace
+              Name = ctx.GetEntityName(info)
               Fields = []
               Methods = []
               Abstract = true 
               BaseType = None
-              Interfaces = [PhpUnion.union; PhpUnion.fSharpUnion ]}
+              Interfaces = [PhpUnion.union; PhpUnion.fSharpUnion ]
+              File = ctx.File }
+      
+      ctx.AddUse(PhpUnion.union)
+      ctx.AddUse(PhpUnion.fSharpUnion)
       ctx.AddType(baseType) |> PhpType
 
       for i, case in Seq.indexed info.UnionCases do
         let t = 
-            { Name = caseName ctx info case
+            { Namespace = Some ctx.Namespace
+              Name = caseName ctx info case
               Fields = [ for e in case.UnionCaseFields do 
                             { Name = e.Name 
                               Type  = convertType com ctx e.FieldType } ]
               Methods = [ { PhpFun.Name = "get_Case";
                             PhpFun.Args = []
                             PhpFun.Matchings = []
-                            PhpFun.Globals = []
                             PhpFun.Static = false
                             PhpFun.Body = 
                                 [ PhpStatement.Return(PhpConst(PhpConstString(caseName ctx info case)))] } 
                           { PhpFun.Name = "get_FSharpCase";
                             PhpFun.Args = []
                             PhpFun.Matchings = []
-                            PhpFun.Globals = []
                             PhpFun.Static = false
                             PhpFun.Body = 
                                 [ PhpStatement.Return(PhpConst(PhpConstString(case.Name)))] } 
                           { PhpFun.Name = "get_Tag"
                             PhpFun.Args = []
                             PhpFun.Matchings = []
-                            PhpFun.Globals = []
                             PhpFun.Static = false
                             PhpFun.Body =
                                 [ PhpStatement.Return(PhpConst(PhpConstNumber (float i)))] }
                           { PhpFun.Name = "CompareTo"
                             PhpFun.Args = ["other"]
                             PhpFun.Matchings = []
-                            PhpFun.Globals = []
                             PhpFun.Static = false
                             PhpFun.Body =
                                               [ let cmp = PhpVar(ctx.MakeUniqueVar "cmp",None)
@@ -1047,12 +1171,16 @@ let convertUnion (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) =
                             ]
               Abstract = false
               BaseType = Some baseType
-              Interfaces = [ Core.icomparable ] }
+              Interfaces = [ Core.icomparable ]
+              File = ctx.File
+              }
+        ctx.AddUse(Core.icomparable)
         ctx.AddType(t) |> PhpType ]
 
 let convertRecord (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) = 
     [ let t =
-        { Name = ctx.GetEntityName(info)
+        { Namespace = Some ctx.Namespace
+          Name = ctx.GetEntityName(info)
           Fields = [ for e in info.FSharpFields do 
                         { Name = e.Name 
                           Type  = convertType com ctx e.FieldType } ]
@@ -1060,7 +1188,6 @@ let convertRecord (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) 
               { PhpFun.Name = "CompareTo"
                 PhpFun.Args = ["other"]
                 PhpFun.Matchings = []
-                PhpFun.Globals = []
                 PhpFun.Static = false
                 PhpFun.Body =
                                   [ for e in info.FSharpFields do
@@ -1099,7 +1226,10 @@ let convertRecord (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) 
           ]
           Abstract = false
           BaseType = None
-          Interfaces = [ Core.icomparable ]}
+          Interfaces = [ Core.icomparable ]
+          File = ctx.File
+          }
+      ctx.AddUse(Core.icomparable)
       ctx.AddType(t) |> PhpType ]
 
 type ReturnStrategy =
@@ -1243,10 +1373,13 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
         | Fable.Get((Fable.Get(_,_,ty,_) as this), Fable.ByKey(Fable.KeyKind.ExprKey(Fable.Value(Fable.StringConstant m, None))),_,_)
                 when match ty with Fable.Array _ -> true | _ -> false
                 ->
-            PhpCall(PhpConst(PhpConstString("FSharpArray::" + m)), convertArgs com ctx (args @ [this])  )
+            PhpCall(PhpIdent(Some "FSharpArray",  m), convertArgs com ctx (args @ [this])  )
         | Fable.Get(Fable.IdentExpr { Name = "Math" }, Fable.ByKey(Fable.KeyKind.ExprKey(Fable.Value(Fable.StringConstant m, None))),_,_)
                 ->
             PhpCall(PhpConst(PhpConstString(m)), convertArgs com ctx (args)  )
+        | Fable.Get(target , Fable.ByKey(Fable.KeyKind.ExprKey(Fable.Value(Fable.StringConstant m, None))),_,_) ->
+            let meth = m.Substring(m.LastIndexOf(".")+1)
+            PhpMethod(convertExpr com ctx target, PhpConst(PhpConstString meth),  convertArgs com ctx (args))
 
         | _ ->
             let phpCallee = convertExpr com ctx callee
@@ -1321,8 +1454,6 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
         | Fable.UnionTag ->
             PhpMethod(phpExpr, PhpConst(PhpConstString ("get_Tag")), [])
 
-
-
     | Fable.IdentExpr(id) ->
         let name = fixName id.Name
         ctx.UseVar(name)
@@ -1335,25 +1466,28 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
         
         PhpVar(name, phpType)
     | Fable.Import(info,t,_) ->
-        match IO.Path.GetFileNameWithoutExtension(info.Path) with
+        let fixNsName = function
+            | "List" -> "FSharpList"
+            | "Array" -> "FSharpArray"
+            | n -> n
+            
+            
+        match fixNsName(IO.Path.GetFileNameWithoutExtension(info.Path)) with
         | "" ->
             match Map.tryFind info.Selector ctx.IsImportValue with
             | Some true ->
                 let name = fixName info.Selector
-                ctx.UseGlobal(name)
                 PhpGlobal(name)
             | _ ->
                 PhpIdent(None, fixName info.Selector)
 
-        | "List" -> PhpIdent(Some "FSharpList", fixName info.Selector)
-        | "Array" -> PhpIdent(Some "FSharpArray", fixName info.Selector)
         | cls ->
             match Map.tryFind info.Selector ctx.IsImportValue with
             | Some true ->
                 let name = fixName info.Selector
-                ctx.UseGlobal(name)
                 PhpGlobal(name)
             | _ ->
+                ctx.AddRequire(info.Path)
                 PhpIdent(Some cls, fixName info.Selector)
 
     | Fable.DecisionTree(expr,targets) ->
@@ -1465,12 +1599,15 @@ and convertValue (com: Fable.Compiler) (ctx:PhpCompiler) (value: Fable.ValueKind
             | Some t -> t
             | None -> failwithf $"Cannot find type {name}"
 
+        ctx.AddRequire(t)
+
         PhpNew(t, [for arg in args do convertExpr com ctx arg ])
     | Fable.NewTuple(args) ->
         
         PhpArray([for arg in args do (PhpArrayNoIndex, convertExpr com ctx arg)])
     | Fable.NewRecord(args, e , _) ->
         let t = ctx.Types.[ctx.GetEntityName(com.GetEntity e)]
+        ctx.AddRequire(t)
         PhpNew(t, [ for arg in args do convertExpr com ctx arg ] )
         
 
@@ -1485,9 +1622,10 @@ and convertValue (com: Fable.Compiler) (ctx:PhpCompiler) (value: Fable.ValueKind
     | Fable.Null _ ->
         PhpConst(PhpConstNull)
     | Fable.NewList(Some(head,tail),_) ->
+        ctx.AddUse(PhpList.cons)
         PhpNew(PhpList.cons, [convertExpr com ctx head; convertExpr com ctx tail])
     | Fable.NewList(None,_) ->
-        ctx.UseGlobal("NIL")
+        ctx.AddRequire(PhpList.nil)
         PhpGlobal("NIL")
     | Fable.NewArray(values,_) ->
         PhpArray([for v in values -> (PhpArrayNoIndex, convertExpr com ctx v)])
@@ -1671,6 +1809,16 @@ and convertExprToStatement (com: Fable.Compiler) ctx expr returnStrategy =
             
     | Fable.WhileLoop(guard, body, _) -> 
         [ WhileLoop(convertExpr com ctx guard, convertExprToStatement com ctx body returnStrategy ) ]
+    | Fable.ForLoop(ident, start, limit, body, isUp, _) ->
+        let id = fixName ident.Name
+        let startExpr =  convertExpr com ctx  start
+        ctx.AddLocalVar(id, false)
+        let limitExpr = convertExpr com ctx  limit
+        let bodyExpr = convertExprToStatement com ctx body returnStrategy
+
+        [ ForLoop(id,startExpr, limitExpr, isUp, bodyExpr)]
+        
+        
 
     | Fable.Emit({ Macro = "throw $0"; CallInfo = { Args = [ Fable.Call( Fable.IdentExpr { Name = cls }, { Args = args },_,_ ) ] }},_,_) ->
         [ Throw(cls, [ for arg in args -> convertExpr com ctx arg]) ]
@@ -1701,25 +1849,25 @@ let convertDecl (com: Fable.Compiler) (ctx: PhpCompiler) decl =
             convertRecord com ctx ent
         else
             [PhpType {
+                Namespace = Some ctx.Namespace
                 Name = decl.Name
                 Fields = []
                 Methods = []
                 Abstract = false
                 BaseType = None
                 Interfaces = []
+                File = ctx.File
              }]
     | Fable.Declaration.MemberDeclaration decl ->
         ctx.AddImport(decl.Name, decl.Info.IsValue)
         if decl.Info.IsValue then
             [ PhpDeclValue(fixName decl.Name, convertExpr com ctx decl.Body) ]
         else
-            ctx.ClearGlobalsUse()
             let body = convertExprToStatement com ctx decl.Body Return 
             [{ PhpFun.Name = fixName decl.Name
                Args = [ for arg in decl.Args do 
                         fixName arg.Name ]
                Matchings = []
-               Globals = Set.toList ctx.GlobalsUse
                Body = body
                Static = false
                
@@ -1787,9 +1935,8 @@ let compOptions = CompilerOptionsHelper.Make(optimizeFSharpAst=true)
 
 let phpComp = PhpCompiler.create()
 (*
-let file = files.[1]
+let file = files.[0]
 *)
-
 let asts =
     [ for file in files do
         let com = Compiler(file, proj, compOptions, __SOURCE_DIRECTORY__ + @"/../Fable/src/fable-library/bin/Debug/netstandard2.0/")
@@ -1798,21 +1945,31 @@ let asts =
             |> Fable.Transforms.FableTransforms.transformFile com 
 
 (*
-        let decl = ast.Declarations.[232]
+        let decl = ast.Declarations.[0]
 *)
+        phpComp.ClearRequire(__SOURCE_DIRECTORY__ + @"/src/")
+        phpComp.SetFile(file + ".php")
+        phpComp.SetNamespace(Path.GetFileNameWithoutExtension(file))
+        let decls = 
+            [
+                for i,decl in List.indexed ast.Declarations do
+                    let decls =
+                        try 
+                            convertDecl com phpComp decl
+                        with
+                        |    ex -> 
+                            eprintfn "Error while transpiling decl %d: %O" i ex
+                            reraise()
+                    for d in decls  do
+                        i,d
+            ]
 
-        for i,decl in List.indexed ast.Declarations do
-            let decls =
-                try 
-                    convertDecl com phpComp decl
-                with
-                |    ex -> 
-                    eprintfn "Error while transpiling decl %d: %O" i ex
-                    reraise()
-            for d in decls  do
-                i,d
- 
-        
+
+        { Filename = file + ".php" 
+          Namespace = Some phpComp.Namespace
+          Require = Set.toList phpComp.Require
+          Uses = Set.toList phpComp.NsUse
+          Decls = decls }
    ]
 
 //asts.[1].Declarations.[11]
@@ -1831,17 +1988,29 @@ let asts =
 //    ]
 //convertDecl com phpComp asts.[1].Declarations.[243]
 
-let w = new StringWriter()
-let ctx = Output.Writer.create w
-let file = { Decls = asts }
-Output.writeFile ctx file
-w.ToString()
+for file in asts do
+    let w = new StringWriter()
+    let ctx = Output.Writer.create w
+    Output.writeFile ctx file
 
+    let fix =  
+        (string w).Replace("$Barns, $Goal, $Undo, $UseGameOver)", "$Barns, $Goal, $Undo=NULL, $UseGameOver=false)")
+                  .Replace("$this->Undo = $Undo;", "$this->Undo = $Undo ?? new UndoType_FullUndo();")
 
-let fix =  
-    (string w).Replace("$Barns, $Goal, $Undo, $UseGameOver)", "$Barns, $Goal, $Undo=NULL, $UseGameOver=false)")
-              .Replace("$this->Undo = $Undo;", "$this->Undo = $Undo ?? new UndoType_FullUndo();")
-IO.File.WriteAllText(@"C:\dev\crazy\bga\modules\crazyfarmers.php", fix)
-IO.File.WriteAllText(@"C:\dev\crazy\php\lib.php", fix)
+    //IO.File.WriteAllText(@"C:\dev\crazy\bga\modules\crazyfarmers.php", fix)
+
+    IO.File.WriteAllText(file.Filename, fix)
+
+let root = __SOURCE_DIRECTORY__ + "/src"
+let phpDir = __SOURCE_DIRECTORY__ + "/php"
+for phpFile in Directory.EnumerateFiles(root, "*.fs.php", SearchOption.AllDirectories) do
+    let dest = Path.GetFullPath(Path.Combine(phpDir, Path.getRelativePath root phpFile))
+    printfn "%s" dest
+    let dir = Path.GetDirectoryName dest
+    if not (Directory.Exists dir) then
+        Directory.CreateDirectory(dir) |> ignore
+
+    File.Copy(phpFile, dest, true)
+
         
 

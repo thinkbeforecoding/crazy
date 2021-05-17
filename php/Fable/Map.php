@@ -1,4 +1,6 @@
 <?php
+namespace Map;
+use \IteratorAggregate,\Exception,\FSharpList\Cons;
 
 class MapOne extends MapTree {
     public $key;
@@ -275,105 +277,6 @@ class Map implements IteratorAggregate
         $this->Tree = $tree;
     }
 
-    static $empty;
-
-    static function empty()  
-    {
-        $comparer = [ 'Compare' => 'Util::compare' ];
-
-        return new Map($comparer, NULL);
-    } 
-
-    static function count($table)
-    {
-        return MapTree::size($table->Tree);
-    }
-
-    static function ofList($list)
-    {
-        $tree = NULL;
-        $comparer = [ 'Compare' => 'Util::compare' ];
-
-        while ($list instanceof Cons)
-        {
-            $tree = MapTree::add($comparer, $list->value[0], $list->value[1], $tree);
-            $list = $list->next;
-        }
-
-        return new Map($comparer, $tree);
-    }
-    
-    static function ofSeq($seq)
-    {
-        $tree = NULL;
-        $comparer = [ 'Compare' => 'Util::compare' ];
-
-        foreach ($seq as $item)
-        {
-            $tree = MapTree::add($comparer, $item[0], $item[1], $tree);
-        }
-
-        return new Map($comparer, $tree);
-    }
-
-    static function ofArray($seq)
-    {
-        $tree = NULL;
-        $comparer = [ 'Compare' => 'Util::compare' ];
-
-        foreach ($seq as $item)
-        {
-            $tree = MapTree::add($comparer, $item[0], $item[1], $tree);
-        }
-
-        return new Map($comparer, $tree);
-    }
-
-    static function add($key, $value, $table)
-    {
-        return new Map($table->Comparer, MapTree::add($table->Comparer, $key, $value, $table->Tree));
-    }
-
-    static function find($key, $table)
-    {
-
-        return MapTree::find($table->Comparer,$key,$table->Tree);
-    }
-    static function tryFind($key, $table)
-    {
-        return MapTree::tryFind($table->Comparer,$key,$table->Tree);
-    }
-
-
-    static function toSeq($table)
-    {
-        return $table;
-    }
-
-    static function toList($table)
-    {
-        return FSharpList::ofSeq($table);
-    }
-
-    static function fold($f,$acc,$table)
-    {
-        return MapTree::fold($f,$acc,$table->Tree);
-    }
-
-    static function exists($f, $table)
-    {
-        return MapTree::exists($f, $table->Tree);
-    }
-    static function map($f, $table)
-    {
-        return new Map($table->Comparer, MapTree::mapi($f, $table->Tree));
-    }
-    static function FSharpMap__get_Item($key, $table)
-    {
-
-        return MapTree::find($table->Comparer, $key, $table->Tree);
-    }
-
     public function getIterator() {
         $stack = [];
         $tree = $this->Tree;
@@ -392,5 +295,103 @@ class Map implements IteratorAggregate
                     $tree = array_pop($stack);
             }
         }
-    } 
+    }
+} 
+
+function _empty()  
+{
+    $comparer = [ 'Compare' => '\\Util\\compare' ];
+
+    return new Map($comparer, NULL);
+} 
+
+function count($table)
+{
+    return MapTree::size($table->Tree);
+}
+
+function ofList($list)
+{
+    $tree = NULL;
+    $comparer = [ 'Compare' => '\\Util\\compare' ];
+
+    while ($list instanceof Cons)
+    {
+        $tree = MapTree::add($comparer, $list->value[0], $list->value[1], $tree);
+        $list = $list->next;
+    }
+
+
+    return new Map($comparer, $tree);
+}
+
+function ofSeq($seq)
+{
+
+    $tree = NULL;
+    $comparer = [ 'Compare' => '\\Util\\compare' ];
+
+    foreach ($seq as $item)
+    {
+        $tree = MapTree::add($comparer, $item[0], $item[1], $tree);
+    }
+
+    return new Map($comparer, $tree);
+}
+
+function ofArray($seq)
+{
+    $tree = NULL;
+    $comparer = [ 'Compare' => '\\Util\\compare' ];
+
+    foreach ($seq as $item)
+    {
+        $tree = MapTree::add($comparer, $item[0], $item[1], $tree);
+    }
+
+    return new Map($comparer, $tree);
+}
+
+function add($key, $value, $table)
+{
+    return new Map($table->Comparer, MapTree::add($table->Comparer, $key, $value, $table->Tree));
+}
+
+function find($key, $table)
+{
+
+    return MapTree::find($table->Comparer,$key,$table->Tree);
+}
+function tryFind($key, $table)
+{
+    return MapTree::tryFind($table->Comparer,$key,$table->Tree);
+}
+
+
+function toSeq($table)
+{
+    return $table;
+}
+
+function toList($table)
+{
+    return \FSharpList\ofSeq($table);
+}
+
+function fold($f,$acc,$table)
+{
+    return MapTree::fold($f,$acc,$table->Tree);
+}
+
+function exists($f, $table)
+{
+    return MapTree::exists($f, $table->Tree);
+}
+function map($f, $table)
+{
+    return new Map($table->Comparer, MapTree::mapi($f, $table->Tree));
+}
+function FSharpMap__get_Item($key, $table)
+{
+    return MapTree::find($table->Comparer, $key, $table->Tree);
 }

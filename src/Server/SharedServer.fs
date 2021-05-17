@@ -42,7 +42,7 @@ let privateEvents playerId events =
     | Board.DrawPileShuffled _ -> Board.DrawPileShuffled []
     | e -> e )
 
-let bgaUpdateState events (board: UndoableBoard) (zombie: bool) (state: string) changeState eliminatePlayer =
+let bgaUpdateState (events: _[]) (board: UndoableBoard) (zombie: bool) (state: string) changeState eliminatePlayer =
     if zombie then
         changeState "zombiepass" 
     else
