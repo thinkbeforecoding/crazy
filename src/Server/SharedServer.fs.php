@@ -100,7 +100,7 @@ function bgaUpdateState($events, $board, $zombie, $state, $changeState, $elimina
                                                     $p_1 = $e->Item1;
                                                     $matchValue = $board->Board;
                                                     if ($matchValue->get_Tag() == 1) {
-                                                        $matchValue_1 = \Map\FSharpMap__get_Item($matchValue->Item->Players, $p_1);
+                                                        $matchValue_1 = $matchValue->Item->Players->get_Item($p_1);
                                                         switch ($matchValue_1->get_Tag())
                                                         {
                                                             case 0:
@@ -130,7 +130,7 @@ function bgaUpdateState($events, $board, $zombie, $state, $changeState, $elimina
                                                     $p_2 = $e->Item1;
                                                     $matchValue_2 = $board->Board;
                                                     if ($matchValue_2->get_Tag() == 1) {
-                                                        $matchValue_3 = \Map\FSharpMap__get_Item($matchValue_2->Item->Players, $p_2);
+                                                        $matchValue_3 = $matchValue_2->Item->Players->get_Item($p_2);
                                                         if ($matchValue_3->get_Tag() == 1) {
                                                             $player_1 = $matchValue_3->Item;
                                                             if (\SharedGame\Player_canMove($p_2, $board->Board)) {
@@ -181,8 +181,8 @@ function bgaUpdateZombieState($board, $changeState) {
     {
         case 1:
             $b = $matchValue->Item;
-            $p = \SharedGame\GameTable__get_Player($b->Table, NULL);
-            $matchValue_1 = \Map\FSharpMap__get_Item($b->Players, $p);
+            $p = $b->Table->get_Player();
+            $matchValue_1 = $b->Players->get_Item($p);
             switch ($matchValue_1->get_Tag())
             {
                 case 1:
@@ -225,7 +225,7 @@ function bgaNextPlayer($board) {
             if (\SharedGame\BoardModule_currentPlayer($b)->get_Tag() == 0) {
                 return 'nextStarting';
             } else {
-                if (\SharedGame\Player_canMove(\SharedGame\GameTable__get_Player($b->Table, NULL), $board->Board)) {
+                if (\SharedGame\Player_canMove($b->Table->get_Player(), $board->Board)) {
                     return 'nextPlayer';
                 } else {
                     return 'nextEndTurn';
@@ -412,7 +412,7 @@ function textAction($previous, $b, $e) {
     {
         case 0:
             $playerName = function ($p) use ($board) { 
-                $name = \Map\FSharpMap__get_Item($board->Table->Names, $p);
+                $name = $board->Table->Names->get_Item($p);
                 return '<span style="font-weight:bold;color:#' . (function ($matchValue_1) {                 switch ($matchValue_1->get_Tag())
                 {
                     case 1:
@@ -424,7 +424,7 @@ function textAction($previous, $b, $e) {
                     default:
                         return 'AEDBDE';
                 }
- })(\SharedGame\Player_color(\Map\FSharpMap__get_Item($board->Players, $p))) . '">' . $name . '</span>';
+ })(\SharedGame\Player_color($board->Players->get_Item($p))) . '">' . $name . '</span>';
             };
             if ($e->get_Tag() == 0) {
                 if ($e->Item2->get_Tag() == 7) {
@@ -516,7 +516,7 @@ function textAction($previous, $b, $e) {
                     case 2:
                         $matchValue_2 = $previous->Board;
                         if ($matchValue_2->get_Tag() == 1) {
-                            $player_1 = \SharedGame\GameTable__get_Player($matchValue_2->Item->Table, NULL);
+                            $player_1 = $matchValue_2->Item->Table->get_Player();
                         } else {
                             $player_1 = '';
                         }

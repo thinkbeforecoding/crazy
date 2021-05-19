@@ -277,6 +277,11 @@ class Map implements IteratorAggregate
         $this->Tree = $tree;
     }
 
+    function get_Item($key)
+    {
+        return MapTree::find($this->Comparer, $key, $this->Tree);
+    }
+
     public function getIterator() {
         $stack = [];
         $tree = $this->Tree;
@@ -390,8 +395,4 @@ function exists($f, $table)
 function map($f, $table)
 {
     return new Map($table->Comparer, MapTree::mapi($f, $table->Tree));
-}
-function FSharpMap__get_Item($table, $key)
-{
-    return MapTree::find($table->Comparer, $key, $table->Tree);
 }

@@ -42,6 +42,12 @@ class Axe implements FSharpUnion, IComparable {
         }        
         return 0;
     }
+    function get_Q() {
+        return $this->q;
+    }
+    function get_R() {
+        return $this->r;
+    }
 }
 
 #1
@@ -52,16 +58,6 @@ function Axe_op_Addition_2BE35040($_arg1, $_arg2) {
 #2
 function Axe_op_Multiply_Z425F7B5E($a, $_arg3) {
     return new Axe(($_arg3->q * $a), ($_arg3->r * $a));
-}
-
-#3
-function Axe__get_Q($this_, $unitVar1) {
-    return $this_->q;
-}
-
-#4
-function Axe__get_R($this_, $unitVar1) {
-    return $this_->r;
 }
 
 #5
@@ -1307,16 +1303,12 @@ class GameTable implements IComparable {
         }        
         return 0;
     }
-}
-
-#50
-function GameTable__get_Player($this_, $unitVar1) {
-    return $this_->Players[$this_->Current];
-}
-
-#51
-function GameTable__get_Next($this_, $unitVar1) {
-    return new GameTable($this_->Players, $this_->AllPlayers, $this_->Names, (($this_->Current + 1) % count($this_->Players)));
+    function get_Player() {
+        return $this->Players[$this->Current];
+    }
+    function get_Next() {
+        return new GameTable($this->Players, $this->AllPlayers, $this->Names, (($this->Current + 1) % count($this->Players)));
+    }
 }
 
 #52
@@ -1338,7 +1330,7 @@ function Table_eliminate($player, $table) {
 
 #54
 function Table_isCurrent($playerid, $table) {
-    return GameTable__get_Player($table, NULL) === $playerid;
+    return $table->get_Player() === $playerid;
 }
 
 #55
@@ -2738,8 +2730,8 @@ function FieldModule_crossroads($_arg1) {
 
 #123
 function FieldModule_fill($paths) {
-    $sortedPaths = \Seq2\List_groupBy(function ($tile) {     return Axe__get_Q($tile, NULL);
- }, \FSharpList\sortBy(function ($t_1) {     return [ Axe__get_Q($t_1, NULL), Axe__get_R($t_1, NULL)];
+    $sortedPaths = \Seq2\List_groupBy(function ($tile) {     return $tile->get_Q();
+ }, \FSharpList\sortBy(function ($t_1) {     return [ $t_1->get_Q(), $t_1->get_R()];
  }, \FSharpList\choose(function ($_arg1) {     switch ($_arg1[1]->get_Tag())
     {
         case 2:
@@ -2758,7 +2750,7 @@ function FieldModule_fill($paths) {
                 $e = $l->next->value;
                 $s = $l->value;
                 return \Seq\toList(\Seq\delay(function ($unitVar_1) use ($e, $matchValue, $s) {                 return \Seq\map(function ($r) use ($matchValue) {                 return new Parcel(new Axe($matchValue[0], $r));
- }, \Range\rangeDouble(Axe__get_R($s, NULL), 1, Axe__get_R($e, NULL) - 1));
+ }, \Range\rangeDouble($s->get_R(), 1, $e->get_R() - 1));
  }));
             } else {
                 return \Seq\_empty();
@@ -5296,8 +5288,8 @@ function HistoryModule_addPos($player, $boardPos, $history) {
 #208
 function HistoryModule_findDangerousPositions($player, $boardPos, $history) {
     return \Seq\toList(\Seq\delay(function ($unitVar) use ($boardPos, $history, $player) {     return \Seq\collect(function ($matchValue) use ($boardPos, $player) { 
-        $activePatternResult21104 = $matchValue;
-        $opponent = $activePatternResult21104[0];
+        $activePatternResult64820 = $matchValue;
+        $opponent = $activePatternResult64820[0];
         if ($opponent !== $player) {
             $posOfOtherPlayers = \Set\filter(function ($p) use ($opponent) {             return $p->Player !== $opponent;
  }, $boardPos->Positions);
@@ -5322,7 +5314,7 @@ function HistoryModule_findDangerousPositions($player, $boardPos, $history) {
  }, $source);
  }, $findRep(\Set\_empty([ 'Compare' => function ($x, $y) {             return \Util\compare($x, $y);
  }]), \Set\_empty([ 'Compare' => function ($x_1, $y_1) {             return \Util\compare($x_1, $y_1);
- }]), $activePatternResult21104[1]))));
+ }]), $activePatternResult64820[1]))));
         } else {
             return \Seq\_empty();
         }
@@ -5808,12 +5800,12 @@ class PlayerDrewCards implements IComparable {
 
 #215
 function BoardModule_currentPlayer($board) {
-    return \Map\FSharpMap__get_Item($board->Players, GameTable__get_Player($board->Table, NULL));
+    return $board->Players->get_Item($board->Table->get_Player());
 }
 
 #216
 function BoardModule_currentOtherPlayers($board) {
-    return Player_otherPlayers(GameTable__get_Player($board->Table, NULL), $board);
+    return Player_otherPlayers($board->Table->get_Player(), $board);
 }
 
 #217
@@ -5935,10 +5927,10 @@ function BoardModule_tryFindWinner($board) {
 
 #222
 function BoardModule_next($shouldShuffle, $repeated, $state) {
-    $playerId = GameTable__get_Player($state->Table, NULL);
+    $playerId = $state->Table->get_Player();
     $player = \Map\tryFind($playerId, $state->Players);
-    $nextPlayerId = GameTable__get_Player(GameTable__get_Next($state->Table, NULL), NULL);
-    $nextPlayer = \Map\FSharpMap__get_Item($state->Players, $nextPlayerId);
+    $nextPlayerId = $state->Table->get_Next()->get_Player();
+    $nextPlayer = $state->Players->get_Item($nextPlayerId);
     return \Seq\toList(\Seq\delay(function ($unitVar) use ($nextPlayer, $nextPlayerId, $player, $playerId, $repeated, $shouldShuffle, $state) {     return \Seq\append(\FSharpList\map(function ($c) use ($playerId) {     return new BoardEvent_Played($playerId, new Event_BonusDiscarded($c));
  }, BonusModule_endTurn(is_null($player) ? $GLOBALS['BonusModule_empty'] : Player_bonus($player))), \Seq\delay(function ($unitVar_1) use ($nextPlayer, $nextPlayerId, $playerId, $repeated, $shouldShuffle, $state) {     return \Seq\append($shouldShuffle ? (function ($matchValue) use ($state) {     switch ($matchValue->get_Tag())
     {
@@ -6186,7 +6178,7 @@ function BoardModule_bribeParcels($board) {
     if (BoardModule_endGameWithBribe($board)) {
         return new \Result_Error(new BribeBlocker_InstantVictory());
     } else {
-        $playerField = Player_field(\Map\FSharpMap__get_Item($board->Players, GameTable__get_Player($board->Table, NULL)));
+        $playerField = Player_field($board->Players->get_Item($board->Table->get_Player()));
         $border = FieldModule_borderTiles($playerField);
         $barns = Field_op_Addition_Z24735800($board->Barns->Free, $board->Barns->Occupied);
         $bridgeParcels = BoardModule_findBridgeParcels($playerField);
@@ -6233,7 +6225,7 @@ function BoardModule_bribeParcelsBlockers($board) {
     if (BoardModule_endGameWithBribe($board)) {
         return $GLOBALS['NIL'];
     } else {
-        $playerField = Player_field(\Map\FSharpMap__get_Item($board->Players, GameTable__get_Player($board->Table, NULL)));
+        $playerField = Player_field($board->Players->get_Item($board->Table->get_Player()));
         $border = FieldModule_borderTiles($playerField);
         $barns = FieldModule_intersect(FieldModule_unionMany(\Seq\toList(\Seq\delay(function ($unitVar) use ($board) {         return \Seq\collect(function ($matchValue) {         return \Seq\singleton(Player_field($matchValue[1]));
  }, BoardModule_currentOtherPlayers($board));
@@ -6289,13 +6281,13 @@ function BoardModule_bribeParcelsBlockers($board) {
 
 #230
 function BoardModule_annexed($playerid, $e, $board) {
-    $newMap = \Map\add($playerid, Player_evolve(\Map\FSharpMap__get_Item($board->Players, $playerid), new Event_Annexed($e)), $board->Players);
+    $newMap = \Map\add($playerid, Player_evolve($board->Players->get_Item($playerid), new Event_Annexed($e)), $board->Players);
     $freeFields = Field_op_Subtraction_Z24735800(FieldModule_ofParcels($e->NewField), FieldModule_unionMany(\Seq\toList(\Seq\delay(function ($unitVar) use ($e) {     return \Seq\collect(function ($matchValue) {     return \Seq\singleton(FieldModule_ofParcels($matchValue[1]));
  }, $e->LostFields);
  }))));
     return \FSharpList\fold(function ($board_1, $tupledArg) { 
         $playerid_1 = $tupledArg[0];
-        $matchValue_1 = \Map\FSharpMap__get_Item($board_1->Players, $playerid_1);
+        $matchValue_1 = $board_1->Players->get_Item($playerid_1);
         if ($matchValue_1->get_Tag() == 1) {
             $p = $matchValue_1->Item;
             return new PlayingBoard(\Map\add($playerid_1, new CrazyPlayer_Playing(new Playing($p->Color, $p->Tractor, $p->Fence, Field_op_Subtraction_Z24735800($p->Field, FieldModule_ofParcels($tupledArg[1])), $p->Power, $p->Moves, $p->Hand, $p->Bonus)), $board_1->Players), $board_1->Table, $board_1->DrawPile, $board_1->DiscardPile, $board_1->Barns, $board_1->HayBales, $board_1->Goal, $board_1->UseGameOver, $board_1->History);
@@ -6307,7 +6299,7 @@ function BoardModule_annexed($playerid, $e, $board) {
 
 #231
 function BoardModule_bribed($playerid, $p, $board) {
-    $newPlayer = Player_evolve(\Map\FSharpMap__get_Item($board->Players, $playerid), new Event_Bribed($p));
+    $newPlayer = Player_evolve($board->Players->get_Item($playerid), new Event_Bribed($p));
     return new PlayingBoard(\Map\add($p->Victim, (function ($matchValue) use ($p) {     switch ($matchValue->get_Tag())
     {
         case 1:
@@ -6318,7 +6310,7 @@ function BoardModule_bribed($playerid, $p, $board) {
         default:
             return new CrazyPlayer_Starting($matchValue->Item);
     }
- })(\Map\FSharpMap__get_Item($board->Players, $p->Victim)), \Map\add($playerid, $newPlayer, $board->Players)), $board->Table, $board->DrawPile, $board->DiscardPile, $board->Barns, $board->HayBales, $board->Goal, $board->UseGameOver, $board->History);
+ })($board->Players->get_Item($p->Victim)), \Map\add($playerid, $newPlayer, $board->Players)), $board->Table, $board->DrawPile, $board->DiscardPile, $board->Barns, $board->HayBales, $board->Goal, $board->UseGameOver, $board->History);
 }
 
 #232
@@ -6349,7 +6341,7 @@ function BoardModule_evolve($state, $event) {
                             if ($matchValue[1]->Item2->get_Tag() == 8) {
                                 $board_4 = $matchValue[0]->Item;
                                 $playerid = $matchValue[1]->Item2->Item->Player;
-                                $matchValue_3 = \Map\FSharpMap__get_Item($board_4->Players, $playerid);
+                                $matchValue_3 = $board_4->Players->get_Item($playerid);
                                 if ($matchValue_3->get_Tag() == 1) {
                                     $player_1 = $matchValue_3->Item;
                                     return new UndoableBoard(new Board_Board(new PlayingBoard(\Map\add($playerid, new CrazyPlayer_Playing(new Playing($player_1->Color, $player_1->Tractor, $GLOBALS['FenceModule_empty'], $player_1->Field, new Power_PowerDown(), $player_1->Moves, $player_1->Hand, $player_1->Bonus)), $board_4->Players), $board_4->Table, $board_4->DrawPile, $board_4->DiscardPile, $board_4->Barns, $board_4->HayBales, $board_4->Goal, $board_4->UseGameOver, $board_4->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false);
@@ -6373,7 +6365,7 @@ function BoardModule_evolve($state, $event) {
                                             $board_12 = $matchValue[0]->Item;
                                             $e_2 = $matchValue[1]->Item2;
                                             $playerid_3 = $matchValue[1]->Item1;
-                                            $newPlayer = Player_evolve(\Map\FSharpMap__get_Item($board_12->Players, $playerid_3), $e_2);
+                                            $newPlayer = Player_evolve($board_12->Players->get_Item($playerid_3), $e_2);
                                             $newTable = Table_eliminate($playerid_3, $board_12->Table);
                                             return new UndoableBoard(new Board_Board(new PlayingBoard(\Map\add($playerid_3, $newPlayer, $board_12->Players), $newTable, $board_12->DrawPile, $board_12->DiscardPile, $board_12->Barns, $board_12->HayBales, $board_12->Goal, $board_12->UseGameOver, $board_12->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false);
                                         } else {
@@ -6381,12 +6373,12 @@ function BoardModule_evolve($state, $event) {
                                                 $board_13 = $matchValue[0]->Item;
                                                 $e_3 = $matchValue[1]->Item2;
                                                 $playerid_4 = $matchValue[1]->Item1;
-                                                $currentPlayer = GameTable__get_Player($board_13->Table, NULL);
-                                                $newPlayer_1 = Player_evolve(\Map\FSharpMap__get_Item($board_13->Players, $playerid_4), $e_3);
+                                                $currentPlayer = $board_13->Table->get_Player();
+                                                $newPlayer_1 = Player_evolve($board_13->Players->get_Item($playerid_4), $e_3);
                                                 $newTable_1 = Table_eliminate($playerid_4, $board_13->Table);
                                                 $players_1 = \Map\add($playerid_4, $newPlayer_1, $board_13->Players);
-                                                return new UndoableBoard(new Board_Board(new PlayingBoard(($playerid_4 === $currentPlayer ? (function ($nextPlayer) use ($newTable_1, $players_1) {                                                 return \Map\add(GameTable__get_Player($newTable_1, NULL), $nextPlayer, $players_1);
- })(Player_startTurn(\Map\FSharpMap__get_Item($board_13->Players, GameTable__get_Player($newTable_1, NULL)))) : $players_1), $newTable_1, $board_13->DrawPile, $board_13->DiscardPile, $board_13->Barns, $board_13->HayBales, $board_13->Goal, $board_13->UseGameOver, $board_13->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false);
+                                                return new UndoableBoard(new Board_Board(new PlayingBoard(($playerid_4 === $currentPlayer ? (function ($nextPlayer) use ($newTable_1, $players_1) {                                                 return \Map\add($newTable_1->get_Player(), $nextPlayer, $players_1);
+ })(Player_startTurn($board_13->Players->get_Item($newTable_1->get_Player()))) : $players_1), $newTable_1, $board_13->DrawPile, $board_13->DiscardPile, $board_13->Barns, $board_13->HayBales, $board_13->Goal, $board_13->UseGameOver, $board_13->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false);
                                             } else {
                                                 switch ($matchValue[1]->Item2->get_Tag())
                                                 {
@@ -6396,7 +6388,7 @@ function BoardModule_evolve($state, $event) {
                                                         $board_14 = $matchValue[0]->Item;
                                                         $e_4 = $matchValue[1]->Item2;
                                                         $playerid_5 = $matchValue[1]->Item1;
-                                                        $player_4 = Player_evolve(\Map\FSharpMap__get_Item($board_14->Players, $playerid_5), $e_4);
+                                                        $player_4 = Player_evolve($board_14->Players->get_Item($playerid_5), $e_4);
                                                         switch ($e_4->get_Tag())
                                                         {
                                                             case 14:
@@ -6443,7 +6435,7 @@ function BoardModule_evolve($state, $event) {
                                             $newDrawPile = new Hand_PublicHand(DrawPile_remove($e_1->Cards, $matchValue_4->cards));
                                             break;
                                     }
-                                    $newBoard_1 = new Board_Board(new PlayingBoard(\Map\add($e_1->Player, Player_takeCards($e_1->Cards, \Map\FSharpMap__get_Item($board_6->Players, $e_1->Player)), $board_6->Players), $board_6->Table, $newDrawPile, $board_6->DiscardPile, $board_6->Barns, $board_6->HayBales, $board_6->Goal, $board_6->UseGameOver, $board_6->History));
+                                    $newBoard_1 = new Board_Board(new PlayingBoard(\Map\add($e_1->Player, Player_takeCards($e_1->Cards, $board_6->Players->get_Item($e_1->Player)), $board_6->Players), $board_6->Table, $newDrawPile, $board_6->DiscardPile, $board_6->Barns, $board_6->HayBales, $board_6->Goal, $board_6->UseGameOver, $board_6->History));
                                     if ($state->UndoType->get_Tag() == 0) {
                                         return new UndoableBoard($newBoard_1, $state->UndoPoint, $state->UndoType, true, false);
                                     } else {
@@ -6479,10 +6471,10 @@ function BoardModule_evolve($state, $event) {
                                     return new UndoableBoard(new Board_Board(new PlayingBoard($board_10->Players, $board_10->Table, ($board_10->DrawPile->get_Tag() == 0 ? $board_10->DrawPile : new Hand_PublicHand($cards_4)), $board_10->DiscardPile, $board_10->Barns, $board_10->HayBales, $board_10->Goal, $board_10->UseGameOver, $board_10->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false);
                                 case 2:
                                     $board_15 = $matchValue[0]->Item;
-                                    $previousPlayer = GameTable__get_Player($board_15->Table, NULL);
-                                    $nextTable = GameTable__get_Next($board_15->Table, NULL);
-                                    $player_5 = Player_startTurn(\Map\FSharpMap__get_Item($board_15->Players, GameTable__get_Player($nextTable, NULL)));
-                                    $newBoard_10 = new Board_Board(new PlayingBoard(\Map\add(GameTable__get_Player($nextTable, NULL), $player_5, $board_15->Players), $nextTable, $board_15->DrawPile, $board_15->DiscardPile, $board_15->Barns, $board_15->HayBales, $board_15->Goal, $board_15->UseGameOver, HistoryModule_addPos($previousPlayer, HistoryModule_createPos($board_15), $board_15->History)));
+                                    $previousPlayer = $board_15->Table->get_Player();
+                                    $nextTable = $board_15->Table->get_Next();
+                                    $player_5 = Player_startTurn($board_15->Players->get_Item($nextTable->get_Player()));
+                                    $newBoard_10 = new Board_Board(new PlayingBoard(\Map\add($nextTable->get_Player(), $player_5, $board_15->Players), $nextTable, $board_15->DrawPile, $board_15->DiscardPile, $board_15->Barns, $board_15->HayBales, $board_15->Goal, $board_15->UseGameOver, HistoryModule_addPos($previousPlayer, HistoryModule_createPos($board_15), $board_15->History)));
                                     return new UndoableBoard($newBoard_10, $newBoard_10, $state->UndoType, false, true);
                                 default:
                                     return $state;
@@ -6665,8 +6657,8 @@ function BoardModule_decide($cmd, $state) {
                 if ($matchValue[1]->Item2->get_Tag() == 5) {
                     $board = $matchValue[0]->Item;
                     $playerId = $matchValue[1]->Item1;
-                    if (GameTable__get_Player($board->Table, NULL) === $playerId) {
-                        $player = \Map\FSharpMap__get_Item($board->Players, $playerId);
+                    if ($board->Table->get_Player() === $playerId) {
+                        $player = $board->Players->get_Item($playerId);
                         if ($player->get_Tag() == 1) {
                             if (!(Player_canMove($playerId, $state->Board) ? true : HandModule_shouldDiscard($player->Item->Hand))) {
                                 $p_1 = $player->Item;
@@ -6693,7 +6685,7 @@ function BoardModule_decide($cmd, $state) {
                     if ($matchValue[1]->Item2->get_Tag() == 6) {
                         $board_1 = $matchValue[0]->Item;
                         $playerId_1 = $matchValue[1]->Item1;
-                        if ((GameTable__get_Player($board_1->Table, NULL) === $playerId_1 ? !\Util\equals($state->UndoType, new \Shared\UndoType_NoUndo()) : false) ? !$state->AtUndoPoint : false) {
+                        if (($board_1->Table->get_Player() === $playerId_1 ? !\Util\equals($state->UndoType, new \Shared\UndoType_NoUndo()) : false) ? !$state->AtUndoPoint : false) {
                             return new Cons(new BoardEvent_Played($playerId_1, new Event_Undone()), $GLOBALS['NIL']);
                         } else {
                             return $GLOBALS['NIL'];
@@ -6706,8 +6698,8 @@ function BoardModule_decide($cmd, $state) {
                                 $card = $matchValue[1]->Item2->Item;
                                 $cmd_2 = $matchValue[1]->Item2;
                                 $playerId_2 = $matchValue[1]->Item1;
-                                if (GameTable__get_Player($board_2->Table, NULL) === $playerId_2) {
-                                    $player_1 = \Map\FSharpMap__get_Item($board_2->Players, $playerId_2);
+                                if ($board_2->Table->get_Player() === $playerId_2) {
+                                    $player_1 = $board_2->Players->get_Item($playerId_2);
                                     $events = Player_decide(Player_otherPlayers($playerId_2, $board_2), $board_2->Barns, $board_2->HayBales, function ($unitVar0) use ($board_2) {                                     return BoardModule_bribeParcels($board_2);
  }, $cmd_2, $player_1);
                                     return \Seq\toList(\Seq\delay(function ($unitVar) use ($events, $playerId_2) {                                     return \Seq\map(function ($e) use ($playerId_2) {                                     return new BoardEvent_Played($playerId_2, $e);
@@ -6720,9 +6712,9 @@ function BoardModule_decide($cmd, $state) {
                                 $board_3 = $matchValue[0]->Item;
                                 $cmd_3 = $matchValue[1]->Item2;
                                 $playerid = $matchValue[1]->Item1;
-                                $player_2 = \Map\FSharpMap__get_Item($board_3->Players, $playerid);
+                                $player_2 = $board_3->Players->get_Item($playerid);
                                 $others_1 = Player_otherPlayers($playerid, $board_3);
-                                if ($playerid === GameTable__get_Player($board_3->Table, NULL)) {
+                                if ($playerid === $board_3->Table->get_Player()) {
                                     return (function ($tupledArg_7) use ($playerid, $state) {                                     return BoardModule_cont(function ($board_16, $es_1) use ($playerid, $state) { 
                                         $matchValue_9 = BoardModule_tryFindWinner($board_16);
                                         switch ($matchValue_9->get_Tag())
@@ -6785,10 +6777,10 @@ function BoardModule_decide($cmd, $state) {
                                                                 }
  }));
                                                             default:
-                                                                $player_8 = \Map\FSharpMap__get_Item($board_16->Players, $playerid);
-                                                                if ($playerid !== GameTable__get_Player($board_16->Table, NULL)) {
-                                                                    $nextPlayerId = GameTable__get_Player($board_16->Table, NULL);
-                                                                    $nextPlayer = \Map\FSharpMap__get_Item($board_16->Players, $nextPlayerId);
+                                                                $player_8 = $board_16->Players->get_Item($playerid);
+                                                                if ($playerid !== $board_16->Table->get_Player()) {
+                                                                    $nextPlayerId = $board_16->Table->get_Player();
+                                                                    $nextPlayer = $board_16->Players->get_Item($nextPlayerId);
                                                                     return \Seq\toList(\Seq\delay(function ($unitVar_12) use ($nextPlayer, $nextPlayerId) {                                                                     return \Seq\append(\FSharpList\map(function ($c) use ($nextPlayerId) {                                                                     return new BoardEvent_Played($nextPlayerId, new Event_BonusDiscarded($c));
  }, BonusModule_startTurn(Player_bonus($nextPlayer))), \Seq\delay(function ($unitVar_13) {                                                                     return \Seq\singleton(new BoardEvent_UndoCheckPointed());
  }));
@@ -6798,10 +6790,10 @@ function BoardModule_decide($cmd, $state) {
                                                                 }
                                                         }
                                                     } else {
-                                                        $player_8 = \Map\FSharpMap__get_Item($board_16->Players, $playerid);
-                                                        if ($playerid !== GameTable__get_Player($board_16->Table, NULL)) {
-                                                            $nextPlayerId = GameTable__get_Player($board_16->Table, NULL);
-                                                            $nextPlayer = \Map\FSharpMap__get_Item($board_16->Players, $nextPlayerId);
+                                                        $player_8 = $board_16->Players->get_Item($playerid);
+                                                        if ($playerid !== $board_16->Table->get_Player()) {
+                                                            $nextPlayerId = $board_16->Table->get_Player();
+                                                            $nextPlayer = $board_16->Players->get_Item($nextPlayerId);
                                                             return \Seq\toList(\Seq\delay(function ($unitVar_12) use ($nextPlayer, $nextPlayerId) {                                                             return \Seq\append(\FSharpList\map(function ($c) use ($nextPlayerId) {                                                             return new BoardEvent_Played($nextPlayerId, new Event_BonusDiscarded($c));
  }, BonusModule_startTurn(Player_bonus($nextPlayer))), \Seq\delay(function ($unitVar_13) {                                                             return \Seq\singleton(new BoardEvent_UndoCheckPointed());
  }));
@@ -6811,10 +6803,10 @@ function BoardModule_decide($cmd, $state) {
                                                         }
                                                     }
                                                 } else {
-                                                    $player_8 = \Map\FSharpMap__get_Item($board_16->Players, $playerid);
-                                                    if ($playerid !== GameTable__get_Player($board_16->Table, NULL)) {
-                                                        $nextPlayerId = GameTable__get_Player($board_16->Table, NULL);
-                                                        $nextPlayer = \Map\FSharpMap__get_Item($board_16->Players, $nextPlayerId);
+                                                    $player_8 = $board_16->Players->get_Item($playerid);
+                                                    if ($playerid !== $board_16->Table->get_Player()) {
+                                                        $nextPlayerId = $board_16->Table->get_Player();
+                                                        $nextPlayer = $board_16->Players->get_Item($nextPlayerId);
                                                         return \Seq\toList(\Seq\delay(function ($unitVar_12) use ($nextPlayer, $nextPlayerId) {                                                         return \Seq\append(\FSharpList\map(function ($c) use ($nextPlayerId) {                                                         return new BoardEvent_Played($nextPlayerId, new Event_BonusDiscarded($c));
  }, BonusModule_startTurn(Player_bonus($nextPlayer))), \Seq\delay(function ($unitVar_13) {                                                         return \Seq\singleton(new BoardEvent_UndoCheckPointed());
  }));
@@ -6922,10 +6914,10 @@ function BoardModule_decide($cmd, $state) {
  }));
  }, $tupledArg_3[0], $tupledArg_3[1]);
  })((function ($tupledArg_2) {                                     return BoardModule_cont(function ($board_8, $_arg3) {                                     return \Seq\toList(\Seq\delay(function ($unitVar_5) use ($board_8) {                                     return \Seq\collect(function ($matchValue_6) { 
-                                        $activePatternResult21336 = $matchValue_6;
-                                        $p_8 = $activePatternResult21336[1];
+                                        $activePatternResult65052 = $matchValue_6;
+                                        $p_8 = $activePatternResult65052[1];
                                         if (FieldModule_isEmpty(Player_field($p_8)) ? !Player_isKo($p_8) : false) {
-                                            return \Seq\append(\Seq\singleton(new BoardEvent_Played($activePatternResult21336[0], new Event_Eliminated())), \Seq\delay(function ($unitVar_6) {                                             return \Seq\singleton(new BoardEvent_UndoCheckPointed());
+                                            return \Seq\append(\Seq\singleton(new BoardEvent_Played($activePatternResult65052[0], new Event_Eliminated())), \Seq\delay(function ($unitVar_6) {                                             return \Seq\singleton(new BoardEvent_UndoCheckPointed());
  }));
                                         } else {
                                             return \Seq\_empty();
@@ -6934,7 +6926,7 @@ function BoardModule_decide($cmd, $state) {
  }));
  }, $tupledArg_2[0], $tupledArg_2[1]);
  })((function ($tupledArg_1) use ($playerid) {                                     return BoardModule_cont(function ($board_6, $_arg2) use ($playerid) { 
-                                        $player_3 = \Map\FSharpMap__get_Item($board_6->Players, $playerid);
+                                        $player_3 = $board_6->Players->get_Item($playerid);
                                         if ($player_3->get_Tag() == 1) {
                                             $player_4 = $player_3->Item;
                                             $matchValue_3 = Player_fullAnnexation($player_4->Field, $player_4->Fence, $player_4->Tractor);
@@ -7075,8 +7067,8 @@ function BoardModule_toState($board) {
             $board_2 = $board->Item2;
             return new BoardState(\Seq\toArray(\Seq\map(function ($tupledArg_1) {             return [ $tupledArg_1[0], Player_toState($tupledArg_1[1])];
  }, \Map\toSeq($board_2->Players))), new STable($board_2->Table->Players, $board_2->Table->AllPlayers, \Seq\toArray(\Seq\delay(function ($unitVar_4) use ($board_2) {             return \Seq\collect(function ($matchValue_2) { 
-                $activePatternResult21385 = $matchValue_2;
-                return \Seq\singleton([ $activePatternResult21385[0], $activePatternResult21385[1]]);
+                $activePatternResult65101 = $matchValue_2;
+                return \Seq\singleton([ $activePatternResult65101[0], $activePatternResult65101[1]]);
             }, $board_2->Table->Names);
  })), $board_2->Table->Current), \FSharpList\toArray($board_2->DiscardPile), HandModule_count($board_2->DrawPile), \FSharpList\toArray(FieldModule_parcels($board_2->Barns->Free)), \FSharpList\toArray(FieldModule_parcels($board_2->Barns->Occupied)), \Set\toArray($board_2->HayBales), $board_2->Goal, ($winners instanceof Cons ? ($winners->next instanceof Nil ? (function ($winner) {             return $winner;
  })($winners->value) : NULL) : NULL), ($winners instanceof Cons ? ($winners->next instanceof Nil ? [ ] : \FSharpList\toArray($winners)) : [ ]), $board_2->UseGameOver, [ ]);
@@ -7084,15 +7076,15 @@ function BoardModule_toState($board) {
             $board_1 = $board->Item;
             return new BoardState(\Seq\toArray(\Seq\map(function ($tupledArg) {             return [ $tupledArg[0], Player_toState($tupledArg[1])];
  }, \Map\toSeq($board_1->Players))), new STable($board_1->Table->Players, $board_1->Table->AllPlayers, \Seq\toArray(\Seq\delay(function ($unitVar) use ($board_1) {             return \Seq\collect(function ($matchValue) { 
-                $activePatternResult21374 = $matchValue;
-                return \Seq\singleton([ $activePatternResult21374[0], $activePatternResult21374[1]]);
+                $activePatternResult65090 = $matchValue;
+                return \Seq\singleton([ $activePatternResult65090[0], $activePatternResult65090[1]]);
             }, $board_1->Table->Names);
  })), $board_1->Table->Current), \FSharpList\toArray($board_1->DiscardPile), HandModule_count($board_1->DrawPile), \FSharpList\toArray(FieldModule_parcels($board_1->Barns->Free)), \FSharpList\toArray(FieldModule_parcels($board_1->Barns->Occupied)), \Set\toArray($board_1->HayBales), $board_1->Goal, NULL, [ ], $board_1->UseGameOver, \Seq\toArray(\Seq\delay(function ($unitVar_1) use ($board_1) {             return \Seq\collect(function ($matchValue_1) { 
-                $activePatternResult21381 = $matchValue_1;
-                return \Seq\singleton([ $activePatternResult21381[0], \Seq\toArray(\Seq\delay(function ($unitVar_2) use ($activePatternResult21381) {                 return \Seq\map(function ($boardpos) {                 return \Seq\toArray(\Seq\delay(function ($unitVar_3) use ($boardpos) {                 return \Seq\map(function ($pos) {                 return [ $pos->Player, $pos->TractorPos, $pos->FencePos, FieldModule_parcels($pos->FieldPos)];
+                $activePatternResult65097 = $matchValue_1;
+                return \Seq\singleton([ $activePatternResult65097[0], \Seq\toArray(\Seq\delay(function ($unitVar_2) use ($activePatternResult65097) {                 return \Seq\map(function ($boardpos) {                 return \Seq\toArray(\Seq\delay(function ($unitVar_3) use ($boardpos) {                 return \Seq\map(function ($pos) {                 return [ $pos->Player, $pos->TractorPos, $pos->FencePos, FieldModule_parcels($pos->FieldPos)];
  }, $boardpos->Positions);
  }));
- }, $activePatternResult21381[1]);
+ }, $activePatternResult65097[1]);
  }))]);
             }, $board_1->History->PlayersHistory);
  })));

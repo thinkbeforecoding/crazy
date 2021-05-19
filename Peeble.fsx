@@ -830,6 +830,7 @@ type PhpCompiler =
       mutable NsUse: Set<PhpType>
       mutable File: string
       mutable Namespace: string
+      mutable thisArgument: string option 
     }
     static member create() =
 
@@ -854,6 +855,7 @@ type PhpCompiler =
           NsUse = Set.empty
           Namespace = ""
           File = ""
+          thisArgument = None
           }
     member this.AddType(phpType: PhpType) =
         this.Types <- Map.add phpType.Name phpType this.Types
@@ -1397,22 +1399,23 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
     //    PhpCall(PhpVar(name, None), convertArgs ctx args)
 
     | Fable.Expr.Call(Fable.Import({ Selector = name; Path = "." }, _,_), { ThisArg = Some this; Args = args  }, ty,_) ->
+        let methodName =
+            match this.Type with
+            | Fable.DeclaredType(entref,_) ->
+                let ent = ctx.GetEntityName(com.GetEntity(entref))
+                name.Substring(ent.Length + 2)
+            | _ -> name
 
-        PhpCall(PhpConst(PhpConstString name),  convertArgs com ctx  (this::args))
+
+
+        PhpMethod(convertExpr com ctx this, PhpConst (PhpConstString methodName), convertArgs com ctx args)
+        //PhpCall(PhpConst(PhpConstString name),  convertArgs com ctx  (this::args))
     | Fable.Expr.Call(callee, { ThisArg = Some this; Args = args }, ty,_) ->
         
         let phpCallee = convertExpr com ctx callee
 
-        //PhpMethod(convertExpr com ctx this,  phpCallee, convertArgs com ctx args)
-        PhpCall(phpCallee, convertArgs com ctx (this :: args))
+        PhpMethod(convertExpr com ctx this, phpCallee, convertArgs com ctx args)
 
-        
-    //| Fable.Operation(Fable.Call(Fable.InstanceCall( Some (Fable.Value(Fable.StringConstant s, _ ))),({ Args = args; ThisArg = Some this} as argInfo)), _, _) ->
-    //    match s, this.Type with
-    //    | "filter", Fable.Type.Array _  -> PhpCall(PhpConst(PhpConstString ("FSharpArray::" + fixName s)), convertArgsThisLast ctx argInfo)
-    //    | "findIndex", Fable.Type.Array _  -> PhpCall(PhpConst(PhpConstString ("FSharpArray::" + fixName s)), convertArgsThisLast ctx argInfo)
-        
-    //    | _ -> PhpMethod(convertExpr ctx this,fixName s, [for arg in args -> convertExpr ctx arg ] )
     | Fable.CurriedApply(expr, args,_,_) ->
         PhpCall(convertExpr com ctx expr, [for arg in args -> convertExpr com ctx arg]) 
       
@@ -1449,8 +1452,6 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
             PhpMethod(phpExpr, PhpConst(PhpConstString ("get_Tag")), [])
 
     | Fable.IdentExpr(id) ->
-        let name = fixName id.Name
-        ctx.UseVar(name)
         let phpType = 
             match id.Type with
             | Fable.Type.DeclaredType(e,_) ->
@@ -1458,6 +1459,18 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
 
             | _ -> None 
         
+        let name =
+            if id.IsThisArgument then
+                "this"
+            else
+                let name = fixName id.Name
+                if Some name = ctx.thisArgument then 
+                    "this"
+                else
+                    ctx.UseVar(name)
+                    name
+
+
         PhpVar(name, phpType)
     | Fable.Import(info,t,_) ->
         let fixNsName = function
@@ -1473,6 +1486,13 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
                 let name = fixName info.Selector
                 PhpGlobal(name)
             | _ ->
+                //let name = 
+                //    let sepPos = info.Selector.IndexOf("$$")
+                //    if sepPos >= 0 then
+                //        fixName (info.Selector.Substring(sepPos+2))
+                //    else
+                //        fixName info.Selector
+
                 PhpIdent(None, fixName info.Selector)
 
         | cls ->
@@ -1482,7 +1502,11 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
                 PhpGlobal(name)
             | _ ->
                 ctx.AddRequire(info.Path)
-                PhpIdent(Some cls, fixName info.Selector)
+                let sepPos = info.Selector.IndexOf("__")
+                if sepPos >= 0 then
+                    PhpIdent(None, fixName (info.Selector.Substring(sepPos+2)))
+                else
+                    PhpIdent(Some cls, fixName info.Selector)
 
     | Fable.DecisionTree(expr,targets) ->
         let upperTargets = ctx.DecisionTargets
@@ -1555,7 +1579,10 @@ and convertArgs com ctx (args: Fable.Expr list) =
     [ for arg in args do 
         match arg with
         | Fable.IdentExpr({ Name = "Array"; IsCompilerGenerated = true}) -> ()
-        | _ -> convertExpr com ctx arg
+        | _ ->
+            match arg.Type with
+            | Fable.Unit -> ()
+            | _ -> convertExpr com ctx arg
     ]
 //and convertArgsThisLast ctx (args: Fable.ArgInfo) =
 //       [ 
@@ -1857,15 +1884,51 @@ let convertDecl (com: Fable.Compiler) (ctx: PhpCompiler) decl =
         if decl.Info.IsValue then
             [ PhpDeclValue(fixName decl.Name, convertExpr com ctx decl.Body) ]
         else
-            let body = convertExprToStatement com ctx decl.Body Return 
-            [{ PhpFun.Name = fixName decl.Name
-               Args = [ for arg in decl.Args do 
-                        fixName arg.Name ]
-               Matchings = []
-               Body = body
-               Static = false
-               
-               } |> PhpFun ]
+            if decl.Info.IsInstance then
+                let typ =
+                    match decl.Args.[0].Type with
+                    | Fable.DeclaredType(_, Fable.DeclaredType(entref,_)  :: _)
+                    | Fable.DeclaredType(entref,[])-> 
+                        
+                        let entName = ctx.GetEntityName(com.GetEntity(entref))
+                        ctx.Types.[entName]
+                    | t -> failwithf $"Unknow type {t}"
+
+                let name = 
+                    decl.Name.Substring(typ.Name.Length + 2) |> fixName
+
+                ctx.thisArgument <- Some (fixName decl.Args.[0].Name)
+
+                let meth =
+                    { PhpFun.Name = name;
+                      PhpFun.Args = [ for arg in decl.Args.[1..] do
+                                        match arg.Type with
+                                        | Fable.Unit -> ()
+                                        | _ -> fixName arg.Name ]
+                      PhpFun.Matchings = []
+                      PhpFun.Static = false
+                      PhpFun.Body = convertExprToStatement com ctx decl.Body Return } 
+                ctx.thisArgument <- None
+                let newType =
+                    { typ with
+                            Methods = typ.Methods @ [ meth ]
+                    }
+
+                ctx.AddType(newType) |> ignore
+                [ ]
+            else
+
+                
+
+                let body = convertExprToStatement com ctx decl.Body Return 
+                [{ PhpFun.Name = fixName decl.Name
+                   Args = [ for arg in decl.Args do 
+                            fixName arg.Name ]
+                   Matchings = []
+                   Body = body
+                   Static = false
+                   
+                   } |> PhpFun ]
     //| Fable.Declaration.ActionDeclaration(decl) ->
     //    [ PhpDecl.Expr( convertExpr com ctx decl.Body ) ]
     | _ -> failwithf "Cannot convertDecl %A" decl
@@ -1939,7 +2002,7 @@ let asts =
             |> Fable.Transforms.FableTransforms.transformFile com 
 
 (*
-        let decl = ast.Declarations.[3]
+        let decl = ast.Declarations.[215]
 *)
         phpComp.ClearRequire(__SOURCE_DIRECTORY__ + @"/src/")
         phpComp.SetFile(file + ".php")
@@ -1957,6 +2020,13 @@ let asts =
                     for d in decls  do
                         i,d
             ]
+            |> List.map (fun (i,d) -> 
+                match d with
+                | PhpType p ->
+                    match Map.tryFind p.Name phpComp.Types with
+                    | Some t -> i, PhpType t
+                    | None -> i, d
+                | _ -> i,d)
 
 
         { Filename = file + ".php" 
@@ -1966,7 +2036,7 @@ let asts =
           Decls = decls }
    ]
 
-//let (Fable.MemberDeclaration d) = decl
+//let (Fable.MemberDeclaration decl) = decl
 //let (Fable.MemberDeclaration d2) = ast.Declarations.[123]
 //d2.Body
 
