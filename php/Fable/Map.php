@@ -391,7 +391,7 @@ function map($f, $table)
 {
     return new Map($table->Comparer, MapTree::mapi($f, $table->Tree));
 }
-function FSharpMap__get_Item($key, $table)
+function FSharpMap__get_Item($table, $key)
 {
     return MapTree::find($table->Comparer, $key, $table->Tree);
 }

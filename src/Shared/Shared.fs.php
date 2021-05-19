@@ -5,18 +5,14 @@ require_once(__FABLE_LIBRARY__.'/FSharp.Core.php');
 
 use \FSharpUnion;
 use \IComparable;
-use \Union;
 
 #0
-abstract class Color implements Union, FSharpUnion {
+abstract class Color implements FSharpUnion {
 }
 
 #0
 class Color_Blue extends Color implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Color_Blue';
     }
     function get_FSharpCase() {
         return 'Blue';
@@ -34,9 +30,6 @@ class Color_Blue extends Color implements IComparable {
 class Color_Yellow extends Color implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Color_Yellow';
-    }
     function get_FSharpCase() {
         return 'Yellow';
     }
@@ -52,9 +45,6 @@ class Color_Yellow extends Color implements IComparable {
 #0
 class Color_Purple extends Color implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Color_Purple';
     }
     function get_FSharpCase() {
         return 'Purple';
@@ -72,9 +62,6 @@ class Color_Purple extends Color implements IComparable {
 class Color_Red extends Color implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Color_Red';
-    }
     function get_FSharpCase() {
         return 'Red';
     }
@@ -88,7 +75,7 @@ class Color_Red extends Color implements IComparable {
 }
 
 #1
-abstract class Goal implements Union, FSharpUnion {
+abstract class Goal implements FSharpUnion {
 }
 
 #1
@@ -96,9 +83,6 @@ class Goal_Common extends Goal implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Goal_Common';
     }
     function get_FSharpCase() {
         return 'Common';
@@ -125,9 +109,6 @@ class Goal_Individual extends Goal implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Goal_Individual';
-    }
     function get_FSharpCase() {
         return 'Individual';
     }
@@ -148,15 +129,12 @@ class Goal_Individual extends Goal implements IComparable {
 }
 
 #2
-abstract class GoalType implements Union, FSharpUnion {
+abstract class GoalType implements FSharpUnion {
 }
 
 #2
 class GoalType_Fast extends GoalType implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'GoalType_Fast';
     }
     function get_FSharpCase() {
         return 'Fast';
@@ -174,9 +152,6 @@ class GoalType_Fast extends GoalType implements IComparable {
 class GoalType_Regular extends GoalType implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'GoalType_Regular';
-    }
     function get_FSharpCase() {
         return 'Regular';
     }
@@ -193,9 +168,6 @@ class GoalType_Regular extends GoalType implements IComparable {
 class GoalType_Expert extends GoalType implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'GoalType_Expert';
-    }
     function get_FSharpCase() {
         return 'Expert';
     }
@@ -209,15 +181,12 @@ class GoalType_Expert extends GoalType implements IComparable {
 }
 
 #3
-abstract class UndoType implements Union, FSharpUnion {
+abstract class UndoType implements FSharpUnion {
 }
 
 #3
 class UndoType_FullUndo extends UndoType implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'UndoType_FullUndo';
     }
     function get_FSharpCase() {
         return 'FullUndo';
@@ -235,9 +204,6 @@ class UndoType_FullUndo extends UndoType implements IComparable {
 class UndoType_DontUndoCards extends UndoType implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'UndoType_DontUndoCards';
-    }
     function get_FSharpCase() {
         return 'DontUndoCards';
     }
@@ -253,9 +219,6 @@ class UndoType_DontUndoCards extends UndoType implements IComparable {
 #3
 class UndoType_NoUndo extends UndoType implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'UndoType_NoUndo';
     }
     function get_FSharpCase() {
         return 'NoUndo';

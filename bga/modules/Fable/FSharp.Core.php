@@ -3,9 +3,6 @@
 interface IComparable {
     public function CompareTo($Other);
 }
-interface Union {
-    public function get_Case();
-}
 
 interface FSharpUnion {
     public function get_FSharpCase();
@@ -21,7 +18,7 @@ class Result {
 
 }
 
-class Ok extends Result {
+class Result_Ok extends Result {
     public $ResultValue;
     function __construct($value)
     {

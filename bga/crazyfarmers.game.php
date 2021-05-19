@@ -190,7 +190,7 @@ class CrazyFarmers extends Table
 
 
 
-        $goal = GoalModule_fromType(count($players), $goalType);
+        $goal = \Shared\GoalModule_fromType(count($players), $goalType);
 
         $cmd = new \SharedGame\BoardCommand_Start(
                 new \SharedGame\BoardStart(
@@ -503,7 +503,7 @@ class CrazyFarmers extends Table
     {
         \SharedServer\bgaUpdateState($es,$board,$zombie,
             $this->gamestate->state()['name'], 
-            function($state) {$this->gamestate->nextState($state);},
+            function($state) { $this->gamestate->nextState($state);},
             function($player) {  self::eliminatePlayer($player); }
         );
     }
@@ -511,20 +511,24 @@ class CrazyFarmers extends Table
     function stNextPlayer()
     {
         $player_id = self::activeNextPlayer();
+
+        self::trace("new player: $player_id  ");
         $state = self::loadState();
         $version = $state[0];
         $board = $state[1];
 
         self::giveExtraTime($player_id);
 
-        $s = \SharedServer\bgaNextPlayer($board);
+        $nextstate = \SharedServer\bgaNextPlayer($board);
 
-        $this->gamestate->nextState($s);
+        $this->gamestate->nextState($nextstate);
     }
 
     function stZombie()
     {
+        
         $player_id = self::activeNextPlayer();
+
         self::giveExtraTime($player_id);
 
         $state = self::loadState();

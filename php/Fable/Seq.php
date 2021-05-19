@@ -55,6 +55,11 @@ function collect($projection, $seq)
 {
     if (is_null($seq))
         throw new Exception("Seq should not be null");
+    if (is_string($seq))
+    {
+        echo $seq;
+    }
+
     foreach($seq as $item)
     {
         foreach($projection($item) as $i)

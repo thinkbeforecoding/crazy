@@ -14,8 +14,8 @@ require_once(__ROOT__.'/Shared/Shared.fs.php');
 
 use \FSharpUnion;
 use \IComparable;
-use \Union;
 use \FSharpList\Cons;
+use \FSharpList\Nil;
 
 #0
 class Axe implements FSharpUnion, IComparable {
@@ -102,15 +102,12 @@ function AxeModule_cube($_arg1) {
 }
 
 #16
-abstract class CrossroadSide implements Union, FSharpUnion {
+abstract class CrossroadSide implements FSharpUnion {
 }
 
 #16
 class CrossroadSide_CLeft extends CrossroadSide implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'CrossroadSide_CLeft';
     }
     function get_FSharpCase() {
         return 'CLeft';
@@ -127,9 +124,6 @@ class CrossroadSide_CLeft extends CrossroadSide implements IComparable {
 #16
 class CrossroadSide_CRight extends CrossroadSide implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'CrossroadSide_CRight';
     }
     function get_FSharpCase() {
         return 'CRight';
@@ -171,15 +165,12 @@ class Crossroad implements FSharpUnion, IComparable {
 }
 
 #18
-abstract class BorderSide implements Union, FSharpUnion {
+abstract class BorderSide implements FSharpUnion {
 }
 
 #18
 class BorderSide_BNW extends BorderSide implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'BorderSide_BNW';
     }
     function get_FSharpCase() {
         return 'BNW';
@@ -197,9 +188,6 @@ class BorderSide_BNW extends BorderSide implements IComparable {
 class BorderSide_BN extends BorderSide implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'BorderSide_BN';
-    }
     function get_FSharpCase() {
         return 'BN';
     }
@@ -215,9 +203,6 @@ class BorderSide_BN extends BorderSide implements IComparable {
 #18
 class BorderSide_BNE extends BorderSide implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'BorderSide_BNE';
     }
     function get_FSharpCase() {
         return 'BNE';
@@ -259,15 +244,12 @@ class Path implements FSharpUnion, IComparable {
 }
 
 #20
-abstract class Direction implements Union, FSharpUnion {
+abstract class Direction implements FSharpUnion {
 }
 
 #20
 class Direction_Up extends Direction implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Direction_Up';
     }
     function get_FSharpCase() {
         return 'Up';
@@ -285,9 +267,6 @@ class Direction_Up extends Direction implements IComparable {
 class Direction_Down extends Direction implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Direction_Down';
-    }
     function get_FSharpCase() {
         return 'Down';
     }
@@ -303,9 +282,6 @@ class Direction_Down extends Direction implements IComparable {
 #20
 class Direction_Horizontal extends Direction implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Direction_Horizontal';
     }
     function get_FSharpCase() {
         return 'Horizontal';
@@ -432,15 +408,12 @@ function DirectionModule_rev($_arg1) {
 }
 
 #29
-abstract class Power implements Union, FSharpUnion {
+abstract class Power implements FSharpUnion {
 }
 
 #29
 class Power_PowerUp extends Power implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Power_PowerUp';
     }
     function get_FSharpCase() {
         return 'PowerUp';
@@ -458,9 +431,6 @@ class Power_PowerUp extends Power implements IComparable {
 class Power_PowerDown extends Power implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Power_PowerDown';
-    }
     function get_FSharpCase() {
         return 'PowerDown';
     }
@@ -474,7 +444,7 @@ class Power_PowerDown extends Power implements IComparable {
 }
 
 #30
-abstract class Card implements Union, FSharpUnion {
+abstract class Card implements FSharpUnion {
 }
 
 #30
@@ -482,9 +452,6 @@ class Card_Nitro extends Card implements IComparable {
     public $power;
     function __construct($power) {
         $this->power = $power;
-    }
-    function get_Case() {
-        return 'Card_Nitro';
     }
     function get_FSharpCase() {
         return 'Nitro';
@@ -509,9 +476,6 @@ class Card_Nitro extends Card implements IComparable {
 class Card_Rut extends Card implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Card_Rut';
-    }
     function get_FSharpCase() {
         return 'Rut';
     }
@@ -529,9 +493,6 @@ class Card_HayBale extends Card implements IComparable {
     public $power;
     function __construct($power) {
         $this->power = $power;
-    }
-    function get_Case() {
-        return 'Card_HayBale';
     }
     function get_FSharpCase() {
         return 'HayBale';
@@ -556,9 +517,6 @@ class Card_HayBale extends Card implements IComparable {
 class Card_Dynamite extends Card implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Card_Dynamite';
-    }
     function get_FSharpCase() {
         return 'Dynamite';
     }
@@ -574,9 +532,6 @@ class Card_Dynamite extends Card implements IComparable {
 #30
 class Card_HighVoltage extends Card implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Card_HighVoltage';
     }
     function get_FSharpCase() {
         return 'HighVoltage';
@@ -594,9 +549,6 @@ class Card_HighVoltage extends Card implements IComparable {
 class Card_Watchdog extends Card implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Card_Watchdog';
-    }
     function get_FSharpCase() {
         return 'Watchdog';
     }
@@ -612,9 +564,6 @@ class Card_Watchdog extends Card implements IComparable {
 #30
 class Card_Helicopter extends Card implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Card_Helicopter';
     }
     function get_FSharpCase() {
         return 'Helicopter';
@@ -632,9 +581,6 @@ class Card_Helicopter extends Card implements IComparable {
 class Card_Bribe extends Card implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Card_Bribe';
-    }
     function get_FSharpCase() {
         return 'Bribe';
     }
@@ -651,9 +597,6 @@ class Card_Bribe extends Card implements IComparable {
 class Card_GameOver extends Card implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Card_GameOver';
-    }
     function get_FSharpCase() {
         return 'GameOver';
     }
@@ -667,15 +610,12 @@ class Card_GameOver extends Card implements IComparable {
 }
 
 #31
-abstract class CardPower implements Union, FSharpUnion {
+abstract class CardPower implements FSharpUnion {
 }
 
 #31
 class CardPower_One extends CardPower implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'CardPower_One';
     }
     function get_FSharpCase() {
         return 'One';
@@ -693,9 +633,6 @@ class CardPower_One extends CardPower implements IComparable {
 class CardPower_Two extends CardPower implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'CardPower_Two';
-    }
     function get_FSharpCase() {
         return 'Two';
     }
@@ -709,7 +646,7 @@ class CardPower_Two extends CardPower implements IComparable {
 }
 
 #32
-abstract class PlayCard implements Union, FSharpUnion {
+abstract class PlayCard implements FSharpUnion {
 }
 
 #32
@@ -717,9 +654,6 @@ class PlayCard_PlayNitro extends PlayCard implements IComparable {
     public $power;
     function __construct($power) {
         $this->power = $power;
-    }
-    function get_Case() {
-        return 'PlayCard_PlayNitro';
     }
     function get_FSharpCase() {
         return 'PlayNitro';
@@ -745,9 +679,6 @@ class PlayCard_PlayRut extends PlayCard implements IComparable {
     public $victim;
     function __construct($victim) {
         $this->victim = $victim;
-    }
-    function get_Case() {
-        return 'PlayCard_PlayRut';
     }
     function get_FSharpCase() {
         return 'PlayRut';
@@ -775,9 +706,6 @@ class PlayCard_PlayHayBale extends PlayCard implements IComparable {
     function __construct($path, $moved) {
         $this->path = $path;
         $this->moved = $moved;
-    }
-    function get_Case() {
-        return 'PlayCard_PlayHayBale';
     }
     function get_FSharpCase() {
         return 'PlayHayBale';
@@ -808,9 +736,6 @@ class PlayCard_PlayDynamite extends PlayCard implements IComparable {
     function __construct($path) {
         $this->path = $path;
     }
-    function get_Case() {
-        return 'PlayCard_PlayDynamite';
-    }
     function get_FSharpCase() {
         return 'PlayDynamite';
     }
@@ -834,9 +759,6 @@ class PlayCard_PlayDynamite extends PlayCard implements IComparable {
 class PlayCard_PlayHighVoltage extends PlayCard implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'PlayCard_PlayHighVoltage';
-    }
     function get_FSharpCase() {
         return 'PlayHighVoltage';
     }
@@ -852,9 +774,6 @@ class PlayCard_PlayHighVoltage extends PlayCard implements IComparable {
 #32
 class PlayCard_PlayWatchdog extends PlayCard implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'PlayCard_PlayWatchdog';
     }
     function get_FSharpCase() {
         return 'PlayWatchdog';
@@ -873,9 +792,6 @@ class PlayCard_PlayHelicopter extends PlayCard implements IComparable {
     public $destination;
     function __construct($destination) {
         $this->destination = $destination;
-    }
-    function get_Case() {
-        return 'PlayCard_PlayHelicopter';
     }
     function get_FSharpCase() {
         return 'PlayHelicopter';
@@ -902,9 +818,6 @@ class PlayCard_PlayBribe extends PlayCard implements IComparable {
     function __construct($parcel) {
         $this->parcel = $parcel;
     }
-    function get_Case() {
-        return 'PlayCard_PlayBribe';
-    }
     function get_FSharpCase() {
         return 'PlayBribe';
     }
@@ -927,9 +840,6 @@ class PlayCard_PlayBribe extends PlayCard implements IComparable {
 #32
 class PlayCard_PlayGameOver extends PlayCard implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'PlayCard_PlayGameOver';
     }
     function get_FSharpCase() {
         return 'PlayGameOver';
@@ -973,7 +883,7 @@ function CardModule_ofPlayCard($_arg1) {
 }
 
 #34
-abstract class Hand implements Union, FSharpUnion {
+abstract class Hand implements FSharpUnion {
 }
 
 #34
@@ -981,9 +891,6 @@ class Hand_PrivateHand extends Hand implements IComparable {
     public $cards;
     function __construct($cards) {
         $this->cards = $cards;
-    }
-    function get_Case() {
-        return 'Hand_PrivateHand';
     }
     function get_FSharpCase() {
         return 'PrivateHand';
@@ -1009,9 +916,6 @@ class Hand_PublicHand extends Hand implements IComparable {
     public $cards;
     function __construct($cards) {
         $this->cards = $cards;
-    }
-    function get_Case() {
-        return 'Hand_PublicHand';
     }
     function get_FSharpCase() {
         return 'PublicHand';
@@ -1132,7 +1036,7 @@ function HandModule_shouldDiscard($_arg1) {
 }
 
 #44
-abstract class CrazyPlayer implements Union, FSharpUnion {
+abstract class CrazyPlayer implements FSharpUnion {
 }
 
 #44
@@ -1140,9 +1044,6 @@ class CrazyPlayer_Starting extends CrazyPlayer implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'CrazyPlayer_Starting';
     }
     function get_FSharpCase() {
         return 'Starting';
@@ -1169,9 +1070,6 @@ class CrazyPlayer_Playing extends CrazyPlayer implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'CrazyPlayer_Playing';
-    }
     function get_FSharpCase() {
         return 'Playing';
     }
@@ -1196,9 +1094,6 @@ class CrazyPlayer_Ko extends CrazyPlayer implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'CrazyPlayer_Ko';
     }
     function get_FSharpCase() {
         return 'Ko';
@@ -1569,15 +1464,12 @@ class History implements IComparable {
 }
 
 #63
-abstract class Board implements Union, FSharpUnion {
+abstract class Board implements FSharpUnion {
 }
 
 #63
 class Board_InitialState extends Board implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Board_InitialState';
     }
     function get_FSharpCase() {
         return 'InitialState';
@@ -1596,9 +1488,6 @@ class Board_Board extends Board implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Board_Board';
     }
     function get_FSharpCase() {
         return 'Board';
@@ -1626,9 +1515,6 @@ class Board_Won extends Board implements IComparable {
     function __construct($Item1, $Item2) {
         $this->Item1 = $Item1;
         $this->Item2 = $Item2;
-    }
-    function get_Case() {
-        return 'Board_Won';
     }
     function get_FSharpCase() {
         return 'Won';
@@ -1756,7 +1642,7 @@ class UndoableBoard implements IComparable {
 }
 
 #66
-abstract class PlayerState implements Union, FSharpUnion {
+abstract class PlayerState implements FSharpUnion {
 }
 
 #66
@@ -1764,9 +1650,6 @@ class PlayerState_SStarting extends PlayerState implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'PlayerState_SStarting';
     }
     function get_FSharpCase() {
         return 'SStarting';
@@ -1793,9 +1676,6 @@ class PlayerState_SPlaying extends PlayerState implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'PlayerState_SPlaying';
-    }
     function get_FSharpCase() {
         return 'SPlaying';
     }
@@ -1820,9 +1700,6 @@ class PlayerState_SKo extends PlayerState implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'PlayerState_SKo';
     }
     function get_FSharpCase() {
         return 'SKo';
@@ -2249,15 +2126,12 @@ function ParcelModule_areNeighbors($_arg2, $_arg1) {
 }
 
 #85
-abstract class ParcelDir implements Union, FSharpUnion {
+abstract class ParcelDir implements FSharpUnion {
 }
 
 #85
 class ParcelDir_PN extends ParcelDir implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'ParcelDir_PN';
     }
     function get_FSharpCase() {
         return 'PN';
@@ -2275,9 +2149,6 @@ class ParcelDir_PN extends ParcelDir implements IComparable {
 class ParcelDir_PNE extends ParcelDir implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'ParcelDir_PNE';
-    }
     function get_FSharpCase() {
         return 'PNE';
     }
@@ -2293,9 +2164,6 @@ class ParcelDir_PNE extends ParcelDir implements IComparable {
 #85
 class ParcelDir_PSE extends ParcelDir implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'ParcelDir_PSE';
     }
     function get_FSharpCase() {
         return 'PSE';
@@ -2313,9 +2181,6 @@ class ParcelDir_PSE extends ParcelDir implements IComparable {
 class ParcelDir_PS extends ParcelDir implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'ParcelDir_PS';
-    }
     function get_FSharpCase() {
         return 'PS';
     }
@@ -2332,9 +2197,6 @@ class ParcelDir_PS extends ParcelDir implements IComparable {
 class ParcelDir_PSW extends ParcelDir implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'ParcelDir_PSW';
-    }
     function get_FSharpCase() {
         return 'PSW';
     }
@@ -2350,9 +2212,6 @@ class ParcelDir_PSW extends ParcelDir implements IComparable {
 #85
 class ParcelDir_PNW extends ParcelDir implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'ParcelDir_PNW';
     }
     function get_FSharpCase() {
         return 'PNW';
@@ -2546,15 +2405,12 @@ class LMax implements IComparable {
 }
 
 #96
-abstract class OrientedPath implements Union, FSharpUnion {
+abstract class OrientedPath implements FSharpUnion {
 }
 
 #96
 class OrientedPath_DNE extends OrientedPath implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'OrientedPath_DNE';
     }
     function get_FSharpCase() {
         return 'DNE';
@@ -2572,9 +2428,6 @@ class OrientedPath_DNE extends OrientedPath implements IComparable {
 class OrientedPath_DNW extends OrientedPath implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'OrientedPath_DNW';
-    }
     function get_FSharpCase() {
         return 'DNW';
     }
@@ -2590,9 +2443,6 @@ class OrientedPath_DNW extends OrientedPath implements IComparable {
 #96
 class OrientedPath_DW extends OrientedPath implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'OrientedPath_DW';
     }
     function get_FSharpCase() {
         return 'DW';
@@ -2610,9 +2460,6 @@ class OrientedPath_DW extends OrientedPath implements IComparable {
 class OrientedPath_DSW extends OrientedPath implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'OrientedPath_DSW';
-    }
     function get_FSharpCase() {
         return 'DSW';
     }
@@ -2629,9 +2476,6 @@ class OrientedPath_DSW extends OrientedPath implements IComparable {
 class OrientedPath_DSE extends OrientedPath implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'OrientedPath_DSE';
-    }
     function get_FSharpCase() {
         return 'DSE';
     }
@@ -2647,9 +2491,6 @@ class OrientedPath_DSE extends OrientedPath implements IComparable {
 #96
 class OrientedPath_DE extends OrientedPath implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'OrientedPath_DE';
     }
     function get_FSharpCase() {
         return 'DE';
@@ -3236,15 +3077,12 @@ function HayBales_hayBaleDestinations($players, $hayBales) {
 }
 
 #140
-abstract class Blocker implements Union, FSharpUnion {
+abstract class Blocker implements FSharpUnion {
 }
 
 #140
 class Blocker_BorderBlocker extends Blocker implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Blocker_BorderBlocker';
     }
     function get_FSharpCase() {
         return 'BorderBlocker';
@@ -3262,9 +3100,6 @@ class Blocker_BorderBlocker extends Blocker implements IComparable {
 class Blocker_FenceBlocker extends Blocker implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Blocker_FenceBlocker';
-    }
     function get_FSharpCase() {
         return 'FenceBlocker';
     }
@@ -3280,9 +3115,6 @@ class Blocker_FenceBlocker extends Blocker implements IComparable {
 #140
 class Blocker_CutPathBlocker extends Blocker implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Blocker_CutPathBlocker';
     }
     function get_FSharpCase() {
         return 'CutPathBlocker';
@@ -3311,10 +3143,10 @@ function HayBales_hayBaleDestinationsWithComment($players, $hayBales) {
  })), [ 'Compare' => function ($x_2, $y_2) {     return \Util\compare($x_2, $y_2);
  }]);
     $cutPaths = HayBales_findCutPaths($hayBales);
-    return \Seq\toList(\Seq\delay(function ($unitVar_1) use ($cutPaths, $hayBales, $players_1) {     return \Seq\append(\Seq\map(function ($p_2) {     return [ $p_2, new Result_Ok(NULL)];
- }, \Set\FSharpSet_op_Subtraction(\Set\FSharpSet_op_Subtraction(\Set\FSharpSet_op_Subtraction($GLOBALS['PathModule_allInnerPaths'], $players_1), $hayBales), $cutPaths)), \Seq\delay(function ($unitVar_2) use ($cutPaths, $players_1) {     return \Seq\append(\Seq\map(function ($p_3) {     return [ $p_3, new Result_Error(new Blocker_FenceBlocker())];
- }, $players_1), \Seq\delay(function ($unitVar_3) use ($cutPaths) {     return \Seq\append(\Seq\map(function ($p_4) {     return [ $p_4, new Result_Error(new Blocker_CutPathBlocker())];
- }, $cutPaths), \Seq\delay(function ($unitVar_4) {     return \Seq\map(function ($p_5) {     return [ $p_5, new Result_Error(new Blocker_BorderBlocker())];
+    return \Seq\toList(\Seq\delay(function ($unitVar_1) use ($cutPaths, $hayBales, $players_1) {     return \Seq\append(\Seq\map(function ($p_2) {     return [ $p_2, new \Result_Ok(NULL)];
+ }, \Set\FSharpSet_op_Subtraction(\Set\FSharpSet_op_Subtraction(\Set\FSharpSet_op_Subtraction($GLOBALS['PathModule_allInnerPaths'], $players_1), $hayBales), $cutPaths)), \Seq\delay(function ($unitVar_2) use ($cutPaths, $players_1) {     return \Seq\append(\Seq\map(function ($p_3) {     return [ $p_3, new \Result_Error(new Blocker_FenceBlocker())];
+ }, $players_1), \Seq\delay(function ($unitVar_3) use ($cutPaths) {     return \Seq\append(\Seq\map(function ($p_4) {     return [ $p_4, new \Result_Error(new Blocker_CutPathBlocker())];
+ }, $cutPaths), \Seq\delay(function ($unitVar_4) {     return \Seq\map(function ($p_5) {     return [ $p_5, new \Result_Error(new Blocker_BorderBlocker())];
  }, $GLOBALS['PathModule_boderPaths']);
  }));
  }));
@@ -3328,15 +3160,12 @@ function HayBales_maxReached($hayBales) {
 }
 
 #143
-abstract class MoveBlocker implements Union, FSharpUnion {
+abstract class MoveBlocker implements FSharpUnion {
 }
 
 #143
 class MoveBlocker_Tractor extends MoveBlocker implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'MoveBlocker_Tractor';
     }
     function get_FSharpCase() {
         return 'Tractor';
@@ -3354,9 +3183,6 @@ class MoveBlocker_Tractor extends MoveBlocker implements IComparable {
 class MoveBlocker_Protection extends MoveBlocker implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'MoveBlocker_Protection';
-    }
     function get_FSharpCase() {
         return 'Protection';
     }
@@ -3372,9 +3198,6 @@ class MoveBlocker_Protection extends MoveBlocker implements IComparable {
 #143
 class MoveBlocker_PhytosanitaryProducts extends MoveBlocker implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'MoveBlocker_PhytosanitaryProducts';
     }
     function get_FSharpCase() {
         return 'PhytosanitaryProducts';
@@ -3392,9 +3215,6 @@ class MoveBlocker_PhytosanitaryProducts extends MoveBlocker implements IComparab
 class MoveBlocker_HayBaleOnPath extends MoveBlocker implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'MoveBlocker_HayBaleOnPath';
-    }
     function get_FSharpCase() {
         return 'HayBaleOnPath';
     }
@@ -3411,9 +3231,6 @@ class MoveBlocker_HayBaleOnPath extends MoveBlocker implements IComparable {
 class MoveBlocker_HighVoltageProtection extends MoveBlocker implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'MoveBlocker_HighVoltageProtection';
-    }
     function get_FSharpCase() {
         return 'HighVoltageProtection';
     }
@@ -3427,7 +3244,7 @@ class MoveBlocker_HighVoltageProtection extends MoveBlocker implements IComparab
 }
 
 #144
-abstract class Move implements Union, FSharpUnion {
+abstract class Move implements FSharpUnion {
 }
 
 #144
@@ -3437,9 +3254,6 @@ class Move_Move extends Move implements IComparable {
     function __construct($Item1, $Item2) {
         $this->Item1 = $Item1;
         $this->Item2 = $Item2;
-    }
-    function get_Case() {
-        return 'Move_Move';
     }
     function get_FSharpCase() {
         return 'Move';
@@ -3474,9 +3288,6 @@ class Move_ImpossibleMove extends Move implements IComparable {
         $this->Item2 = $Item2;
         $this->Item3 = $Item3;
     }
-    function get_Case() {
-        return 'Move_ImpossibleMove';
-    }
     function get_FSharpCase() {
         return 'ImpossibleMove';
     }
@@ -3509,9 +3320,6 @@ class Move_SelectCrossroad extends Move implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Move_SelectCrossroad';
     }
     function get_FSharpCase() {
         return 'SelectCrossroad';
@@ -3599,7 +3407,7 @@ function DrawPile_take($count, $pile) {
 }
 
 #154
-abstract class Command implements Union, FSharpUnion {
+abstract class Command implements FSharpUnion {
 }
 
 #154
@@ -3607,9 +3415,6 @@ class Command_Start extends Command implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Command_Start';
     }
     function get_FSharpCase() {
         return 'Start';
@@ -3636,9 +3441,6 @@ class Command_SelectFirstCrossroad extends Command implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Command_SelectFirstCrossroad';
-    }
     function get_FSharpCase() {
         return 'SelectFirstCrossroad';
     }
@@ -3663,9 +3465,6 @@ class Command_Move extends Command implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Command_Move';
     }
     function get_FSharpCase() {
         return 'Move';
@@ -3692,9 +3491,6 @@ class Command_PlayCard extends Command implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Command_PlayCard';
-    }
     function get_FSharpCase() {
         return 'PlayCard';
     }
@@ -3720,9 +3516,6 @@ class Command_Discard extends Command implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Command_Discard';
-    }
     function get_FSharpCase() {
         return 'Discard';
     }
@@ -3746,9 +3539,6 @@ class Command_Discard extends Command implements IComparable {
 class Command_EndTurn extends Command implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Command_EndTurn';
-    }
     function get_FSharpCase() {
         return 'EndTurn';
     }
@@ -3765,9 +3555,6 @@ class Command_EndTurn extends Command implements IComparable {
 class Command_Undo extends Command implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Command_Undo';
-    }
     function get_FSharpCase() {
         return 'Undo';
     }
@@ -3783,9 +3570,6 @@ class Command_Undo extends Command implements IComparable {
 #154
 class Command_Quit extends Command implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Command_Quit';
     }
     function get_FSharpCase() {
         return 'Quit';
@@ -3851,7 +3635,7 @@ class PlayerMove implements IComparable {
 }
 
 #158
-abstract class Event implements Union, FSharpUnion {
+abstract class Event implements FSharpUnion {
 }
 
 #158
@@ -3859,9 +3643,6 @@ class Event_FirstCrossroadSelected extends Event implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Event_FirstCrossroadSelected';
     }
     function get_FSharpCase() {
         return 'FirstCrossroadSelected';
@@ -3888,9 +3669,6 @@ class Event_FenceDrawn extends Event implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Event_FenceDrawn';
-    }
     function get_FSharpCase() {
         return 'FenceDrawn';
     }
@@ -3915,9 +3693,6 @@ class Event_FenceRemoved extends Event implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Event_FenceRemoved';
     }
     function get_FSharpCase() {
         return 'FenceRemoved';
@@ -3944,9 +3719,6 @@ class Event_FenceLooped extends Event implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Event_FenceLooped';
-    }
     function get_FSharpCase() {
         return 'FenceLooped';
     }
@@ -3971,9 +3743,6 @@ class Event_MovedInField extends Event implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Event_MovedInField';
     }
     function get_FSharpCase() {
         return 'MovedInField';
@@ -4000,9 +3769,6 @@ class Event_MovedPowerless extends Event implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Event_MovedPowerless';
-    }
     function get_FSharpCase() {
         return 'MovedPowerless';
     }
@@ -4027,9 +3793,6 @@ class Event_FenceReduced extends Event implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Event_FenceReduced';
     }
     function get_FSharpCase() {
         return 'FenceReduced';
@@ -4056,9 +3819,6 @@ class Event_Annexed extends Event implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Event_Annexed';
-    }
     function get_FSharpCase() {
         return 'Annexed';
     }
@@ -4084,9 +3844,6 @@ class Event_CutFence extends Event implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Event_CutFence';
-    }
     function get_FSharpCase() {
         return 'CutFence';
     }
@@ -4110,9 +3867,6 @@ class Event_CutFence extends Event implements IComparable {
 class Event_PoweredUp extends Event implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Event_PoweredUp';
-    }
     function get_FSharpCase() {
         return 'PoweredUp';
     }
@@ -4130,9 +3884,6 @@ class Event_CardPlayed extends Event implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Event_CardPlayed';
     }
     function get_FSharpCase() {
         return 'CardPlayed';
@@ -4159,9 +3910,6 @@ class Event_SpedUp extends Event implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Event_SpedUp';
-    }
     function get_FSharpCase() {
         return 'SpedUp';
     }
@@ -4185,9 +3933,6 @@ class Event_SpedUp extends Event implements IComparable {
 class Event_Rutted extends Event implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Event_Rutted';
-    }
     function get_FSharpCase() {
         return 'Rutted';
     }
@@ -4203,9 +3948,6 @@ class Event_Rutted extends Event implements IComparable {
 #158
 class Event_HighVoltaged extends Event implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Event_HighVoltaged';
     }
     function get_FSharpCase() {
         return 'HighVoltaged';
@@ -4224,9 +3966,6 @@ class Event_BonusDiscarded extends Event implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Event_BonusDiscarded';
     }
     function get_FSharpCase() {
         return 'BonusDiscarded';
@@ -4253,9 +3992,6 @@ class Event_CardDiscarded extends Event implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Event_CardDiscarded';
-    }
     function get_FSharpCase() {
         return 'CardDiscarded';
     }
@@ -4279,9 +4015,6 @@ class Event_CardDiscarded extends Event implements IComparable {
 class Event_Watched extends Event implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Event_Watched';
-    }
     function get_FSharpCase() {
         return 'Watched';
     }
@@ -4299,9 +4032,6 @@ class Event_Heliported extends Event implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'Event_Heliported';
     }
     function get_FSharpCase() {
         return 'Heliported';
@@ -4328,9 +4058,6 @@ class Event_Bribed extends Event implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'Event_Bribed';
-    }
     function get_FSharpCase() {
         return 'Bribed';
     }
@@ -4354,9 +4081,6 @@ class Event_Bribed extends Event implements IComparable {
 class Event_Eliminated extends Event implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Event_Eliminated';
-    }
     function get_FSharpCase() {
         return 'Eliminated';
     }
@@ -4373,9 +4097,6 @@ class Event_Eliminated extends Event implements IComparable {
 class Event_Undone extends Event implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'Event_Undone';
-    }
     function get_FSharpCase() {
         return 'Undone';
     }
@@ -4391,9 +4112,6 @@ class Event_Undone extends Event implements IComparable {
 #158
 class Event_PlayerQuit extends Event implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'Event_PlayerQuit';
     }
     function get_FSharpCase() {
         return 'PlayerQuit';
@@ -5184,7 +4902,7 @@ function Player_evolve($player, $event) {
 #187
 function Player_exec($otherPlayers, $barns, $haybales, $cmd, $state) {
     return \FSharpList\fold(function ($player_1, $event) {     return Player_evolve($player_1, $event);
- }, $state, Player_decide($otherPlayers, $barns, $haybales, function ($unitVar0) {     return new Result_Ok($GLOBALS['FieldModule_empty']);
+ }, $state, Player_decide($otherPlayers, $barns, $haybales, function ($unitVar0) {     return new \Result_Ok($GLOBALS['FieldModule_empty']);
  }, $cmd, $state));
 }
 
@@ -5209,7 +4927,7 @@ function Player_start($color, $parcel, $pos) {
 function Player_possibleMove($player, $dir) {
     $pos = CrossroadModule_neighbor($dir, $player->Tractor);
     if (CrossroadModule_isOnBoard($pos)) {
-        return new Cons([ $dir, new Result_Ok($pos)], $GLOBALS['NIL']);
+        return new Cons([ $dir, new \Result_Ok($pos)], $GLOBALS['NIL']);
     } else {
         return $GLOBALS['NIL'];
     }
@@ -5235,7 +4953,7 @@ function Player_bindMove($f, $cr) {
     switch ($cr->get_Tag())
     {
         case 1:
-            return new Result_Error($cr->ErrorValue);
+            return new \Result_Error($cr->ErrorValue);
         default:
             return $f($cr->ResultValue);
     }
@@ -5249,9 +4967,9 @@ function Player_op_GreaterGreaterEquals($c, $f) {
 #194
 function Player_checkTractor($player, $c) {
     if (\Util\equals($c, $player->Tractor)) {
-        return new Result_Error([ $c, new MoveBlocker_Tractor()]);
+        return new \Result_Error([ $c, new MoveBlocker_Tractor()]);
     } else {
-        return new Result_Ok($c);
+        return new \Result_Ok($c);
     }
 }
 
@@ -5261,16 +4979,16 @@ function Player_checkProtection($player, $c) {
  }, FenceModule_fenceCrossroads($player->Tractor, $player->Fence));
     if (!is_null($matchValue)) {
         if ($player->Bonus->HighVoltage) {
-            return new Result_Error([ $c, new MoveBlocker_HighVoltageProtection()]);
+            return new \Result_Error([ $c, new MoveBlocker_HighVoltageProtection()]);
         } else {
             if ($matchValue < 2) {
-                return new Result_Error([ $c, new MoveBlocker_Protection()]);
+                return new \Result_Error([ $c, new MoveBlocker_Protection()]);
             } else {
-                return new Result_Ok($c);
+                return new \Result_Ok($c);
             }
         }
     } else {
-        return new Result_Ok($c);
+        return new \Result_Ok($c);
     }
 }
 
@@ -5279,12 +4997,12 @@ function Player_checkHeliported($moverBonus, $player, $c) {
     if ($moverBonus->Heliported > 0) {
         if (\Seq\exists(function ($p) use ($c) {         return \Util\equals($p, $c);
  }, FenceModule_fenceCrossroads($player->Tractor, $player->Fence))) {
-            return new Result_Error([ $c, new MoveBlocker_PhytosanitaryProducts()]);
+            return new \Result_Error([ $c, new MoveBlocker_PhytosanitaryProducts()]);
         } else {
-            return new Result_Ok($c);
+            return new \Result_Ok($c);
         }
     } else {
-        return new Result_Ok($c);
+        return new \Result_Ok($c);
     }
 }
 
@@ -5296,7 +5014,7 @@ function Player_checkMove($moverbonus, $player, $c) {
  }), function ($c_2) use ($moverbonus, $player_1) {         return Player_checkHeliported($moverbonus, $player_1, $c_2);
  });
     } else {
-        return new Result_Ok($c);
+        return new \Result_Ok($c);
     }
 }
 
@@ -5578,8 +5296,8 @@ function HistoryModule_addPos($player, $boardPos, $history) {
 #208
 function HistoryModule_findDangerousPositions($player, $boardPos, $history) {
     return \Seq\toList(\Seq\delay(function ($unitVar) use ($boardPos, $history, $player) {     return \Seq\collect(function ($matchValue) use ($boardPos, $player) { 
-        $activePatternResult1357 = $matchValue;
-        $opponent = $activePatternResult1357[0];
+        $activePatternResult21104 = $matchValue;
+        $opponent = $activePatternResult21104[0];
         if ($opponent !== $player) {
             $posOfOtherPlayers = \Set\filter(function ($p) use ($opponent) {             return $p->Player !== $opponent;
  }, $boardPos->Positions);
@@ -5604,7 +5322,7 @@ function HistoryModule_findDangerousPositions($player, $boardPos, $history) {
  }, $source);
  }, $findRep(\Set\_empty([ 'Compare' => function ($x, $y) {             return \Util\compare($x, $y);
  }]), \Set\_empty([ 'Compare' => function ($x_1, $y_1) {             return \Util\compare($x_1, $y_1);
- }]), $activePatternResult1357[1]))));
+ }]), $activePatternResult21104[1]))));
         } else {
             return \Seq\_empty();
         }
@@ -5616,7 +5334,7 @@ function HistoryModule_findDangerousPositions($player, $boardPos, $history) {
 $GLOBALS['BoardModule_initialState'] = new UndoableBoard(new Board_InitialState(), new Board_InitialState(), new \Shared\UndoType_NoUndo(), false, true);
 
 #210
-abstract class BoardCommand implements Union, FSharpUnion {
+abstract class BoardCommand implements FSharpUnion {
 }
 
 #210
@@ -5626,9 +5344,6 @@ class BoardCommand_Play extends BoardCommand implements IComparable {
     function __construct($Item1, $Item2) {
         $this->Item1 = $Item1;
         $this->Item2 = $Item2;
-    }
-    function get_Case() {
-        return 'BoardCommand_Play';
     }
     function get_FSharpCase() {
         return 'Play';
@@ -5658,9 +5373,6 @@ class BoardCommand_Start extends BoardCommand implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'BoardCommand_Start';
     }
     function get_FSharpCase() {
         return 'Start';
@@ -5715,7 +5427,7 @@ class BoardStart implements IComparable {
 }
 
 #212
-abstract class BoardEvent implements Union, FSharpUnion {
+abstract class BoardEvent implements FSharpUnion {
 }
 
 #212
@@ -5725,9 +5437,6 @@ class BoardEvent_Played extends BoardEvent implements IComparable {
     function __construct($Item1, $Item2) {
         $this->Item1 = $Item1;
         $this->Item2 = $Item2;
-    }
-    function get_Case() {
-        return 'BoardEvent_Played';
     }
     function get_FSharpCase() {
         return 'Played';
@@ -5758,9 +5467,6 @@ class BoardEvent_Started extends BoardEvent implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'BoardEvent_Started';
-    }
     function get_FSharpCase() {
         return 'Started';
     }
@@ -5784,9 +5490,6 @@ class BoardEvent_Started extends BoardEvent implements IComparable {
 class BoardEvent_Next extends BoardEvent implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'BoardEvent_Next';
-    }
     function get_FSharpCase() {
         return 'Next';
     }
@@ -5804,9 +5507,6 @@ class BoardEvent_PlayerDrewCards extends BoardEvent implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'BoardEvent_PlayerDrewCards';
     }
     function get_FSharpCase() {
         return 'PlayerDrewCards';
@@ -5833,9 +5533,6 @@ class BoardEvent_GameWon extends BoardEvent implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'BoardEvent_GameWon';
-    }
     function get_FSharpCase() {
         return 'GameWon';
     }
@@ -5861,9 +5558,6 @@ class BoardEvent_GameEnded extends BoardEvent implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'BoardEvent_GameEnded';
-    }
     function get_FSharpCase() {
         return 'GameEnded';
     }
@@ -5887,9 +5581,6 @@ class BoardEvent_GameEnded extends BoardEvent implements IComparable {
 class BoardEvent_GameEndedByRepetition extends BoardEvent implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'BoardEvent_GameEndedByRepetition';
-    }
     function get_FSharpCase() {
         return 'GameEndedByRepetition';
     }
@@ -5907,9 +5598,6 @@ class BoardEvent_RepetitionDetected extends BoardEvent implements IComparable {
     public $player;
     function __construct($player) {
         $this->player = $player;
-    }
-    function get_Case() {
-        return 'BoardEvent_RepetitionDetected';
     }
     function get_FSharpCase() {
         return 'RepetitionDetected';
@@ -5937,9 +5625,6 @@ class BoardEvent_HayBalesPlaced extends BoardEvent implements IComparable {
     function __construct($added, $removed) {
         $this->added = $added;
         $this->removed = $removed;
-    }
-    function get_Case() {
-        return 'BoardEvent_HayBalesPlaced';
     }
     function get_FSharpCase() {
         return 'HayBalesPlaced';
@@ -5970,9 +5655,6 @@ class BoardEvent_HayBaleDynamited extends BoardEvent implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'BoardEvent_HayBaleDynamited';
-    }
     function get_FSharpCase() {
         return 'HayBaleDynamited';
     }
@@ -5997,9 +5679,6 @@ class BoardEvent_DiscardPileShuffled extends BoardEvent implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'BoardEvent_DiscardPileShuffled';
     }
     function get_FSharpCase() {
         return 'DiscardPileShuffled';
@@ -6026,9 +5705,6 @@ class BoardEvent_DrawPileShuffled extends BoardEvent implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'BoardEvent_DrawPileShuffled';
-    }
     function get_FSharpCase() {
         return 'DrawPileShuffled';
     }
@@ -6051,9 +5727,6 @@ class BoardEvent_DrawPileShuffled extends BoardEvent implements IComparable {
 #212
 class BoardEvent_UndoCheckPointed extends BoardEvent implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'BoardEvent_UndoCheckPointed';
     }
     function get_FSharpCase() {
         return 'UndoCheckPointed';
@@ -6135,7 +5808,7 @@ class PlayerDrewCards implements IComparable {
 
 #215
 function BoardModule_currentPlayer($board) {
-    return \Map\FSharpMap__get_Item(GameTable__get_Player($board->Table, NULL), $board->Players);
+    return \Map\FSharpMap__get_Item($board->Players, GameTable__get_Player($board->Table, NULL));
 }
 
 #216
@@ -6176,7 +5849,7 @@ function BoardModule_endGameWithBribe($board) {
 }
 
 #220
-abstract class FindWinner implements Union, FSharpUnion {
+abstract class FindWinner implements FSharpUnion {
 }
 
 #220
@@ -6184,9 +5857,6 @@ class FindWinner_Winner extends FindWinner implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'FindWinner_Winner';
     }
     function get_FSharpCase() {
         return 'Winner';
@@ -6212,9 +5882,6 @@ class FindWinner_Lead extends FindWinner implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'FindWinner_Lead';
     }
     function get_FSharpCase() {
         return 'Lead';
@@ -6271,7 +5938,7 @@ function BoardModule_next($shouldShuffle, $repeated, $state) {
     $playerId = GameTable__get_Player($state->Table, NULL);
     $player = \Map\tryFind($playerId, $state->Players);
     $nextPlayerId = GameTable__get_Player(GameTable__get_Next($state->Table, NULL), NULL);
-    $nextPlayer = \Map\FSharpMap__get_Item($nextPlayerId, $state->Players);
+    $nextPlayer = \Map\FSharpMap__get_Item($state->Players, $nextPlayerId);
     return \Seq\toList(\Seq\delay(function ($unitVar) use ($nextPlayer, $nextPlayerId, $player, $playerId, $repeated, $shouldShuffle, $state) {     return \Seq\append(\FSharpList\map(function ($c) use ($playerId) {     return new BoardEvent_Played($playerId, new Event_BonusDiscarded($c));
  }, BonusModule_endTurn(is_null($player) ? $GLOBALS['BonusModule_empty'] : Player_bonus($player))), \Seq\delay(function ($unitVar_1) use ($nextPlayer, $nextPlayerId, $playerId, $repeated, $shouldShuffle, $state) {     return \Seq\append($shouldShuffle ? (function ($matchValue) use ($state) {     switch ($matchValue->get_Tag())
     {
@@ -6291,15 +5958,12 @@ function BoardModule_next($shouldShuffle, $repeated, $state) {
 }
 
 #223
-abstract class BribeBlocker implements Union, FSharpUnion {
+abstract class BribeBlocker implements FSharpUnion {
 }
 
 #223
 class BribeBlocker_InstantVictory extends BribeBlocker implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'BribeBlocker_InstantVictory';
     }
     function get_FSharpCase() {
         return 'InstantVictory';
@@ -6317,9 +5981,6 @@ class BribeBlocker_InstantVictory extends BribeBlocker implements IComparable {
 class BribeBlocker_NoParcelsToBribe extends BribeBlocker implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'BribeBlocker_NoParcelsToBribe';
-    }
     function get_FSharpCase() {
         return 'NoParcelsToBribe';
     }
@@ -6333,15 +5994,12 @@ class BribeBlocker_NoParcelsToBribe extends BribeBlocker implements IComparable 
 }
 
 #224
-abstract class BribeParcelBlocker implements Union, FSharpUnion {
+abstract class BribeParcelBlocker implements FSharpUnion {
 }
 
 #224
 class BribeParcelBlocker_BarnBlocker extends BribeParcelBlocker implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'BribeParcelBlocker_BarnBlocker';
     }
     function get_FSharpCase() {
         return 'BarnBlocker';
@@ -6359,9 +6017,6 @@ class BribeParcelBlocker_BarnBlocker extends BribeParcelBlocker implements IComp
 class BribeParcelBlocker_LastParcelBlocker extends BribeParcelBlocker implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'BribeParcelBlocker_LastParcelBlocker';
-    }
     function get_FSharpCase() {
         return 'LastParcelBlocker';
     }
@@ -6377,9 +6032,6 @@ class BribeParcelBlocker_LastParcelBlocker extends BribeParcelBlocker implements
 #224
 class BribeParcelBlocker_WatchedBlocker extends BribeParcelBlocker implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'BribeParcelBlocker_WatchedBlocker';
     }
     function get_FSharpCase() {
         return 'WatchedBlocker';
@@ -6397,9 +6049,6 @@ class BribeParcelBlocker_WatchedBlocker extends BribeParcelBlocker implements IC
 class BribeParcelBlocker_FenceBlocker extends BribeParcelBlocker implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'BribeParcelBlocker_FenceBlocker';
-    }
     function get_FSharpCase() {
         return 'FenceBlocker';
     }
@@ -6416,9 +6065,6 @@ class BribeParcelBlocker_FenceBlocker extends BribeParcelBlocker implements ICom
 class BribeParcelBlocker_FallowBlocker extends BribeParcelBlocker implements IComparable {
     function __construct() {
     }
-    function get_Case() {
-        return 'BribeParcelBlocker_FallowBlocker';
-    }
     function get_FSharpCase() {
         return 'FallowBlocker';
     }
@@ -6434,9 +6080,6 @@ class BribeParcelBlocker_FallowBlocker extends BribeParcelBlocker implements ICo
 #224
 class BribeParcelBlocker_BridgeBlocker extends BribeParcelBlocker implements IComparable {
     function __construct() {
-    }
-    function get_Case() {
-        return 'BribeParcelBlocker_BridgeBlocker';
     }
     function get_FSharpCase() {
         return 'BridgeBlocker';
@@ -6541,9 +6184,9 @@ function BoardModule_findBridgeParcels($field) {
 #228
 function BoardModule_bribeParcels($board) {
     if (BoardModule_endGameWithBribe($board)) {
-        return new Result_Error(new BribeBlocker_InstantVictory());
+        return new \Result_Error(new BribeBlocker_InstantVictory());
     } else {
-        $playerField = Player_field(\Map\FSharpMap__get_Item(GameTable__get_Player($board->Table, NULL), $board->Players));
+        $playerField = Player_field(\Map\FSharpMap__get_Item($board->Players, GameTable__get_Player($board->Table, NULL)));
         $border = FieldModule_borderTiles($playerField);
         $barns = Field_op_Addition_Z24735800($board->Barns->Free, $board->Barns->Occupied);
         $bridgeParcels = BoardModule_findBridgeParcels($playerField);
@@ -6578,9 +6221,9 @@ function BoardModule_bribeParcels($board) {
             }
         }, BoardModule_currentOtherPlayers($board)))), $barns);
         if (FieldModule_isEmpty($parcelsToBribe)) {
-            return new Result_Error(new BribeBlocker_NoParcelsToBribe());
+            return new \Result_Error(new BribeBlocker_NoParcelsToBribe());
         } else {
-            return new Result_Ok($parcelsToBribe);
+            return new \Result_Ok($parcelsToBribe);
         }
     }
 }
@@ -6590,7 +6233,7 @@ function BoardModule_bribeParcelsBlockers($board) {
     if (BoardModule_endGameWithBribe($board)) {
         return $GLOBALS['NIL'];
     } else {
-        $playerField = Player_field(\Map\FSharpMap__get_Item(GameTable__get_Player($board->Table, NULL), $board->Players));
+        $playerField = Player_field(\Map\FSharpMap__get_Item($board->Players, GameTable__get_Player($board->Table, NULL)));
         $border = FieldModule_borderTiles($playerField);
         $barns = FieldModule_intersect(FieldModule_unionMany(\Seq\toList(\Seq\delay(function ($unitVar) use ($board) {         return \Seq\collect(function ($matchValue) {         return \Seq\singleton(Player_field($matchValue[1]));
  }, BoardModule_currentOtherPlayers($board));
@@ -6646,13 +6289,13 @@ function BoardModule_bribeParcelsBlockers($board) {
 
 #230
 function BoardModule_annexed($playerid, $e, $board) {
-    $newMap = \Map\add($playerid, Player_evolve(\Map\FSharpMap__get_Item($playerid, $board->Players), new Event_Annexed($e)), $board->Players);
+    $newMap = \Map\add($playerid, Player_evolve(\Map\FSharpMap__get_Item($board->Players, $playerid), new Event_Annexed($e)), $board->Players);
     $freeFields = Field_op_Subtraction_Z24735800(FieldModule_ofParcels($e->NewField), FieldModule_unionMany(\Seq\toList(\Seq\delay(function ($unitVar) use ($e) {     return \Seq\collect(function ($matchValue) {     return \Seq\singleton(FieldModule_ofParcels($matchValue[1]));
  }, $e->LostFields);
  }))));
     return \FSharpList\fold(function ($board_1, $tupledArg) { 
         $playerid_1 = $tupledArg[0];
-        $matchValue_1 = \Map\FSharpMap__get_Item($playerid_1, $board_1->Players);
+        $matchValue_1 = \Map\FSharpMap__get_Item($board_1->Players, $playerid_1);
         if ($matchValue_1->get_Tag() == 1) {
             $p = $matchValue_1->Item;
             return new PlayingBoard(\Map\add($playerid_1, new CrazyPlayer_Playing(new Playing($p->Color, $p->Tractor, $p->Fence, Field_op_Subtraction_Z24735800($p->Field, FieldModule_ofParcels($tupledArg[1])), $p->Power, $p->Moves, $p->Hand, $p->Bonus)), $board_1->Players), $board_1->Table, $board_1->DrawPile, $board_1->DiscardPile, $board_1->Barns, $board_1->HayBales, $board_1->Goal, $board_1->UseGameOver, $board_1->History);
@@ -6664,7 +6307,7 @@ function BoardModule_annexed($playerid, $e, $board) {
 
 #231
 function BoardModule_bribed($playerid, $p, $board) {
-    $newPlayer = Player_evolve(\Map\FSharpMap__get_Item($playerid, $board->Players), new Event_Bribed($p));
+    $newPlayer = Player_evolve(\Map\FSharpMap__get_Item($board->Players, $playerid), new Event_Bribed($p));
     return new PlayingBoard(\Map\add($p->Victim, (function ($matchValue) use ($p) {     switch ($matchValue->get_Tag())
     {
         case 1:
@@ -6675,7 +6318,7 @@ function BoardModule_bribed($playerid, $p, $board) {
         default:
             return new CrazyPlayer_Starting($matchValue->Item);
     }
- })(\Map\FSharpMap__get_Item($p->Victim, $board->Players)), \Map\add($playerid, $newPlayer, $board->Players)), $board->Table, $board->DrawPile, $board->DiscardPile, $board->Barns, $board->HayBales, $board->Goal, $board->UseGameOver, $board->History);
+ })(\Map\FSharpMap__get_Item($board->Players, $p->Victim)), \Map\add($playerid, $newPlayer, $board->Players)), $board->Table, $board->DrawPile, $board->DiscardPile, $board->Barns, $board->HayBales, $board->Goal, $board->UseGameOver, $board->History);
 }
 
 #232
@@ -6706,7 +6349,7 @@ function BoardModule_evolve($state, $event) {
                             if ($matchValue[1]->Item2->get_Tag() == 8) {
                                 $board_4 = $matchValue[0]->Item;
                                 $playerid = $matchValue[1]->Item2->Item->Player;
-                                $matchValue_3 = \Map\FSharpMap__get_Item($playerid, $board_4->Players);
+                                $matchValue_3 = \Map\FSharpMap__get_Item($board_4->Players, $playerid);
                                 if ($matchValue_3->get_Tag() == 1) {
                                     $player_1 = $matchValue_3->Item;
                                     return new UndoableBoard(new Board_Board(new PlayingBoard(\Map\add($playerid, new CrazyPlayer_Playing(new Playing($player_1->Color, $player_1->Tractor, $GLOBALS['FenceModule_empty'], $player_1->Field, new Power_PowerDown(), $player_1->Moves, $player_1->Hand, $player_1->Bonus)), $board_4->Players), $board_4->Table, $board_4->DrawPile, $board_4->DiscardPile, $board_4->Barns, $board_4->HayBales, $board_4->Goal, $board_4->UseGameOver, $board_4->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false);
@@ -6730,7 +6373,7 @@ function BoardModule_evolve($state, $event) {
                                             $board_12 = $matchValue[0]->Item;
                                             $e_2 = $matchValue[1]->Item2;
                                             $playerid_3 = $matchValue[1]->Item1;
-                                            $newPlayer = Player_evolve(\Map\FSharpMap__get_Item($playerid_3, $board_12->Players), $e_2);
+                                            $newPlayer = Player_evolve(\Map\FSharpMap__get_Item($board_12->Players, $playerid_3), $e_2);
                                             $newTable = Table_eliminate($playerid_3, $board_12->Table);
                                             return new UndoableBoard(new Board_Board(new PlayingBoard(\Map\add($playerid_3, $newPlayer, $board_12->Players), $newTable, $board_12->DrawPile, $board_12->DiscardPile, $board_12->Barns, $board_12->HayBales, $board_12->Goal, $board_12->UseGameOver, $board_12->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false);
                                         } else {
@@ -6739,11 +6382,11 @@ function BoardModule_evolve($state, $event) {
                                                 $e_3 = $matchValue[1]->Item2;
                                                 $playerid_4 = $matchValue[1]->Item1;
                                                 $currentPlayer = GameTable__get_Player($board_13->Table, NULL);
-                                                $newPlayer_1 = Player_evolve(\Map\FSharpMap__get_Item($playerid_4, $board_13->Players), $e_3);
+                                                $newPlayer_1 = Player_evolve(\Map\FSharpMap__get_Item($board_13->Players, $playerid_4), $e_3);
                                                 $newTable_1 = Table_eliminate($playerid_4, $board_13->Table);
                                                 $players_1 = \Map\add($playerid_4, $newPlayer_1, $board_13->Players);
                                                 return new UndoableBoard(new Board_Board(new PlayingBoard(($playerid_4 === $currentPlayer ? (function ($nextPlayer) use ($newTable_1, $players_1) {                                                 return \Map\add(GameTable__get_Player($newTable_1, NULL), $nextPlayer, $players_1);
- })(Player_startTurn(\Map\FSharpMap__get_Item(GameTable__get_Player($newTable_1, NULL), $board_13->Players))) : $players_1), $newTable_1, $board_13->DrawPile, $board_13->DiscardPile, $board_13->Barns, $board_13->HayBales, $board_13->Goal, $board_13->UseGameOver, $board_13->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false);
+ })(Player_startTurn(\Map\FSharpMap__get_Item($board_13->Players, GameTable__get_Player($newTable_1, NULL)))) : $players_1), $newTable_1, $board_13->DrawPile, $board_13->DiscardPile, $board_13->Barns, $board_13->HayBales, $board_13->Goal, $board_13->UseGameOver, $board_13->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false);
                                             } else {
                                                 switch ($matchValue[1]->Item2->get_Tag())
                                                 {
@@ -6753,7 +6396,7 @@ function BoardModule_evolve($state, $event) {
                                                         $board_14 = $matchValue[0]->Item;
                                                         $e_4 = $matchValue[1]->Item2;
                                                         $playerid_5 = $matchValue[1]->Item1;
-                                                        $player_4 = Player_evolve(\Map\FSharpMap__get_Item($playerid_5, $board_14->Players), $e_4);
+                                                        $player_4 = Player_evolve(\Map\FSharpMap__get_Item($board_14->Players, $playerid_5), $e_4);
                                                         switch ($e_4->get_Tag())
                                                         {
                                                             case 14:
@@ -6800,7 +6443,7 @@ function BoardModule_evolve($state, $event) {
                                             $newDrawPile = new Hand_PublicHand(DrawPile_remove($e_1->Cards, $matchValue_4->cards));
                                             break;
                                     }
-                                    $newBoard_1 = new Board_Board(new PlayingBoard(\Map\add($e_1->Player, Player_takeCards($e_1->Cards, \Map\FSharpMap__get_Item($e_1->Player, $board_6->Players)), $board_6->Players), $board_6->Table, $newDrawPile, $board_6->DiscardPile, $board_6->Barns, $board_6->HayBales, $board_6->Goal, $board_6->UseGameOver, $board_6->History));
+                                    $newBoard_1 = new Board_Board(new PlayingBoard(\Map\add($e_1->Player, Player_takeCards($e_1->Cards, \Map\FSharpMap__get_Item($board_6->Players, $e_1->Player)), $board_6->Players), $board_6->Table, $newDrawPile, $board_6->DiscardPile, $board_6->Barns, $board_6->HayBales, $board_6->Goal, $board_6->UseGameOver, $board_6->History));
                                     if ($state->UndoType->get_Tag() == 0) {
                                         return new UndoableBoard($newBoard_1, $state->UndoPoint, $state->UndoType, true, false);
                                     } else {
@@ -6838,7 +6481,7 @@ function BoardModule_evolve($state, $event) {
                                     $board_15 = $matchValue[0]->Item;
                                     $previousPlayer = GameTable__get_Player($board_15->Table, NULL);
                                     $nextTable = GameTable__get_Next($board_15->Table, NULL);
-                                    $player_5 = Player_startTurn(\Map\FSharpMap__get_Item(GameTable__get_Player($nextTable, NULL), $board_15->Players));
+                                    $player_5 = Player_startTurn(\Map\FSharpMap__get_Item($board_15->Players, GameTable__get_Player($nextTable, NULL)));
                                     $newBoard_10 = new Board_Board(new PlayingBoard(\Map\add(GameTable__get_Player($nextTable, NULL), $player_5, $board_15->Players), $nextTable, $board_15->DrawPile, $board_15->DiscardPile, $board_15->Barns, $board_15->HayBales, $board_15->Goal, $board_15->UseGameOver, HistoryModule_addPos($previousPlayer, HistoryModule_createPos($board_15), $board_15->History)));
                                     return new UndoableBoard($newBoard_10, $newBoard_10, $state->UndoType, false, true);
                                 default:
@@ -7023,7 +6666,7 @@ function BoardModule_decide($cmd, $state) {
                     $board = $matchValue[0]->Item;
                     $playerId = $matchValue[1]->Item1;
                     if (GameTable__get_Player($board->Table, NULL) === $playerId) {
-                        $player = \Map\FSharpMap__get_Item($playerId, $board->Players);
+                        $player = \Map\FSharpMap__get_Item($board->Players, $playerId);
                         if ($player->get_Tag() == 1) {
                             if (!(Player_canMove($playerId, $state->Board) ? true : HandModule_shouldDiscard($player->Item->Hand))) {
                                 $p_1 = $player->Item;
@@ -7064,7 +6707,7 @@ function BoardModule_decide($cmd, $state) {
                                 $cmd_2 = $matchValue[1]->Item2;
                                 $playerId_2 = $matchValue[1]->Item1;
                                 if (GameTable__get_Player($board_2->Table, NULL) === $playerId_2) {
-                                    $player_1 = \Map\FSharpMap__get_Item($playerId_2, $board_2->Players);
+                                    $player_1 = \Map\FSharpMap__get_Item($board_2->Players, $playerId_2);
                                     $events = Player_decide(Player_otherPlayers($playerId_2, $board_2), $board_2->Barns, $board_2->HayBales, function ($unitVar0) use ($board_2) {                                     return BoardModule_bribeParcels($board_2);
  }, $cmd_2, $player_1);
                                     return \Seq\toList(\Seq\delay(function ($unitVar) use ($events, $playerId_2) {                                     return \Seq\map(function ($e) use ($playerId_2) {                                     return new BoardEvent_Played($playerId_2, $e);
@@ -7077,7 +6720,7 @@ function BoardModule_decide($cmd, $state) {
                                 $board_3 = $matchValue[0]->Item;
                                 $cmd_3 = $matchValue[1]->Item2;
                                 $playerid = $matchValue[1]->Item1;
-                                $player_2 = \Map\FSharpMap__get_Item($playerid, $board_3->Players);
+                                $player_2 = \Map\FSharpMap__get_Item($board_3->Players, $playerid);
                                 $others_1 = Player_otherPlayers($playerid, $board_3);
                                 if ($playerid === GameTable__get_Player($board_3->Table, NULL)) {
                                     return (function ($tupledArg_7) use ($playerid, $state) {                                     return BoardModule_cont(function ($board_16, $es_1) use ($playerid, $state) { 
@@ -7142,10 +6785,10 @@ function BoardModule_decide($cmd, $state) {
                                                                 }
  }));
                                                             default:
-                                                                $player_8 = \Map\FSharpMap__get_Item($playerid, $board_16->Players);
+                                                                $player_8 = \Map\FSharpMap__get_Item($board_16->Players, $playerid);
                                                                 if ($playerid !== GameTable__get_Player($board_16->Table, NULL)) {
                                                                     $nextPlayerId = GameTable__get_Player($board_16->Table, NULL);
-                                                                    $nextPlayer = \Map\FSharpMap__get_Item($nextPlayerId, $board_16->Players);
+                                                                    $nextPlayer = \Map\FSharpMap__get_Item($board_16->Players, $nextPlayerId);
                                                                     return \Seq\toList(\Seq\delay(function ($unitVar_12) use ($nextPlayer, $nextPlayerId) {                                                                     return \Seq\append(\FSharpList\map(function ($c) use ($nextPlayerId) {                                                                     return new BoardEvent_Played($nextPlayerId, new Event_BonusDiscarded($c));
  }, BonusModule_startTurn(Player_bonus($nextPlayer))), \Seq\delay(function ($unitVar_13) {                                                                     return \Seq\singleton(new BoardEvent_UndoCheckPointed());
  }));
@@ -7155,10 +6798,10 @@ function BoardModule_decide($cmd, $state) {
                                                                 }
                                                         }
                                                     } else {
-                                                        $player_8 = \Map\FSharpMap__get_Item($playerid, $board_16->Players);
+                                                        $player_8 = \Map\FSharpMap__get_Item($board_16->Players, $playerid);
                                                         if ($playerid !== GameTable__get_Player($board_16->Table, NULL)) {
                                                             $nextPlayerId = GameTable__get_Player($board_16->Table, NULL);
-                                                            $nextPlayer = \Map\FSharpMap__get_Item($nextPlayerId, $board_16->Players);
+                                                            $nextPlayer = \Map\FSharpMap__get_Item($board_16->Players, $nextPlayerId);
                                                             return \Seq\toList(\Seq\delay(function ($unitVar_12) use ($nextPlayer, $nextPlayerId) {                                                             return \Seq\append(\FSharpList\map(function ($c) use ($nextPlayerId) {                                                             return new BoardEvent_Played($nextPlayerId, new Event_BonusDiscarded($c));
  }, BonusModule_startTurn(Player_bonus($nextPlayer))), \Seq\delay(function ($unitVar_13) {                                                             return \Seq\singleton(new BoardEvent_UndoCheckPointed());
  }));
@@ -7168,10 +6811,10 @@ function BoardModule_decide($cmd, $state) {
                                                         }
                                                     }
                                                 } else {
-                                                    $player_8 = \Map\FSharpMap__get_Item($playerid, $board_16->Players);
+                                                    $player_8 = \Map\FSharpMap__get_Item($board_16->Players, $playerid);
                                                     if ($playerid !== GameTable__get_Player($board_16->Table, NULL)) {
                                                         $nextPlayerId = GameTable__get_Player($board_16->Table, NULL);
-                                                        $nextPlayer = \Map\FSharpMap__get_Item($nextPlayerId, $board_16->Players);
+                                                        $nextPlayer = \Map\FSharpMap__get_Item($board_16->Players, $nextPlayerId);
                                                         return \Seq\toList(\Seq\delay(function ($unitVar_12) use ($nextPlayer, $nextPlayerId) {                                                         return \Seq\append(\FSharpList\map(function ($c) use ($nextPlayerId) {                                                         return new BoardEvent_Played($nextPlayerId, new Event_BonusDiscarded($c));
  }, BonusModule_startTurn(Player_bonus($nextPlayer))), \Seq\delay(function ($unitVar_13) {                                                         return \Seq\singleton(new BoardEvent_UndoCheckPointed());
  }));
@@ -7279,10 +6922,10 @@ function BoardModule_decide($cmd, $state) {
  }));
  }, $tupledArg_3[0], $tupledArg_3[1]);
  })((function ($tupledArg_2) {                                     return BoardModule_cont(function ($board_8, $_arg3) {                                     return \Seq\toList(\Seq\delay(function ($unitVar_5) use ($board_8) {                                     return \Seq\collect(function ($matchValue_6) { 
-                                        $activePatternResult1589 = $matchValue_6;
-                                        $p_8 = $activePatternResult1589[1];
+                                        $activePatternResult21336 = $matchValue_6;
+                                        $p_8 = $activePatternResult21336[1];
                                         if (FieldModule_isEmpty(Player_field($p_8)) ? !Player_isKo($p_8) : false) {
-                                            return \Seq\append(\Seq\singleton(new BoardEvent_Played($activePatternResult1589[0], new Event_Eliminated())), \Seq\delay(function ($unitVar_6) {                                             return \Seq\singleton(new BoardEvent_UndoCheckPointed());
+                                            return \Seq\append(\Seq\singleton(new BoardEvent_Played($activePatternResult21336[0], new Event_Eliminated())), \Seq\delay(function ($unitVar_6) {                                             return \Seq\singleton(new BoardEvent_UndoCheckPointed());
  }));
                                         } else {
                                             return \Seq\_empty();
@@ -7291,7 +6934,7 @@ function BoardModule_decide($cmd, $state) {
  }));
  }, $tupledArg_2[0], $tupledArg_2[1]);
  })((function ($tupledArg_1) use ($playerid) {                                     return BoardModule_cont(function ($board_6, $_arg2) use ($playerid) { 
-                                        $player_3 = \Map\FSharpMap__get_Item($playerid, $board_6->Players);
+                                        $player_3 = \Map\FSharpMap__get_Item($board_6->Players, $playerid);
                                         if ($player_3->get_Tag() == 1) {
                                             $player_4 = $player_3->Item;
                                             $matchValue_3 = Player_fullAnnexation($player_4->Field, $player_4->Fence, $player_4->Tractor);
@@ -7432,8 +7075,8 @@ function BoardModule_toState($board) {
             $board_2 = $board->Item2;
             return new BoardState(\Seq\toArray(\Seq\map(function ($tupledArg_1) {             return [ $tupledArg_1[0], Player_toState($tupledArg_1[1])];
  }, \Map\toSeq($board_2->Players))), new STable($board_2->Table->Players, $board_2->Table->AllPlayers, \Seq\toArray(\Seq\delay(function ($unitVar_4) use ($board_2) {             return \Seq\collect(function ($matchValue_2) { 
-                $activePatternResult1638 = $matchValue_2;
-                return \Seq\singleton([ $activePatternResult1638[0], $activePatternResult1638[1]]);
+                $activePatternResult21385 = $matchValue_2;
+                return \Seq\singleton([ $activePatternResult21385[0], $activePatternResult21385[1]]);
             }, $board_2->Table->Names);
  })), $board_2->Table->Current), \FSharpList\toArray($board_2->DiscardPile), HandModule_count($board_2->DrawPile), \FSharpList\toArray(FieldModule_parcels($board_2->Barns->Free)), \FSharpList\toArray(FieldModule_parcels($board_2->Barns->Occupied)), \Set\toArray($board_2->HayBales), $board_2->Goal, ($winners instanceof Cons ? ($winners->next instanceof Nil ? (function ($winner) {             return $winner;
  })($winners->value) : NULL) : NULL), ($winners instanceof Cons ? ($winners->next instanceof Nil ? [ ] : \FSharpList\toArray($winners)) : [ ]), $board_2->UseGameOver, [ ]);
@@ -7441,15 +7084,15 @@ function BoardModule_toState($board) {
             $board_1 = $board->Item;
             return new BoardState(\Seq\toArray(\Seq\map(function ($tupledArg) {             return [ $tupledArg[0], Player_toState($tupledArg[1])];
  }, \Map\toSeq($board_1->Players))), new STable($board_1->Table->Players, $board_1->Table->AllPlayers, \Seq\toArray(\Seq\delay(function ($unitVar) use ($board_1) {             return \Seq\collect(function ($matchValue) { 
-                $activePatternResult1627 = $matchValue;
-                return \Seq\singleton([ $activePatternResult1627[0], $activePatternResult1627[1]]);
+                $activePatternResult21374 = $matchValue;
+                return \Seq\singleton([ $activePatternResult21374[0], $activePatternResult21374[1]]);
             }, $board_1->Table->Names);
  })), $board_1->Table->Current), \FSharpList\toArray($board_1->DiscardPile), HandModule_count($board_1->DrawPile), \FSharpList\toArray(FieldModule_parcels($board_1->Barns->Free)), \FSharpList\toArray(FieldModule_parcels($board_1->Barns->Occupied)), \Set\toArray($board_1->HayBales), $board_1->Goal, NULL, [ ], $board_1->UseGameOver, \Seq\toArray(\Seq\delay(function ($unitVar_1) use ($board_1) {             return \Seq\collect(function ($matchValue_1) { 
-                $activePatternResult1634 = $matchValue_1;
-                return \Seq\singleton([ $activePatternResult1634[0], \Seq\toArray(\Seq\delay(function ($unitVar_2) use ($activePatternResult1634) {                 return \Seq\map(function ($boardpos) {                 return \Seq\toArray(\Seq\delay(function ($unitVar_3) use ($boardpos) {                 return \Seq\map(function ($pos) {                 return [ $pos->Player, $pos->TractorPos, $pos->FencePos, FieldModule_parcels($pos->FieldPos)];
+                $activePatternResult21381 = $matchValue_1;
+                return \Seq\singleton([ $activePatternResult21381[0], \Seq\toArray(\Seq\delay(function ($unitVar_2) use ($activePatternResult21381) {                 return \Seq\map(function ($boardpos) {                 return \Seq\toArray(\Seq\delay(function ($unitVar_3) use ($boardpos) {                 return \Seq\map(function ($pos) {                 return [ $pos->Player, $pos->TractorPos, $pos->FencePos, FieldModule_parcels($pos->FieldPos)];
  }, $boardpos->Positions);
  }));
- }, $activePatternResult1634[1]);
+ }, $activePatternResult21381[1]);
  }))]);
             }, $board_1->History->PlayersHistory);
  })));
@@ -7594,7 +7237,7 @@ function Client_cardName($_arg1) {
 }
 
 #253
-abstract class ServerMsg implements Union, FSharpUnion {
+abstract class ServerMsg implements FSharpUnion {
 }
 
 #253
@@ -7602,9 +7245,6 @@ class ServerMsg_JoinGame extends ServerMsg implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'ServerMsg_JoinGame';
     }
     function get_FSharpCase() {
         return 'JoinGame';
@@ -7631,9 +7271,6 @@ class ServerMsg_Command extends ServerMsg implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'ServerMsg_Command';
-    }
     function get_FSharpCase() {
         return 'Command';
     }
@@ -7658,9 +7295,6 @@ class ServerMsg_SendMessage extends ServerMsg implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'ServerMsg_SendMessage';
     }
     function get_FSharpCase() {
         return 'SendMessage';
@@ -7709,7 +7343,7 @@ class ChatEntry implements IComparable {
 }
 
 #255
-abstract class ClientMsg implements Union, FSharpUnion {
+abstract class ClientMsg implements FSharpUnion {
 }
 
 #255
@@ -7719,9 +7353,6 @@ class ClientMsg_Events extends ClientMsg implements IComparable {
     function __construct($Item1, $Item2) {
         $this->Item1 = $Item1;
         $this->Item2 = $Item2;
-    }
-    function get_Case() {
-        return 'ClientMsg_Events';
     }
     function get_FSharpCase() {
         return 'Events';
@@ -7752,9 +7383,6 @@ class ClientMsg_Message extends ClientMsg implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'ClientMsg_Message';
-    }
     function get_FSharpCase() {
         return 'Message';
     }
@@ -7783,9 +7411,6 @@ class ClientMsg_Sync extends ClientMsg implements IComparable {
         $this->Item1 = $Item1;
         $this->Item2 = $Item2;
         $this->Item3 = $Item3;
-    }
-    function get_Case() {
-        return 'ClientMsg_Sync';
     }
     function get_FSharpCase() {
         return 'Sync';
@@ -7820,9 +7445,6 @@ class ClientMsg_SyncPlayer extends ClientMsg implements IComparable {
     function __construct($Item) {
         $this->Item = $Item;
     }
-    function get_Case() {
-        return 'ClientMsg_SyncPlayer';
-    }
     function get_FSharpCase() {
         return 'SyncPlayer';
     }
@@ -7847,9 +7469,6 @@ class ClientMsg_ReceiveMessage extends ClientMsg implements IComparable {
     public $Item;
     function __construct($Item) {
         $this->Item = $Item;
-    }
-    function get_Case() {
-        return 'ClientMsg_ReceiveMessage';
     }
     function get_FSharpCase() {
         return 'ReceiveMessage';

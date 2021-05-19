@@ -379,7 +379,7 @@ module Output =
 
                     if not (Set.contains t ctx.UsedTypes) then
                         match t.Namespace with
-                        | None -> ()
+                        | None -> write subCtx @"\"
                         | Some ns  ->
                             if t.Namespace <> ctx.CurrentNamespace then
                                 write subCtx @"\"
@@ -807,7 +807,6 @@ module PhpResult =
     let error = { Namespace = None; Name = "Result_Error"; Fields = [errorValue] ; Methods = []; Abstract = true; BaseType = Some result; Interfaces = []; File = "fable-library/FSharp.Core.php" }
 
 module PhpUnion =
-    let union = { Namespace = None; Name = "Union"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []; File = "fable-library/FSharp.Core.php"}
     let fSharpUnion = { Namespace = None; Name = "FSharpUnion"; Fields = []; Methods = []; Abstract = true; BaseType = None; Interfaces = []; File = "fable-library/FSharp.Core.php"}
 
 module Core =
@@ -1079,10 +1078,9 @@ let convertUnion (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) =
               Methods = []
               Abstract = true 
               BaseType = None
-              Interfaces = [PhpUnion.union; PhpUnion.fSharpUnion ]
+              Interfaces = [ PhpUnion.fSharpUnion ]
               File = ctx.File }
       
-      ctx.AddUse(PhpUnion.union)
       ctx.AddUse(PhpUnion.fSharpUnion)
       ctx.AddType(baseType) |> PhpType
 
@@ -1093,13 +1091,7 @@ let convertUnion (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) =
               Fields = [ for e in case.UnionCaseFields do 
                             { Name = e.Name 
                               Type  = convertType com ctx e.FieldType } ]
-              Methods = [ { PhpFun.Name = "get_Case";
-                            PhpFun.Args = []
-                            PhpFun.Matchings = []
-                            PhpFun.Static = false
-                            PhpFun.Body = 
-                                [ PhpStatement.Return(PhpConst(PhpConstString(caseName ctx info case)))] } 
-                          { PhpFun.Name = "get_FSharpCase";
+              Methods = [ { PhpFun.Name = "get_FSharpCase";
                             PhpFun.Args = []
                             PhpFun.Matchings = []
                             PhpFun.Static = false
@@ -1279,8 +1271,10 @@ let convertTest (com: Fable.Compiler) (ctx: PhpCompiler) test phpExpr =
         PhpBinaryOp("==",PhpMethod(phpExpr, PhpConst(PhpConstString "get_Tag"), []), PhpConst(PhpConstNumber(float tag)))
     | Fable.TestKind.ListTest(isCons) ->
         if isCons then
+            ctx.AddUse(PhpList.cons)
             PhpIsA(phpExpr, InType PhpList.cons)
         else
+            ctx.AddUse(PhpList.nil)
             PhpIsA(phpExpr, InType PhpList.nil)
     | Fable.OptionTest(isSome) ->
        if isSome then
@@ -1410,7 +1404,7 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
         let phpCallee = convertExpr com ctx callee
 
         //PhpMethod(convertExpr com ctx this,  phpCallee, convertArgs com ctx args)
-        PhpCall(phpCallee, convertArgs com ctx (args @ [this]))
+        PhpCall(phpCallee, convertArgs com ctx (this :: args))
 
         
     //| Fable.Operation(Fable.Call(Fable.InstanceCall( Some (Fable.Value(Fable.StringConstant s, _ ))),({ Args = args; ThisArg = Some this} as argInfo)), _, _) ->
@@ -1945,7 +1939,7 @@ let asts =
             |> Fable.Transforms.FableTransforms.transformFile com 
 
 (*
-        let decl = ast.Declarations.[40]
+        let decl = ast.Declarations.[3]
 *)
         phpComp.ClearRequire(__SOURCE_DIRECTORY__ + @"/src/")
         phpComp.SetFile(file + ".php")
@@ -1971,6 +1965,10 @@ let asts =
           Uses = Set.toList phpComp.NsUse
           Decls = decls }
    ]
+
+//let (Fable.MemberDeclaration d) = decl
+//let (Fable.MemberDeclaration d2) = ast.Declarations.[123]
+//d2.Body
 
 //asts.[1].Declarations.[11]
 //asts.[0].UsedNamesInRootScope |> Set.toList

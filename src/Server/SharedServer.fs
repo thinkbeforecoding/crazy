@@ -104,6 +104,7 @@ let bgaUpdateZombieState (board: UndoableBoard) changeState =
         | Ko _ -> ()
     | Won _ -> changeState "nextPlayer"
     | _ -> ()
+
 let bgaNextPlayer (board: UndoableBoard) =
     match board.Board with
     | Board b ->

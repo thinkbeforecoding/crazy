@@ -165,20 +165,24 @@ function getEnumerator($enum) {
 
 class Enumerator {
     public $iter;
+    public $started;
     function __construct($iter)
     {
         $this->iter = $iter;
+        $this->started = false;
     }
 
     public function MoveNext() {
-        $iter->next();
-        return $iter->valid();
+        if (!$this->started)
+        {
+            $this->started = true; 
+            return $this->iter->valid();
+        }
+        $this->iter->next();
+        return $this->iter->valid();
     }
 
     public function get_Current() {
-        return $iter->current();
+        return $this->iter->current();
     }
-
-
-
 }

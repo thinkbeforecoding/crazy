@@ -347,7 +347,7 @@ function collect($projection, $list)
 
 function groupBy($property, $list)
 {
-    $comparer = [ 'Compare' => function () {     return function ($x, $y) {     return \Util\compare($x, $y); }; } ];
+    $comparer = [ 'Compare' => function ($x, $y) {     return \Util\compare($x, $y); } ];
     $map = \Map\_empty($comparer);
 
     while($list instanceof Cons)
@@ -428,7 +428,7 @@ function maxBy($property, $list, $comparerArray)
 {
     $max = NULL;
     $maxVal = NULL;
-    $comparer = $comparerArray['Compare']();
+    $comparer = $comparerArray['Compare'];
     while($list instanceof Cons)
     {
         $prop = $property($list->value);

@@ -1,4 +1,6 @@
 <?php
+require_once('Fable/List.php');
+
 
 // converts an object tree to another that
 // can be converted to json
@@ -6,7 +8,7 @@ function convertToJson($obj) {
     if (is_null($obj)) {
         return NULL;
     }
-    else if ($obj instanceof \FSharpList)
+    else if ($obj instanceof \FSharpList\FSharpList)
     {
         $array = [];
         foreach($obj as $value)
@@ -17,14 +19,21 @@ function convertToJson($obj) {
         return [ '_list' => $array];
 
     }
-    else if ($obj instanceof \Union)
+    else if ($obj instanceof \FSharpUnion)
     {
         $props = [];
+        $r = new \ReflectionClass($obj);
         foreach(get_object_vars($obj) as $prop => $value)
         {
             $props[] = convertToJson($value);
         }
-        return ['_case' => $obj->get_Case(), 'fields' => $props ];
+        $array = ['_case' => $r->getShortName(), 'fields' => $props ];
+        $ns = $r->getNamespaceName();
+        if ($ns) {
+            $array['_ns'] = $ns;
+        }
+
+        return $array;
     }
     else if (is_array($obj))
     {
@@ -38,7 +47,13 @@ function convertToJson($obj) {
     else if (is_object($obj))
     {
         $props = [];
-        $props['_type'] = get_class($obj);
+        $r = new \ReflectionClass($obj);
+        $props['_type'] = $r->getShortName();
+        $ns = $r->getNamespaceName();
+        if ($ns) {
+            $props['_ns'] = $ns;
+        }
+
         foreach(get_object_vars($obj) as $prop => $value)
         {
             $props[$prop] = convertToJson($value);
@@ -61,10 +76,19 @@ function fixNamespace($name)
         case 'Goal_Individual': 
         case 'UndoType_NoUndo': 
         case 'UndoType_FullUndo':
+        case 'UndoType_DontUndoCards':
+        case 'GoalType_Fast':
+        case 'GoalType_Regular':
+        case 'GoalType_Expert':
              return '\\Shared\\'.$name;
-        default: return '\\SharedGame\\'.$name;
+        default:
+             if (strpos($name, '\\'))
+             {
+                return $name;
+             }
+            else 
+                return '\\SharedGame\\'.$name;
     }
-
 }
 
 // converts a json parsed object tree
@@ -78,7 +102,14 @@ function convertFromJson($json) {
     {
         if (property_exists($json, '_case'))
         {
-            $case = fixNamespace($json->_case);
+            if (property_exists($json, '_ns'))
+            {
+                $case = $json->_ns . "\\" . $json->_case;
+            }
+            else
+            {
+                $case = fixNamespace($json->_case);
+            }
 
             $args=[];
             foreach($json->fields as $value)
@@ -91,11 +122,18 @@ function convertFromJson($json) {
         }
         if (property_exists($json, '_type'))
         {
-            $type = fixNamespace($json->_type);
+            if (property_exists($json, '_ns'))
+            {
+                $type = $json->_ns . "\\" . $json->_type;
+            }
+            else
+            {
+                $type = fixNamespace($json->_type);
+            }
             $args=[];
             foreach(get_object_vars($json) as $prop => $value)
             {
-                if ($prop != '_type')
+                if ($prop != '_type' && $prop != '_ns')
                 {
                     $args[] = convertFromJson($value);
                 }
@@ -141,7 +179,7 @@ function convertToSimpleJson($obj) {
     if (is_null($obj)) {
         return NULL;
     }
-    else if ($obj instanceof \FSharpList)
+    else if ($obj instanceof \FSharpList\FSharpList)
     {
         $array = [];
         foreach($obj as $value)

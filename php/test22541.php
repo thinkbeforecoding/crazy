@@ -2,18 +2,25 @@
     <body>
     <?php
         function bga_rand($min,$max) { return rand($min,$max); }
-        require 'lib.php';
-        include 'Serialization.php';
+        require_once 'lib.php';
+        require_once 'Serialization.php';
 
         use \SharedGame\BoardCommand_Play, \SharedGame\Command_Move, \SharedGame\PlayerMove, \SharedGame\Direction_Up, \SharedGame\Direction_Down, \SharedGame\Crossroad, \SharedGame\Axe, \SharedGame\CrossroadSide_CLeft, \SharedGame\CrossroadSide_CRight;
 
         function echo_list ($name, $l)
         {
             echo "<p>",$name,"</p><ul>";
-            foreach($l as $e)
+            $enumerator = \Util\getEnumerator($l);
+            while ($enumerator->MoveNext())
             {
+                $e = $enumerator->get_Current();
+
                 echo "<li>", var_dump($e), "</li>";
             }
+            // foreach ($l as $e)
+            // {
+            //     echo "<li>", var_dump($e), "</li>";
+            // }
             echo "</ul>";
             
         }
@@ -393,3 +400,21 @@
         $results = \SharedGame\BoardModule_decide($cmd, $newBoard);
     
         echo_list("events", $results);
+
+        echo "<br/><br/>";
+
+        $json = json_encode( convertToSimpleJson($results));
+
+        echo($json);
+        echo "<br/><br/>";
+        
+        $json = json_encode( convertToJson($results));
+
+        echo($json);
+        echo "<br/><br/>";
+
+
+        $d = convertFromJson(json_decode($json));
+
+        var_dump($d);
+        
