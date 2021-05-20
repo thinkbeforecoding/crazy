@@ -39,7 +39,7 @@ function privateBoard($playerId, $board) {
 
 #2
 function privateUndoableBoard($playerId, $undoboard) {
-    return new \SharedGame\UndoableBoard(privateBoard($playerId, $undoboard->Board), privateBoard($playerId, $undoboard->UndoPoint), $undoboard->UndoType, $undoboard->ShouldShuffle, $undoboard->AtUndoPoint);
+    return new \SharedGame\UndoableBoard(privateBoard($playerId, $undoboard->Board), privateBoard($playerId, $undoboard->UndoPoint), $undoboard->UndoType, $undoboard->ShouldShuffle, $undoboard->AtUndoPoint, $undoboard->Undone);
 }
 
 #3
@@ -75,24 +75,24 @@ function bgaUpdateState($events, $board, $zombie, $state, $changeState, $elimina
             while ($enumerator->MoveNext()) {
                 $e = $enumerator->get_Current();
                 if ($e->get_Tag() == 2) {
-                    return $changeState('next');
+                    $changeState('next');
                 } else {
                     if ($e->get_Tag() == 4) {
-                        return $changeState('endGame');
+                        $changeState('endGame');
                     } else {
                         if ($e->get_Tag() == 5) {
-                            return $changeState('endGame');
+                            $changeState('endGame');
                         } else {
                             if ($e->get_Tag() == 6) {
-                                return $changeState('endGame');
+                                $changeState('endGame');
                             } else {
                                 if ($e->get_Tag() == 0) {
                                     if ($e->Item2->get_Tag() == 0) {
-                                        return $changeState('selectFirstCrossroad');
+                                        $changeState('selectFirstCrossroad');
                                     } else {
                                         if ($e->Item2->get_Tag() == 19) {
                                             $p = $e->Item1;
-                                            return $eliminatePlayer($p);
+                                            $eliminatePlayer($p);
                                         } else {
                                             switch ($e->Item2->get_Tag())
                                             {
@@ -104,28 +104,29 @@ function bgaUpdateState($events, $board, $zombie, $state, $changeState, $elimina
                                                         switch ($matchValue_1->get_Tag())
                                                         {
                                                             case 0:
-                                                                return $changeState('restart');
+                                                                $changeState('restart');
+                                                                break;
                                                             case 1:
                                                                 $player = $matchValue_1->Item;
                                                                 if (\SharedGame\Player_canMove($p_1, $board->Board)) {
-                                                                    return $changeState('canMove');
+                                                                    $changeState('canMove');
                                                                 } else {
                                                                     if (\SharedGame\HandModule_canPlay($player->Hand)) {
                                                                         if (\SharedGame\HandModule_shouldDiscard($player->Hand)) {
-                                                                            return $changeState('shouldDiscard');
+                                                                            $changeState('shouldDiscard');
                                                                         } else {
-                                                                            return $changeState('endTurn');
+                                                                            $changeState('endTurn');
                                                                         }
                                                                     } else {
-                                                                        return NULL;
                                                                     }
                                                                 }
+                                                                break;
                                                             default:
-                                                                return NULL;
+                                                                break;
                                                         }
                                                     } else {
-                                                        return NULL;
                                                     }
+                                                    break;
                                                 default:
                                                     $p_2 = $e->Item1;
                                                     $matchValue_2 = $board->Board;
@@ -134,29 +135,27 @@ function bgaUpdateState($events, $board, $zombie, $state, $changeState, $elimina
                                                         if ($matchValue_3->get_Tag() == 1) {
                                                             $player_1 = $matchValue_3->Item;
                                                             if (\SharedGame\Player_canMove($p_2, $board->Board)) {
-                                                                return $changeState('canMove');
+                                                                $changeState('canMove');
                                                             } else {
                                                                 if (\SharedGame\HandModule_canPlay($player_1->Hand)) {
                                                                     if (\SharedGame\HandModule_shouldDiscard($player_1->Hand)) {
-                                                                        return $changeState('shouldDiscard');
+                                                                        $changeState('shouldDiscard');
                                                                     } else {
-                                                                        return $changeState('endTurn');
+                                                                        $changeState('endTurn');
                                                                     }
                                                                 } else {
-                                                                    return $changeState('endTurn');
+                                                                    $changeState('endTurn');
                                                                 }
                                                             }
                                                         } else {
-                                                            return NULL;
                                                         }
                                                     } else {
-                                                        return NULL;
                                                     }
+                                                    break;
                                             }
                                         }
                                     }
                                 } else {
-                                    return NULL;
                                 }
                             }
                         }
@@ -209,16 +208,16 @@ function bgaNextPlayer($board) {
     switch ($matchValue->get_Tag())
     {
         case 0:
-            $_target__352 = 1;
+            $_target__354 = 1;
             break;
         case 2:
-            $_target__352 = 1;
+            $_target__354 = 1;
             break;
         default:
-            $_target__352 = 0;
+            $_target__354 = 0;
             break;
     }
-    switch ($_target__352)
+    switch ($_target__354)
     {
         case 0:
             $b = $matchValue->Item;
@@ -275,9 +274,9 @@ function bgaScore($events, $board, $updateScore) {
                 $forLoopVar = $enumerator->get_Current();
                 $pid = $forLoopVar[0];
                 if ($forLoopVar[1]->get_Tag() == 2) {
-                    return $updateScore([ $pid, 0, 0]);
+                    $updateScore([ $pid, 0, 0]);
                 } else {
-                    return $updateScore([ $pid, 1, 0]);
+                    $updateScore([ $pid, 1, 0]);
                 }
             }
         }
@@ -298,9 +297,9 @@ function bgaScore($events, $board, $updateScore) {
                         $forLoopVar = $enumerator->get_Current();
                         $pid = $forLoopVar[0];
                         if ($forLoopVar[1]->get_Tag() == 2) {
-                            return $updateScore([ $pid, 0, 0]);
+                            $updateScore([ $pid, 0, 0]);
                         } else {
-                            return $updateScore([ $pid, 1, 0]);
+                            $updateScore([ $pid, 1, 0]);
                         }
                     }
                 }
@@ -324,14 +323,13 @@ function bgaScore($events, $board, $updateScore) {
                                     while ($enumerator_2->MoveNext()) {
                                         $forLoopVar_1 = $enumerator_2->get_Current();
                                         $player_1 = $forLoopVar_1[1];
-                                        return $updateScore([ $forLoopVar_1[0], \SharedGame\Player_principalFieldSize($player_1), \SharedGame\Player_fieldTotalSize($player_1)]);
+                                        $updateScore([ $forLoopVar_1[0], \SharedGame\Player_principalFieldSize($player_1), \SharedGame\Player_fieldTotalSize($player_1)]);
                                     }
                                 }
                                 finally {
                                     if ($enumerator_2 instanceof IDisposable) {
-                                        return $enumerator_2->Dispose();
+                                        $enumerator_2->Dispose();
                                     } else {
-                                        return NULL;
                                     }
                                 }
                             } else {
@@ -344,25 +342,23 @@ function bgaScore($events, $board, $updateScore) {
                                                 while ($enumerator_2->MoveNext()) {
                                                     $forLoopVar_1 = $enumerator_2->get_Current();
                                                     $player_1 = $forLoopVar_1[1];
-                                                    return $updateScore([ $forLoopVar_1[0], \SharedGame\Player_principalFieldSize($player_1), \SharedGame\Player_fieldTotalSize($player_1)]);
+                                                    $updateScore([ $forLoopVar_1[0], \SharedGame\Player_principalFieldSize($player_1), \SharedGame\Player_fieldTotalSize($player_1)]);
                                                 }
                                             }
                                             finally {
                                                 if ($enumerator_2 instanceof IDisposable) {
-                                                    return $enumerator_2->Dispose();
+                                                    $enumerator_2->Dispose();
                                                 } else {
-                                                    return NULL;
                                                 }
                                             }
+                                            break;
                                         default:
-                                            return NULL;
+                                            break;
                                     }
                                 } else {
-                                    return NULL;
                                 }
                             }
                         } else {
-                            return NULL;
                         }
                     }
                 }
@@ -398,17 +394,17 @@ function textAction($previous, $b, $e) {
     {
         case 1:
             $board = $matchValue->Item;
-            $_target__353 = 0;
+            $_target__355 = 0;
             break;
         case 2:
             $board = $matchValue->Item2;
-            $_target__353 = 0;
+            $_target__355 = 0;
             break;
         default:
-            $_target__353 = 1;
+            $_target__355 = 1;
             break;
     }
-    switch ($_target__353)
+    switch ($_target__355)
     {
         case 0:
             $playerName = function ($p) use ($board) { 
@@ -564,13 +560,13 @@ class Stats implements IComparable {
         $this->PlayerStats = $PlayerStats;
     }
     function CompareTo($other) {
-        $_cmp__354 = $this->TableStats->CompareTo($other->TableStats);
-        if ($_cmp__354 != 0) {
-            return $_cmp__354;
+        $_cmp__356 = $this->TableStats->CompareTo($other->TableStats);
+        if ($_cmp__356 != 0) {
+            return $_cmp__356;
         }        
-        $_cmp__355 = $this->PlayerStats->CompareTo($other->PlayerStats);
-        if ($_cmp__355 != 0) {
-            return $_cmp__355;
+        $_cmp__357 = $this->PlayerStats->CompareTo($other->PlayerStats);
+        if ($_cmp__357 != 0) {
+            return $_cmp__357;
         }        
         return 0;
     }
@@ -585,13 +581,13 @@ class UndoableStats implements IComparable {
         $this->UndoPoint = $UndoPoint;
     }
     function CompareTo($other) {
-        $_cmp__356 = $this->Stats->CompareTo($other->Stats);
-        if ($_cmp__356 != 0) {
-            return $_cmp__356;
+        $_cmp__358 = $this->Stats->CompareTo($other->Stats);
+        if ($_cmp__358 != 0) {
+            return $_cmp__358;
         }        
-        $_cmp__357 = $this->UndoPoint->CompareTo($other->UndoPoint);
-        if ($_cmp__357 != 0) {
-            return $_cmp__357;
+        $_cmp__359 = $this->UndoPoint->CompareTo($other->UndoPoint);
+        if ($_cmp__359 != 0) {
+            return $_cmp__359;
         }        
         return 0;
     }
@@ -879,14 +875,13 @@ function updateStats($es, $stats, $setStat) {
             try {
                 while ($enumerator_2->MoveNext()) {
                     $forLoopVar_2 = $enumerator_2->get_Current();
-                    return $setStat($forLoopVar_2[1], $forLoopVar_2[0], $player);
+                    $setStat($forLoopVar_2[1], $forLoopVar_2[0], $player);
                 }
             }
             finally {
                 if ($enumerator_2 instanceof IDisposable) {
-                    return $enumerator_2->Dispose();
+                    $enumerator_2->Dispose();
                 } else {
-                    return NULL;
                 }
             }
         }

@@ -6,7 +6,7 @@ type Axe = Axe of q:int * r:int
     with
     static member (+) (Axe(q1,r1), Axe(q2,r2)) =
         Axe(q1+q2, r1+r2)
-    static member ( * ) (a,Axe(q,r)) =
+    static member (*) (a,Axe(q,r)) =
         Axe(q*a, r*a)
 
     member this.Q = match this with Axe(q,_) -> q 
@@ -326,6 +326,7 @@ type UndoableBoard =
       UndoType: UndoType
       ShouldShuffle: bool
       AtUndoPoint: bool
+      Undone: bool
     }
 
 
@@ -374,7 +375,8 @@ type UndoBoardState =
       SUndoPoint: BoardState
       SUndoType: string
       SShouldShuffle: bool
-      SAtUndoPoint: bool }
+      SAtUndoPoint: bool
+      SUndone: bool }
     
 
 
@@ -1735,7 +1737,8 @@ module Board =
           UndoPoint = InitialState
           UndoType = NoUndo
           ShouldShuffle = false 
-          AtUndoPoint = true }
+          AtUndoPoint = true
+          Undone = false}
 
     [<CompiledName("BoardCommand")>]
     type Command =
@@ -1834,7 +1837,7 @@ module Board =
             else
                 Lead leadsids
 
-    let next shouldShuffle repeated state =
+    let next shouldShuffle undone repeated state =
         let playerId = state.Table.Player
         let player = Map.tryFind playerId state.Players
         let nextPlayerId = state.Table.Next.Player 
@@ -1848,7 +1851,7 @@ module Board =
                Bonus.endTurn bonus
                |> List.map (fun c -> Played(playerId, Player.BonusDiscarded c))
 
-          if shouldShuffle then
+          if shouldShuffle && undone then
             match state.DrawPile with
             | PublicHand drawPile -> yield DrawPileShuffled (DrawPile.shuffle state.UseGameOver drawPile)
             | PrivateHand _ -> ()
@@ -2119,7 +2122,8 @@ module Board =
              UndoPoint = board
              UndoType = s.Undo
              ShouldShuffle = false
-             AtUndoPoint = false }
+             AtUndoPoint = false
+             Undone = false}
         | InitialState, _ -> state
         | Board _, Started _ -> state
         | Board board, GameWon player
@@ -2128,21 +2132,24 @@ module Board =
                 { state with
                     Board = won 
                     UndoPoint = won
-                    AtUndoPoint = true }
+                    AtUndoPoint = true
+                    Undone = false }
         | Board board, GameEnded players
             -> 
                 let won = Won(players, board)
                 { state with
                     Board = won 
                     UndoPoint = won
-                    AtUndoPoint = true }
+                    AtUndoPoint = true
+                    Undone = false}
         | Board board, GameEndedByRepetition
             -> 
                 let won = Won([], board)
                 { state with
                     Board = won
                     UndoPoint = won
-                    AtUndoPoint = true }
+                    AtUndoPoint = true
+                    Undone = false}
         | Board _, RepetitionDetected _ ->
             state
 
@@ -2187,7 +2194,7 @@ module Board =
                 { state with Board = newBoard; ShouldShuffle = true; AtUndoPoint = false }
             | _ -> { state with Board = newBoard }
         | Board _, UndoCheckPointed ->
-                { state with UndoPoint = state.Board; ShouldShuffle = false; AtUndoPoint = true  }
+                { state with UndoPoint = state.Board; ShouldShuffle = false; AtUndoPoint = true; Undone = false  }
             
 
         | Board board, HayBalesPlaced (added, removed) ->
@@ -2265,7 +2272,8 @@ module Board =
                          AtUndoPoint = false}
         | _, Played (_, Player.Undone) -> 
             { state with Board = state.UndoPoint
-                         AtUndoPoint = true }
+                         AtUndoPoint = true
+                         Undone = true}
 
         | Board board, Played (playerid,e) ->
             let player = Player.evolve board.Players.[playerid] e
@@ -2517,8 +2525,8 @@ module Board =
 
                     match  History.repetitions playerId boardPos board.History with
                     | n when n >= 2 -> [ GameEndedByRepetition ]
-                    | 1 -> next state.ShouldShuffle true board
-                    | _ -> next state.ShouldShuffle false board
+                    | 1 -> next state.ShouldShuffle state.Undone true board
+                    | _ -> next state.ShouldShuffle state.Undone false board
                 | _ -> []
             else
                 []
@@ -2544,24 +2552,31 @@ module Board =
             if playerid = board.Table.Player then
                 (state, [])
                 |> cont (fun board _ ->
+                    let isValid =
+                        match cmd with
+                        | Player.Move m when Player.possibleMoves (Some playerid) state.Board |> List.exists(function Move(d,c) -> d= m.Direction && c=m.Destination | _ -> false ) |> not -> false
+                        | _ -> true
 
-                    let events = 
-                        Player.decide others board.Barns board.HayBales (fun() -> bribeParcels board) cmd player
-                    // return cards action
-                    // and bonus effects
-                    [ for e in events do
-                        Played(playerid,e)
+                    if isValid then
+                        let events = 
+                            Player.decide others board.Barns board.HayBales (fun() -> bribeParcels board) cmd player
+                        // return cards action
+                        // and bonus effects
+                        [ for e in events do
+                            Played(playerid,e)
 
-                      for e in events do
-                        match e with
-                        | Player.CardPlayed (PlayRut victim) -> 
-                            Played(victim, Player.Rutted)
-                        | Player.CardPlayed (PlayHayBale(added,removed)) ->
-                            HayBalesPlaced(added, removed)
-                        | Player.CardPlayed (PlayDynamite bale) ->
-                            HayBaleDynamited bale
-                        | _ -> ()
-                    ])
+                          for e in events do
+                            match e with
+                            | Player.CardPlayed (PlayRut victim) -> 
+                                Played(victim, Player.Rutted)
+                            | Player.CardPlayed (PlayHayBale(added,removed)) ->
+                                HayBalesPlaced(added, removed)
+                            | Player.CardPlayed (PlayDynamite bale) ->
+                                HayBaleDynamited bale
+                            | _ -> ()
+                        ]
+                    else
+                        [])
                 |> cont (fun board _ ->
 
                         let player = board.Players.[playerid]
@@ -2813,7 +2828,8 @@ module Board =
             | DontUndoCards -> "DontUndoCards"
             | NoUndo -> "NoUndo"
           SShouldShuffle = s.ShouldShuffle
-          SAtUndoPoint = s.AtUndoPoint }
+          SAtUndoPoint = s.AtUndoPoint
+          SUndone = s.Undone }
 
 
     let ofState (board: BoardState) =
@@ -2856,7 +2872,8 @@ module Board =
             | "DontUndoCards" -> DontUndoCards
             |  _ -> FullUndo 
           ShouldShuffle = s.SShouldShuffle
-          AtUndoPoint = s.SAtUndoPoint}
+          AtUndoPoint = s.SAtUndoPoint
+          Undone = s.SUndone }
 
 
 

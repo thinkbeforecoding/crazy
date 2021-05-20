@@ -1829,13 +1829,13 @@ and convertExprToStatement (com: Fable.Compiler) ctx expr returnStrategy =
             )]
             
     | Fable.WhileLoop(guard, body, _) -> 
-        [ WhileLoop(convertExpr com ctx guard, convertExprToStatement com ctx body returnStrategy ) ]
+        [ WhileLoop(convertExpr com ctx guard, convertExprToStatement com ctx body Do ) ]
     | Fable.ForLoop(ident, start, limit, body, isUp, _) ->
         let id = fixName ident.Name
         let startExpr =  convertExpr com ctx  start
         ctx.AddLocalVar(id, false)
         let limitExpr = convertExpr com ctx  limit
-        let bodyExpr = convertExprToStatement com ctx body returnStrategy
+        let bodyExpr = convertExprToStatement com ctx body Do
 
         [ ForLoop(id,startExpr, limitExpr, isUp, bodyExpr)]
         
