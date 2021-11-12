@@ -382,7 +382,7 @@ class Php {
 
 #10
 function cardIcon($card) {
-    return '<div class="cardicon"><div class="' . \SharedGame\Client_cardName($card) . '"></div></div>';
+    return '<div class="cardicon"><div class="card ' . \SharedGame\Client_cardName($card) . '"></div></div>';
 }
 
 #11

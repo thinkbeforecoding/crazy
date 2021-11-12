@@ -7193,41 +7193,41 @@ function BoardModule_ofUndoState($s) {
 #253
 function Client_cardName($_arg1) {
     if ($_arg1->get_Tag() == 1) {
-        return 'card rut';
+        return 'rut';
     } else {
         if ($_arg1->get_Tag() == 2) {
             switch ($_arg1->power->get_Tag())
             {
                 case 1:
-                    return 'card hay-bale-2';
+                    return 'hay-bale-2';
                 default:
-                    return 'card hay-bale-1';
+                    return 'hay-bale-1';
             }
         } else {
             if ($_arg1->get_Tag() == 3) {
-                return 'card dynamite';
+                return 'dynamite';
             } else {
                 if ($_arg1->get_Tag() == 4) {
-                    return 'card high-voltage';
+                    return 'high-voltage';
                 } else {
                     if ($_arg1->get_Tag() == 5) {
-                        return 'card watchdog';
+                        return 'watchdog';
                     } else {
                         if ($_arg1->get_Tag() == 6) {
-                            return 'card helicopter';
+                            return 'helicopter';
                         } else {
                             if ($_arg1->get_Tag() == 7) {
-                                return 'card bribe';
+                                return 'bribe';
                             } else {
                                 if ($_arg1->get_Tag() == 8) {
-                                    return 'card gameover';
+                                    return 'gameover';
                                 } else {
                                     switch ($_arg1->power->get_Tag())
                                     {
                                         case 1:
-                                            return 'card nitro-2';
+                                            return 'nitro-2';
                                         default:
-                                            return 'card nitro-1';
+                                            return 'nitro-1';
                                     }
                                 }
                             }

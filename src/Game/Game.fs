@@ -237,7 +237,8 @@ let playersDashboard model dispatch =
                                             Player = player 
                                             IsActive = currentPlayer = playerid
                                             Goal = match board.Goal with | Individual _ as g -> Some g | _ -> None 
-                                            PlayingBoard = board } null dispatch
+                                            PlayingBoard = board
+                                            Id = playerid } null dispatch
 
                                if model.DashboardOpen then
                                    handView dispatch false model.PlayerId board model.CardAction (Player.hand player) false
@@ -245,9 +246,10 @@ let playersDashboard model dispatch =
                                //goalView board
        
                            ]
+
                        match board.Goal with
                        | Common goal ->
-                           commonGoal board goal
+                           commonGoal "common" board goal
                        | _ -> () ]
                ]
            if model.DashboardOpen then

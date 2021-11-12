@@ -171,7 +171,7 @@ let inline (==>) k v = k, box v
 
 let cardIcon card =
     let cardName = Client.cardName card
-    "<div class=\"cardicon\"><div class=\"" + cardName + "\"></div></div>"
+    "<div class=\"cardicon\"><div class=\"card " + cardName + "\"></div></div>"
 
 
 let textAction (previous: UndoableBoard) (b: UndoableBoard)  e = 

@@ -295,7 +295,8 @@ let playerBoard board playerid (player: CrazyPlayer) dispatch =
                      Player = player
                      IsActive = playerid = board.Table.Player
                      Goal = Some board.Goal
-                     PlayingBoard = board}
+                     PlayingBoard = board
+                     Id = playerid}
                    cards
                    dispatch
 
@@ -351,13 +352,13 @@ let playersHand model dispatch =
         | Board board 
         | Won(_,board) ->
             
-            handView dispatch true model.PlayerId board model.CardAction (Player.hand board.Players.[playerId])
+            handView dispatch true model.PlayerId board model.CardAction (Player.hand board.Players.[playerId]) true
         | _ -> null
     | None -> 
         match model.Board.Board with
         | Board board 
         | Won(_,board) ->
-            handView dispatch true model.PlayerId board None Hand.empty
+            handView dispatch true model.PlayerId board None Hand.empty true
         | _ -> null
         
 
@@ -376,6 +377,105 @@ let playedCard dispatch card =
            OnAnimationEnd (fun _ -> dispatch HidePlayedCard) ]
           [ div [ClassName ("card " + Client.cardName c)] [] ]
     | None -> null
+let playersDashboard model dispatch =
+   match model.Board.Board with
+   | InitialState -> null
+   | Board board
+   | Won(_,board) ->
+
+       div [ ClassName "header"] [
+           div [ ClassName "dash"] [
+               span [ OnClick (fun _ -> dispatch SwitchDashboard)]
+                   [ bars ]
+               div [ classBaseList "dashboard" [ "closed",not model.DashboardOpen  ] ]
+                   [  
+
+
+                       let currentPlayer = board.Table.Player
+                       for playerid in board.Table.AllPlayers do
+                           let player = board.Players.[playerid]
+                           div[ classBaseList "player-dashboard" [ "local", Some playerid = model.PlayerId ]] [
+                               playerInfo { Name = Some(board.Table.Names.[playerid])
+                                            Player = player 
+                                            IsActive = currentPlayer = playerid
+                                            Goal = match board.Goal with | Individual _ as g -> Some g | _ -> None 
+                                            PlayingBoard = board
+                                            Id = playerid } null dispatch
+
+                               if model.DashboardOpen then
+                                   handView dispatch false model.PlayerId board model.CardAction (Player.hand player) false
+
+                               //goalView board
+       
+                           ]
+
+                       match board.Goal with
+                       | Common goal ->
+                           commonGoal "common" board goal
+                       | _ -> () ]
+               ]
+           if model.DashboardOpen then
+               div [ ClassName "help"] [ 
+                   let currentPlayer = board.Table.Player
+                   let isActive = model.PlayerId.IsSome && currentPlayer = model.PlayerId.Value
+                   let player = board.Players.[board.Table.Player]
+                   if isActive then
+                       match player with
+                       | Starting p ->
+                           span [] [
+                               str (sprintf "Let's go ! Select a crossroad around your %s field to start." (translatedColorName p.Color) )
+                           ]
+                       | Playing p ->
+                           span [] [
+                               if Moves.canMove p.Moves then
+                                   if p.Power = PowerDown then
+                                       str "You're fence has been cut. Go back to your field to draw a new one. "
+                                       match p.Bonus.Rutted with
+                                       | 0 -> ()
+                                       | 1 ->
+                                           str "You're victime of a rut, you lost 2 moves. "
+                                       | n ->
+                                           str (sprintf "You're victime of %d ruts, you lost %d moves. " n (n*2))
+                                   elif p.Moves.Done = 0 then
+                                       match p.Bonus.Rutted with
+                                       | 0 ->
+                                           if p.Moves.Acceleration then
+                                               str "You started the turn with at least 4 fences, you get an extra move. "
+                                           else
+                                               str "You have 3 moves this turn. "
+                                       | 1 ->
+                                           str "You're victime of a rut, you lost 2 moves. "
+                                       | n ->
+                                           str (sprintf "You're victime of %d ruts, you lost %d moves. " n (n*2))
+
+                                        
+                                   str "Select a crossroad around you to move. "
+                                   if not (Hand.isEmpty p.Hand) then
+                                       str "You can also play a card."
+                               else
+                                   let boardPos = History.createPos board
+                                   match History.repetitions board.Table.Player boardPos board.History with
+                                   | 1 -> str "Danger ! The game has already been exactly in this same position once at the end of your turn. On the 3rd time, the game ends in a draw. "
+                                   | 2 -> str "Danger ! The game has already been exactly in this same position twice at the end of your turn. If you end now, the game ends in a draw. "
+                                   | _ -> null
+                                   str "Play a card, or click on your character to end your turn."
+
+
+                               ]
+
+                           if model.Board.UndoType <> NoUndo then
+                               button [ ClassName "undo"; Disabled model.Board.AtUndoPoint; OnClick (fun e -> dispatch Undo; e.preventDefault()) ] [ str "Undo" ]
+                       | Ko _ ->
+                           span [] [
+                               str (sprintf "You're eliminated. Take your revenge in the next game !")
+                           ]
+                   else
+                       span [] [ str "Wait for your turn" ]
+               
+               ]
+          
+       ]
+        
 
 let boardView (model : Model) (dispatch : Msg -> unit) =
     match model.Board.Board with

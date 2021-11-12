@@ -39,6 +39,7 @@ $crazy-green: #CBDE9C;
 $crazy-lightgreen: #D7E5AA;
 $crazy-hay: #FEEBA2;
 $card-ratio: 167.7%;
+$card-ratio-base: 1.677;
 
 body {
     margin: 0;
@@ -102,6 +103,10 @@ body {
     width: 2.5%;
     height: 2.5%;
     position: absolute;
+
+    div {
+        border-radius: 100% !important;
+    }
 }
 
 .tile {
@@ -110,6 +115,11 @@ body {
     width: 9%;
     height: 9%;
     position: absolute;
+
+    div {
+        border-radius: 100% !important;
+    }
+
 
     .tooltiptext {
         visibility: hidden;
@@ -153,6 +163,10 @@ body {
     background-image: url(~img/tiles-2.png);
     background-size: 500% 800%;
     background-position: -400% 0;
+
+    div {
+        border-radius: 100% !important;
+    }
 }
 
 .barn.occupied {
@@ -190,6 +204,10 @@ body {
 
     &.cf-click {
         cursor: pointer;
+
+        div {
+            border-radius: 100% !important;
+        }
     }
 
 /*    &.warn {
@@ -966,6 +984,10 @@ body {
             width: 2em;
             height: 2em;
             z-index: 10;
+
+            div { 
+                border-radius: 100% !important;
+            }
         }
 
         .name {
@@ -1023,11 +1045,22 @@ body {
 
     .moves {
         margin-left: 3.5em;
-
-
     }
 
     .card-info {
+        
+        margin-right: 0.5em;
+
+        .card-over {
+            width: 3em;
+            height: 3em * $card-ratio-base;
+            position: absolute;
+            z-index: 1;
+            div {
+                border-radius: 10%;
+            }
+        }
+
 
         .tooltiptext {
             @include tooltip;
@@ -1042,19 +1075,16 @@ body {
         position: relative;
         overflow: hidden;
         width: 3em;
+        height: 3em*$card-ratio-base;
         justify-self: end;
-        margin-right: 0.5em;
 
 
-        &:before {
-            content: "";
-            display: block;
-            padding-top: $card-ratio;
-        }
 
         div {
             @include hover-count;
             font-size: 1.5em;
+            width: 100%;
+            height: 100%;
             background-image: url(~img/cards-2.jpg);
             background-size: 600% 200%;
             background-position: 0 0;
@@ -1106,8 +1136,6 @@ body {
     .common-goal, .individual-goal {
         font-size: 110%;
         align-self: flex-end;
-
-
     }
 }
 #crazy_undo {
@@ -1160,9 +1188,10 @@ body {
         font-size: 120%;
         text-shadow: 2px 0.2em 0.2em #333;
     }
-    h3 { 
+
+    h3 {
         margin: 0;
-        margin-top: -0.5em; 
+        margin-top: -0.5em;
     }
 
     .hand-title {
@@ -1170,6 +1199,7 @@ body {
         top: 0.3em;
         left: 0.3em;
     }
+
     .hand {
         flex: 1 1 auto;
         display: flex;
@@ -1202,9 +1232,19 @@ body {
     .card {
         flex: 0 1 auto;
         width: 4em;
-        padding-top: $card-ratio;
+        height: 4em * $card-ratio-base;
         position: relative;
         cursor: pointer;
+    }
+
+    .card-click {
+        width: 4em;
+        height: 4em * $card-ratio-base;
+        position: absolute;
+
+        div {
+            border-radius: 10%;
+        }
     }
 
     .played-card {
@@ -1227,6 +1267,10 @@ body {
             width: 3em;
             height: 3em;
             position: static;
+
+            div {
+                border-radius: 100% !important;
+            }
         }
 
         .player:hover {
@@ -1238,19 +1282,17 @@ body {
     .card-count {
         position: relative;
         overflow: hidden;
-        width: 3em;
+        width: 3.4em;
+        height: 3.4em * $card-ratio-base;
         justify-self: end;
         margin-right: 0.5em;
 
 
-        &:before {
-            content: "";
-            display: block;
-            padding-top: $card-ratio;
-        }
 
         div {
             @include hover-count;
+            width: 100%;
+            height: 100%;
             font-size: 1.5em;
             background-image: url(~img/cards-2.jpg);
             background-size: 600% 200%;
@@ -1279,6 +1321,17 @@ body {
 
     .card-info {
 
+        .card-over {
+            width: 3.4em;
+            height: 3.4em * $card-ratio-base;
+            position: absolute;
+            z-index: 1;
+
+            div {
+                border-radius: 10%;
+            }
+        }
+
         .tooltiptext {
             @include tooltip;
         }
@@ -1296,6 +1349,8 @@ body {
 
     .card {
         width: auto;
+        height: auto;
+        padding-top: $card-ratio;
     }
 }
 
@@ -1372,6 +1427,7 @@ body {
         position: static;
         width: 2em;
         height: 2em;
+
     }
 
     .tile-count {
@@ -1562,7 +1618,7 @@ $back-y: 0.15vw;
 div.card {
     /*margin-top: 3em;*/
     width: 5vw;
-    padding-top: $card-ratio; 
+    height: 5vw * $card-ratio-base ;
     border-radius: 0.5vw;
     background-clip: padding-box;
     box-shadow: rgba(0,0,0,0.4) 2px 2px 3px;
@@ -1573,7 +1629,7 @@ div.card {
     .tooltiptext {
         @include tooltip;
         top: 6em;
-        width:8em;
+        width: 8em;
         left: -2em;
         right: auto;
     }
@@ -1692,6 +1748,10 @@ div.back {
             width: 3em;
             height: 3em;
             position: static;
+
+            div {
+                border-radius: 100% !important;
+            }
         }
     }
 
@@ -1748,9 +1808,10 @@ div.back {
     animation-name: fadeout;
     animation-duration: 6s;
     transition-property: opacity;
+
     .card {
         width: 2*5vw;
-        padding-top: $card-ratio;
+        height: 2*5vw*$card-ratio-base;
     }
 }
 

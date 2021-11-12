@@ -151,7 +151,7 @@ let (%%) x y =
 let parcel (Parcel pos) attr = 
     let x,y = Pix.ofTile pos |> Pix.rotate
     let (Axe(q,r)) = pos
-    div ([ Class (sprintf "tile t%d" ((q + r * 3) %% 8 ))
+    div ( [Id (sprintf "cf-parcel-%d-%d" pos.Q pos.R); Class (sprintf "tile t%d" ((q + r * 3) %% 8 ))
            Style [ Left (sprintf "%f%%" x)
                    Top (sprintf "%f%%" y)
                    ]]  @ attr)
@@ -159,7 +159,7 @@ let parcel (Parcel pos) attr =
         []
 let tile (Parcel pos) f = 
     let x,y = Pix.ofTile pos |> Pix.rotate
-    div ([ ClassName "tile empty cf-click"
+    div ([ Id (sprintf "cf-tile-%d-%d" pos.Q pos.R); ClassName "tile empty cf-click"
            Style [ Left (sprintf "%f%%" x)
                    Top (sprintf "%f%%" y)
                    ]
@@ -182,7 +182,7 @@ let tileWithTooltip (Parcel pos) text =
 
 let barn (Parcel pos) occupied = 
     let x,y = Pix.ofTile pos |> Pix.rotate
-    div [ classBaseList "barn" [ "occupied", occupied ]
+    div [ Id (sprintf "cf-barn-%d-%d" pos.Q pos.R); classBaseList "barn" [ "occupied", occupied ]
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y)
                    ]] 
@@ -191,30 +191,30 @@ let barn (Parcel pos) occupied =
 let key (Crossroad(Axe(q,r),s)) =
     sprintf "c-%d-%d-%s" q r (match s with CLeft -> "l" | CRight -> "r")
 
-let drawplayer selected (x,y) =
-    div [ classBaseList "player" ["selected", selected]
+let drawplayer color selected (x,y) =
+    div [ Id (sprintf "cf-player-%s" (colorName color) ); classBaseList "player" ["selected", selected]
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y)
                    ]] 
         []
 
-let drawplayerOnCrossroad pos selected (x,y) =
-    div [ classBaseList "player" [key pos, true; "selected", selected]
+let drawplayerOnCrossroad color pos selected (x,y) =
+    div [ Id (sprintf "cf-player-%s" (colorName color) );  classBaseList "player" [key pos, true; "selected", selected]
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y)
                    ]] 
         []
 
-let player active pos =
+let player color active pos =
     Pix.ofPlayer pos
     |> Pix.rotate
-    |> drawplayerOnCrossroad pos active
+    |> drawplayerOnCrossroad color pos active
 
 let drawcrossroad pos f =
     let x,y = Pix.ofPlayer pos |> Pix.rotate
     let key = key pos
 
-    div [ classBaseList "crossroad" [key, true; "cf-click", match f with Ok _ -> true | _ -> false  ]
+    div [ Id ("cf-" + key); classBaseList "crossroad" [key, true; "cf-click", match f with Ok _ -> true | _ -> false  ]
           Key key
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y) ]
@@ -267,16 +267,26 @@ let fenceClass (Path(Axe(q,r), side)) =
 
     sprintf "b-%d-%d-%s" q r s
 
+let pathKey (Path(pos,side)) =
+    let k =
+        match side with
+        | BN -> "bn"
+        | BNW -> "bnw"
+        | BNE -> "bne"
+
+    sprintf "%d-%d-%s" pos.Q pos.R k
+
 let singleFence path =
     let x,y = Pix.ofFence path |> Pix.rotate
+    let (Path(_,side)) = path
     let rot =
-        match path with
-        | Path(_,BN) -> "rotate(4deg)"
-        | Path(_,BNW) -> "rotate(-56deg)"
-        | Path(_,BNE) -> "rotate(64deg)"
+        match side with
+        | BN -> "rotate(4deg)"
+        | BNW -> "rotate(-56deg)"
+        | BNE -> "rotate(64deg)"
 
     
-    div [ ClassName ("fence " + fenceClass path)
+    div [ Id (sprintf "cf-fence-%s" (pathKey path)); ClassName ("fence " + fenceClass path)
           Style [ Transform rot
                   Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y) ]] 
@@ -284,7 +294,7 @@ let singleFence path =
 
 let haybale p =
     let x,y = Pix.ofFence p |> Pix.translate (0.2,-0.8) |> Pix.rotate
-    div [ ClassName "hay-bale"
+    div [ Id (sprintf "cf-haybale-%s" (pathKey p) ); ClassName "hay-bale"
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y) ]
           ]
@@ -292,7 +302,7 @@ let haybale p =
 
 let path p f =
     let x,y = Pix.ofFence p |> Pix.translate (0.2,-0.8) |> Pix.rotate
-    div [ ClassName "path cf-click"
+    div [ Id (sprintf "cf-path-%s" (pathKey p) ); ClassName "path cf-click"
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y) ]
           OnClick f
@@ -302,7 +312,7 @@ let path p f =
 
 let pathWithTooltip p text =
     let x,y = Pix.ofFence p |> Pix.translate (0.2,-0.8) |> Pix.rotate
-    div [ ClassName "path"
+    div [ Id (sprintf "cf-path-%s" (pathKey p) ); ClassName "path"
           Style [ Left (sprintf "%f%%" x)
                   Top (sprintf "%f%%" y) ]
           ]
@@ -362,13 +372,13 @@ let playerTractor selected p =
     match p with
     | Playing p ->
         div [ ClassName (colorName p.Color) ]
-            [ player selected p.Tractor ]
-    | Starting { Parcel = Parcel p; Color = color } ->
+            [ player p.Color selected p.Tractor ]
+    | Starting ({ Parcel = Parcel p; Color = color } ) ->
         div [ ClassName (colorName color) ]
             [ Pix.ofTile p
               |> Pix.rotate
               |> Pix.translate (3.3,3.3)
-              |> drawplayer selected ]
+              |> drawplayer color selected ]
     | Ko _ -> null
 
 
@@ -384,11 +394,11 @@ let handView dispatch title playerId board cardAction hand showDrawPile =
     let player = Board.currentPlayer board
     let active =  Option.exists (fun p -> p = board.Table.Player) playerId
     let otherPlayers = Board.currentOtherPlayers board
-    let cancel = a [ ClassName "cancel"; Href "#"; OnClick (fun e -> dispatch CancelCard; e.preventDefault())] [ str (translate "Cancel") ]
+    let cancel = a [ Id "cf-cancel"; ClassName "cancel"; Href "#"; OnClick (fun e -> dispatch CancelCard; e.preventDefault())] [ str (translate "Cancel") ]
     let discard card =  
         [ span [] []
-          a [ ClassName "discard"; Href "#"; OnClick (fun e -> dispatch (DiscardCard card); e.preventDefault())] [ str (translate "Discard") ] ]
-    let go = button [ OnClick (fun _ -> dispatch Go )]  [str (translate "Go") ]
+          a [ Id "cf-discard"; ClassName "discard"; Href "#"; OnClick (fun e -> dispatch (DiscardCard card); e.preventDefault())] [ str (translate "Discard") ] ]
+    let go = button [ Id "cf-go"; OnClick (fun _ -> dispatch Go )]  [str (translate "Go") ]
     let action title texts buttons =
         div [ClassName "action" ]
             [ h2 [] [ str title ]
@@ -420,51 +430,55 @@ let handView dispatch title playerId board cardAction hand showDrawPile =
                       for i,c in List.indexed cards do
                        div [ClassName "card-container" ]
                            [
-                                div [ ClassName ("card " + Client.cardName c)
-                                      match cardAction with
-                                      | Some { Index = index } when index = i -> 
-                                            OnClick (fun _ -> dispatch CancelCard)
-                                      | _ -> OnClick (fun _ -> dispatch (SelectCard(c,i))) ] [
-                                        div [ ClassName "tooltiptext" ]
-                                            [ p [] [ str
-                                                  (match c with
-                                                   | Nitro One -> translate "Nitro +1"
-                                                   | Nitro Two -> translate  "Nitro +2"
-                                                   | Rut -> translate "Rut"
-                                                   | HayBale One -> translate  "1 Hay Bale"
-                                                   | HayBale Two -> translate "2 Hay Bales"
-                                                   | Dynamite -> translate "Dynamite"
-                                                   | HighVoltage -> translate "High Voltage"
-                                                   | Watchdog -> translate "Watchdog" 
-                                                   | Helicopter -> translate "Helicopter"
-                                                   | Bribe -> translate "Bribe"
-                                                   | GameOver -> translate "Game over")]
-                                              p [] [ str (translate " (click for full description)")] ] ]
+                                let name = Client.cardName c
+                                div [] [
+                                    div [ ClassName ("card " + name)
+                                          match cardAction with
+                                          | Some { Index = index } when index = i -> 
+                                                OnClick (fun _ -> dispatch CancelCard)
+                                          | _ -> OnClick (fun _ -> dispatch (SelectCard(c,i))) ] [
+                                            div [Id (sprintf "cf-card-%s-%d" name i); ClassName "card-click" ] []
+                                            div [ ClassName "tooltiptext" ]
+                                                [ p [] [ str
+                                                      (match c with
+                                                       | Nitro One -> translate "Nitro +1"
+                                                       | Nitro Two -> translate  "Nitro +2"
+                                                       | Rut -> translate "Rut"
+                                                       | HayBale One -> translate  "1 Hay Bale"
+                                                       | HayBale Two -> translate "2 Hay Bales"
+                                                       | Dynamite -> translate "Dynamite"
+                                                       | HighVoltage -> translate "High Voltage"
+                                                       | Watchdog -> translate "Watchdog" 
+                                                       | Helicopter -> translate "Helicopter"
+                                                       | Bribe -> translate "Bribe"
+                                                       | GameOver -> translate "Game over")]
+                                                  p [] [ str (translate " (click for full description)")] ] ]
+                                ]
 
                                 match cardAction with
                                 | Some { Index = index; Card = Nitro power; Hidden = false} when index = i ->
                                     action ( match power with One -> translate "Nitro +1" | Two -> translate  "Nitro +2") 
                                         [ str (String.format (translate "Gives you {moves} extra move(s) during this turn.") (Map.ofList [ "moves" ==> match power with One -> 1 | Two -> 2  ]))
                                           Standard.i [] [str (translate "(Reminder: max. 5 moves per turn)") ] ]
-                                         [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str (translate "Play") ] 
+                                         [ button [ Id "cf-action"; OnClick (fun _ -> dispatch (PlayCard (PlayNitro power))) ] [ str (translate "Play") ] 
                                            yield! discard (Nitro power)]
                                 | Some { Index = index; Card = Rut; Hidden = false } when index = i ->
                                     action (translate "Rut")
                                         [ str (translate "Choose an opponent; he/she will have two fewer moves during his next turn") ]
                                         [ for playerId, player in otherPlayers do
-                                              div [ OnClick (fun _ -> dispatch (PlayCard (PlayRut playerId)))
+                                              div [ Id (sprintf "cf-action-%s" playerId); OnClick (fun _ -> dispatch (PlayCard (PlayRut playerId)))
                                                     ClassName (colorName (Player.color player)) ] [
                                                         div [ ClassName "player"] [] ] 
                                           yield! discard Rut]
                                 | Some { Index = index; Card = HighVoltage; Hidden = false } when index = i ->
                                     action (translate "High Voltage")
                                         [ str (translate "Protects the entire length of the fence, even the starting point until your next turn. Other tractors cannot go through or cut your fence.") ]
-                                        [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str (translate "Play") ] 
+                                        [ button [ Id "cf-action"; OnClick (fun _ -> dispatch (PlayCard (PlayHighVoltage))) ] [ str (translate "Play") ] 
                                           yield! discard HighVoltage ]
                                 | Some { Index = index; Card = Watchdog; Hidden = false } when index = i ->
                                     action (translate "Watchdog")
                                         [ str (translate "Protects your plots and barns from being annexed until next turn. Annexations by opponents leave your plots and barns in place.") ]
-                                        [ button [ OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str (translate "Play") ] 
+                                        [ button [ Id "cf-action"; OnClick (fun _ -> dispatch (PlayCard (PlayWatchdog))) ] [ str (translate "Play") ] 
                                           yield! discard Watchdog ] 
                                 | Some { Index = index; Card = Helicopter; Hidden = false } when index = i ->
                                     let canUseHelicopter = Player.canUseHelicopter player
@@ -522,8 +536,9 @@ let handView dispatch title playerId board cardAction hand showDrawPile =
                         [ 
                             h3 [] [ str (translate "Draw pile" ) ]
 
-                            div [ClassName "card-info"]
-                              [ div [ ClassName "card-count" ]
+                            div [ ClassName "card-info"]
+                              [ div [ Id (sprintf "cf-drawpile" ); ClassName "card-over"] []
+                                div [ ClassName "card-count" ]
                                     [ 
                                       div [] [span [][str (string (cardCount))]] 
                                        ]
@@ -701,43 +716,43 @@ let bars = i [ ClassName "fas fa-bars"] [
     [ Fable.React.Standard.path [ SVGAttr.Fill "currentColor"; D "M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z" ] []]
     ]
 
-let bonusMarkers bonus =
+let bonusMarkers playerid bonus =
     div [ ClassName "markers"]
         [
-          for _ in  1 .. bonus.Rutted do
-            div [ ClassName "rut-marker" ] [
+          for i in  1 .. bonus.Rutted do
+            div [ Id(sprintf "cf-%s-rut-%d" playerid i); ClassName "rut-marker" ] [
                 tooltip (translate "Rut: The player looses 2 moves")
             ]
-          for _ in 1 .. bonus.NitroOne do
-            div [ ClassName "nitro-1-marker"] [
+          for i in 1 .. bonus.NitroOne do
+            div [ Id(sprintf "cf-%s-nitro-1-%d" playerid i); ClassName "nitro-1-marker"] [
                 tooltip (translate "Nitro+1: The player get 1 extra move")
             ]
-          for _ in 1 .. bonus.NitroTwo do
-            div [ ClassName "nitro-2-marker"] [
+          for i in 1 .. bonus.NitroTwo do
+            div [ Id(sprintf "cf-%s-nitro-2-%d" playerid i); ClassName "nitro-2-marker"] [
                 tooltip (translate "Nitro+2: The player get 2 extra moves")
             ]
           if bonus.HighVoltage then
-            div [ ClassName "highvoltage-marker" ] [
+            div [ Id(sprintf "cf-%s-high-voltage" playerid); ClassName "highvoltage-marker" ] [
                 tooltip (translate "High Voltage: The player's fence is protected until next turn")
             ]
           if bonus.Watched then
-            div [ ClassName "watchdog-marker" ] [
+            div [ Id(sprintf "cf-%s-watched" playerid); ClassName "watchdog-marker" ] [
                 tooltip (translate "Watchdog: The player's field is protected until next turn")
             ]
           if bonus.Heliported > 0 then
-            div [ ClassName "helicopter-marker" ] [
+            div [ Id(sprintf "cf-%s-heliported" playerid); ClassName "helicopter-marker" ] [
                 tooltip (translate "Helicopter: The player cannot cut fences until the end of the turn")
             ]
 
         ]
 
-let commonGoal board goal =
-   div [ ClassName "common-goal" ]
+let commonGoal playerId board goal =
+   div [  ClassName "common-goal" ]
        [ let colors = [ for KeyValue(_,p) in board.Players -> Player.color p]
          for c in colors do
            div [ ClassName ("stack " + colorName c)]
                [ div [ ClassName ("tile")] [] ]
-         div [ClassName "tile-count"]
+         div [ Id (sprintf "cf-%s-tile-count" playerId); ClassName "tile-count"]
            [ let totalSize = Board.totalSize board
              str (string (goal - totalSize))
              tooltip (String.format (translate "Common goal: {goal} parcels / Remaining: {parcels} parcels") (Map.ofList [ "goal" ==> goal; "parcels" ==> (goal - totalSize)]) ) ]
@@ -749,6 +764,7 @@ type PlayerInfo =
       IsActive: bool
       Goal: Goal option
       PlayingBoard: PlayingBoard
+      Id: string
     }
 
 let playerInfo info (cards: ReactElement) dispatch =
@@ -757,14 +773,14 @@ let playerInfo info (cards: ReactElement) dispatch =
             let color = Player.color info.Player
             div [ ClassName "description"]
               [ div [ ClassName (colorName color) ]
-                    [ div [ classBaseList "player" [ "selected", info.IsActive ; "ko", Player.isKo info.Player ] ] []]
+                    [ div [ Id (sprintf "cf-%s-player-icon" info.Id); classBaseList "player" [ "selected", info.IsActive ; "ko", Player.isKo info.Player ] ] []]
                 
                
                 match info.Name with
                 | Some name -> div [ ClassName "name"] [ str name ] 
                 | _ -> ()
                 
-                div [ ClassName "moves" ] 
+                div [  Id (sprintf "cf-%s-moves" info.Id); ClassName "moves" ] 
                     [ if info.IsActive then
                         match info.Player with
                         | Starting _->
@@ -803,21 +819,21 @@ let playerInfo info (cards: ReactElement) dispatch =
                 ]
 
             
-            bonusMarkers (Player.bonus info.Player)
+            bonusMarkers info.Id (Player.bonus info.Player)
             match info.Player, info.Goal with
             | Ko _, _ -> ()
             | _, Some (Individual goal) ->
-               div [ ClassName "individual-goal" ]
+               div [  ClassName "individual-goal" ]
                    [ div [ ClassName ("stack " + colorName color)]
                          [ div [ ClassName ("tile")] []  ]
-                     div [ClassName "tile-count"]
+                     div [Id (sprintf "cf-%s-tile-count" info.Id); ClassName "tile-count"]
                          [ let totalSize = Player.fieldTotalSize info.Player
                            str (string (goal - totalSize))
                            tooltip (String.format (translate "Individual goal: {goal} parcels / Remaining: {parcels} parcels") (Map.ofList [ "goal" ==> goal; "parcels" ==> (goal - totalSize)]))
                            ] 
                    ]
             | _, Some (Common goal) ->
-                commonGoal info.PlayingBoard goal
+                commonGoal info.Id info.PlayingBoard goal
             | _ -> ()
             cards
         ]

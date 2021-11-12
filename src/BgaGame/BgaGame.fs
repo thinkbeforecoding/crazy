@@ -19,20 +19,6 @@ open Fable.SimpleJson
 open SharedClient
 
 console.log("Startgin BGAGame loading")
-//module BGA =
-//    [<Emit "g_gamethemeurl + $0" >]
-//    let relativeUrl url = jsNative
-
-    //[<Emit "ebg.core.gamegui" >]
-    //let gameGui: obj = jsNative
-
-    //[<Emit "$0.isCurrentPlayerActive()">]
-//    abstract isCurrentPlayerActive: unit -> bool
-
-//module Dojo =
-
-//    [<Emit("define($0,$1)")>]
-//    let define (modules: string[], f: obj -> ((string* obj* obj) -> unit) -> unit) = jsNative
 
 module Serialization =
     let rec  parseNative (x: obj) =
@@ -149,18 +135,6 @@ type Bridge(dispatch: ClientMsg -> unit) =
             console.log("crazyfarmers constructor in F#")
             dispatch (Message "constructor")
         member this.setup(playerId, board, version, sendCallback) =
-            
-
-            //let empty = SStarting  
-            //                { SHand =  PublicHand [] 
-            //                  SColor = Blue
-            //                  SBonus = Bonus.empty
-            //                  SParcel = Parcel.center }
-
-            //console.log(SimpleJson.stringify empty)
-            //let players = unbox<obj[][]> board
-            ////let hand = players.[1].[1]?SStarting //.[1]?SHand
-            //console.log(JS.JSON.stringify(board))
 
             let fsBoard = Serialization.ofObjectLiteral board
 
@@ -419,9 +393,10 @@ let playerBoard board playerid (player: CrazyPlayer) dispatch =
         let cardCount = Hand.count hand
         let cards =
             div [ClassName "card-info"]
-              [ div [ ClassName "card-count" ]
+              [ div [ Id (sprintf "cf-%s-card-count" playerid); ClassName "card-over" ] []
+                div [ ClassName "card-count" ]
                     [ 
-                      div [] [span [][str (string (cardCount))]] 
+                      div [ ] [span [][str (string (cardCount))]] 
                        ]
                 tooltip (String.format (Globalization.translate "{cards} cards in hand") (Map.ofList [ "cards" ==> cardCount])) ]
 
@@ -430,7 +405,8 @@ let playerBoard board playerid (player: CrazyPlayer) dispatch =
                      Player = player
                      IsActive = playerid = board.Table.Player
                      Goal = Some board.Goal
-                     PlayingBoard = board}
+                     PlayingBoard = board
+                     Id = playerid}
                    cards
                    dispatch
 
@@ -609,7 +585,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
 open Elmish.Debug
 open Elmish.HMR
 #endif
-console.log("Startgin React loop")
+console.log("Starting React loop")
 Program.mkProgram init update view
 |>  Program.withBrige Remote
 //|> Program.withBridgeConfig
