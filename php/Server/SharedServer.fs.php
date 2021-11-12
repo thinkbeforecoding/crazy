@@ -87,73 +87,71 @@ function bgaUpdateState($events, $board, $zombie, $state, $changeState, $elimina
                                 $changeState('endGame');
                             } else {
                                 if ($e->get_Tag() == 0) {
-                                    if ($e->Item2->get_Tag() == 0) {
-                                        $changeState('selectFirstCrossroad');
-                                    } else {
-                                        if ($e->Item2->get_Tag() == 19) {
+                                    switch ($e->Item2->get_Tag())
+                                    {
+                                        case 0:
+                                            $changeState('selectFirstCrossroad');
+                                            break;
+                                        case 19:
                                             $p = $e->Item1;
                                             $eliminatePlayer($p);
-                                        } else {
-                                            switch ($e->Item2->get_Tag())
-                                            {
-                                                case 20:
-                                                    $p_1 = $e->Item1;
-                                                    $matchValue = $board->Board;
-                                                    if ($matchValue->get_Tag() == 1) {
-                                                        $matchValue_1 = $matchValue->Item->Players->get_Item($p_1);
-                                                        switch ($matchValue_1->get_Tag())
-                                                        {
-                                                            case 0:
-                                                                $changeState('restart');
-                                                                break;
-                                                            case 1:
-                                                                $player = $matchValue_1->Item;
-                                                                if (\SharedGame\Player_canMove($p_1, $board->Board)) {
-                                                                    $changeState('canMove');
-                                                                } else {
-                                                                    if (\SharedGame\HandModule_canPlay($player->Hand)) {
-                                                                        if (\SharedGame\HandModule_shouldDiscard($player->Hand)) {
-                                                                            $changeState('shouldDiscard');
-                                                                        } else {
-                                                                            $changeState('endTurn');
-                                                                        }
-                                                                    } else {
-                                                                    }
-                                                                }
-                                                                break;
-                                                            default:
-                                                                break;
-                                                        }
-                                                    } else {
-                                                    }
-                                                    break;
-                                                default:
-                                                    $p_2 = $e->Item1;
-                                                    $matchValue_2 = $board->Board;
-                                                    if ($matchValue_2->get_Tag() == 1) {
-                                                        $matchValue_3 = $matchValue_2->Item->Players->get_Item($p_2);
-                                                        if ($matchValue_3->get_Tag() == 1) {
-                                                            $player_1 = $matchValue_3->Item;
-                                                            if (\SharedGame\Player_canMove($p_2, $board->Board)) {
-                                                                $changeState('canMove');
-                                                            } else {
-                                                                if (\SharedGame\HandModule_canPlay($player_1->Hand)) {
-                                                                    if (\SharedGame\HandModule_shouldDiscard($player_1->Hand)) {
-                                                                        $changeState('shouldDiscard');
-                                                                    } else {
-                                                                        $changeState('endTurn');
-                                                                    }
+                                            break;
+                                        case 20:
+                                            $p_1 = $e->Item1;
+                                            $matchValue = $board->Board;
+                                            if ($matchValue->get_Tag() == 1) {
+                                                $matchValue_1 = $matchValue->Item->Players->get_Item($p_1);
+                                                switch ($matchValue_1->get_Tag())
+                                                {
+                                                    case 0:
+                                                        $changeState('restart');
+                                                        break;
+                                                    case 1:
+                                                        $player = $matchValue_1->Item;
+                                                        if (\SharedGame\Player_canMove($p_1, $board->Board)) {
+                                                            $changeState('canMove');
+                                                        } else {
+                                                            if (\SharedGame\HandModule_canPlay($player->Hand)) {
+                                                                if (\SharedGame\HandModule_shouldDiscard($player->Hand)) {
+                                                                    $changeState('shouldDiscard');
                                                                 } else {
                                                                     $changeState('endTurn');
                                                                 }
+                                                            } else {
+                                                            }
+                                                        }
+                                                        break;
+                                                    default:
+                                                        break;
+                                                }
+                                            } else {
+                                            }
+                                            break;
+                                        default:
+                                            $p_2 = $e->Item1;
+                                            $matchValue_2 = $board->Board;
+                                            if ($matchValue_2->get_Tag() == 1) {
+                                                $matchValue_3 = $matchValue_2->Item->Players->get_Item($p_2);
+                                                if ($matchValue_3->get_Tag() == 1) {
+                                                    $player_1 = $matchValue_3->Item;
+                                                    if (\SharedGame\Player_canMove($p_2, $board->Board)) {
+                                                        $changeState('canMove');
+                                                    } else {
+                                                        if (\SharedGame\HandModule_canPlay($player_1->Hand)) {
+                                                            if (\SharedGame\HandModule_shouldDiscard($player_1->Hand)) {
+                                                                $changeState('shouldDiscard');
+                                                            } else {
+                                                                $changeState('endTurn');
                                                             }
                                                         } else {
+                                                            $changeState('endTurn');
                                                         }
-                                                    } else {
                                                     }
-                                                    break;
+                                                } else {
+                                                }
+                                            } else {
                                             }
-                                        }
+                                            break;
                                     }
                                 } else {
                                 }
@@ -443,47 +441,35 @@ function textAction($previous, $b, $e) {
                                 return [ clienttranslate('${player} is eliminated!'), \Map\ofList(new Cons([ 'player', $playerName($p_4)], $GLOBALS['NIL']))];
                             } else {
                                 if ($e->Item2->get_Tag() == 10) {
-                                    if ($e->Item2->Item->get_Tag() == 6) {
-                                        $p_5 = $e->Item1;
-                                        return [ clienttranslate('${icon} ${player} is heliported to new crossroad'), \Map\ofList(new Cons([ 'player', $playerName($p_5)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_Helicopter())], $GLOBALS['NIL'])))];
-                                    } else {
-                                        if ($e->Item2->Item->get_Tag() == 4) {
+                                    switch ($e->Item2->Item->get_Tag())
+                                    {
+                                        case 6:
+                                            $p_5 = $e->Item1;
+                                            return [ clienttranslate('${icon} ${player} is heliported to new crossroad'), \Map\ofList(new Cons([ 'player', $playerName($p_5)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_Helicopter())], $GLOBALS['NIL'])))];
+                                        case 4:
                                             $p_6 = $e->Item1;
                                             return [ clienttranslate('${icon} ${player}\'s fence cannot be cut until next turn'), \Map\ofList(new Cons([ 'player', $playerName($p_6)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_HighVoltage())], $GLOBALS['NIL'])))];
-                                        } else {
-                                            if ($e->Item2->Item->get_Tag() == 5) {
-                                                $p_7 = $e->Item1;
-                                                return [ clienttranslate('${icon} ${player} field is protected until next turn'), \Map\ofList(new Cons([ 'player', $playerName($p_7)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_Watchdog())], $GLOBALS['NIL'])))];
-                                            } else {
-                                                if ($e->Item2->Item->get_Tag() == 1) {
-                                                    $p_8 = $e->Item1;
-                                                    $victim = $e->Item2->Item->victim;
-                                                    return [ clienttranslate('${icon} ${player} makes ${rutted} loose 2 moves during next turn'), \Map\ofList(new Cons([ 'player', $playerName($p_8)], new Cons([ 'rutted', $playerName($victim)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_Rut())], $GLOBALS['NIL']))))];
-                                                } else {
-                                                    if ($e->Item2->Item->get_Tag() == 2) {
-                                                        $hb = $e->Item2->Item->path;
-                                                        $p_9 = $e->Item1;
-                                                        $pc = $e->Item2->Item;
-                                                        return [ clienttranslate('${icon} ${player} blocks ${haybales} paths'), \Map\ofList(new Cons([ 'player', $playerName($p_9)], new Cons([ 'haybales', \FSharpList\length($hb)], new Cons([ 'icon', cardIcon(\SharedGame\CardModule_ofPlayCard($pc))], $GLOBALS['NIL']))))];
-                                                    } else {
-                                                        if ($e->Item2->Item->get_Tag() == 3) {
-                                                            $p_10 = $e->Item1;
-                                                            return [ clienttranslate('${icon} ${player} dynamites 1 hay bale'), \Map\ofList(new Cons([ 'player', $playerName($p_10)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_Dynamite())], $GLOBALS['NIL'])))];
-                                                        } else {
-                                                            switch ($e->Item2->Item->get_Tag())
-                                                            {
-                                                                case 0:
-                                                                    $p_11 = $e->Item1;
-                                                                    $power = $e->Item2->Item->power;
-                                                                    return [ clienttranslate('${icon} ${player} get ${nitro} extra move(s)'), \Map\ofList(new Cons([ 'player', $playerName($p_11)], new Cons([ 'nitro', ($power->get_Tag() == 1 ? 2 : 1)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_Nitro($power))], $GLOBALS['NIL']))))];
-                                                                default:
-                                                                    return [ NULL, \Map\_empty()];
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        case 5:
+                                            $p_7 = $e->Item1;
+                                            return [ clienttranslate('${icon} ${player} field is protected until next turn'), \Map\ofList(new Cons([ 'player', $playerName($p_7)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_Watchdog())], $GLOBALS['NIL'])))];
+                                        case 1:
+                                            $p_8 = $e->Item1;
+                                            $victim = $e->Item2->Item->victim;
+                                            return [ clienttranslate('${icon} ${player} makes ${rutted} loose 2 moves during next turn'), \Map\ofList(new Cons([ 'player', $playerName($p_8)], new Cons([ 'rutted', $playerName($victim)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_Rut())], $GLOBALS['NIL']))))];
+                                        case 2:
+                                            $hb = $e->Item2->Item->path;
+                                            $p_9 = $e->Item1;
+                                            $pc = $e->Item2->Item;
+                                            return [ clienttranslate('${icon} ${player} blocks ${haybales} paths'), \Map\ofList(new Cons([ 'player', $playerName($p_9)], new Cons([ 'haybales', \FSharpList\length($hb)], new Cons([ 'icon', cardIcon(\SharedGame\CardModule_ofPlayCard($pc))], $GLOBALS['NIL']))))];
+                                        case 3:
+                                            $p_10 = $e->Item1;
+                                            return [ clienttranslate('${icon} ${player} dynamites 1 hay bale'), \Map\ofList(new Cons([ 'player', $playerName($p_10)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_Dynamite())], $GLOBALS['NIL'])))];
+                                        case 0:
+                                            $p_11 = $e->Item1;
+                                            $power = $e->Item2->Item->power;
+                                            return [ clienttranslate('${icon} ${player} get ${nitro} extra move(s)'), \Map\ofList(new Cons([ 'player', $playerName($p_11)], new Cons([ 'nitro', ($power->get_Tag() == 1 ? 2 : 1)], new Cons([ 'icon', cardIcon(new \SharedGame\Card_Nitro($power))], $GLOBALS['NIL']))))];
+                                        default:
+                                            return [ NULL, \Map\_empty()];
                                     }
                                 } else {
                                     switch ($e->Item2->get_Tag())
@@ -751,89 +737,81 @@ function StatsModule_update($stats, $e) {
                     return new UndoableStats($stats->Stats, $stats->Stats);
                 } else {
                     if ($e->get_Tag() == 0) {
-                        if ($e->Item2->get_Tag() == 20) {
-                            return new UndoableStats($stats->UndoPoint, $stats->UndoPoint);
-                        } else {
-                            if ($e->Item2->get_Tag() == 8) {
+                        switch ($e->Item2->get_Tag())
+                        {
+                            case 20:
+                                return new UndoableStats($stats->UndoPoint, $stats->UndoPoint);
+                            case 8:
                                 $e_1 = $e->Item2->Item;
                                 $p_1 = $e->Item1;
                                 return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_cut_number'], $e_1->Player, StatsModule_incStat(1, $GLOBALS['StatsModule_fences_cut'], $p_1, StatsModule_incStat(1, $GLOBALS['StatsModule_fences_cut'], NULL, $stats->Stats))), $stats->UndoPoint);
-                            } else {
-                                if ($e->Item2->get_Tag() == 1) {
-                                    $p_2 = $e->Item1;
-                                    return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_fences_drawn'], $p_2, StatsModule_incStat(1, $GLOBALS['StatsModule_fences_drawn'], NULL, $stats->Stats)), $stats->UndoPoint);
-                                } else {
-                                    if ($e->Item2->get_Tag() == 7) {
-                                        $e_2 = $e->Item2->Item;
-                                        $p_3 = $e->Item1;
-                                        $size = \FSharpList\length($e_2->NewField);
-                                        $freeBarns = \FSharpList\length($e_2->FreeBarns);
-                                        $occupiedBarns = \FSharpList\length($e_2->OccupiedBarns);
-                                        return new UndoableStats(StatsModule_incStat($occupiedBarns, $GLOBALS['StatsModule_occupiedbarns_number'], $p_3, StatsModule_incStat($occupiedBarns, $GLOBALS['StatsModule_occupiedbarns_number'], NULL, StatsModule_incStat($freeBarns, $GLOBALS['StatsModule_freebarns_number'], $p_3, StatsModule_incStat($freeBarns, $GLOBALS['StatsModule_freebarns_number'], NULL, StatsModule_updateStat(function ($current_1, $_arg2) use ($size) {                                         return \Util\max(function ($x_1, $y_1) {                                         return \Util\comparePrimitives($x_1, $y_1);
+                            case 1:
+                                $p_2 = $e->Item1;
+                                return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_fences_drawn'], $p_2, StatsModule_incStat(1, $GLOBALS['StatsModule_fences_drawn'], NULL, $stats->Stats)), $stats->UndoPoint);
+                            case 7:
+                                $e_2 = $e->Item2->Item;
+                                $p_3 = $e->Item1;
+                                $size = \FSharpList\length($e_2->NewField);
+                                $freeBarns = \FSharpList\length($e_2->FreeBarns);
+                                $occupiedBarns = \FSharpList\length($e_2->OccupiedBarns);
+                                return new UndoableStats(StatsModule_incStat($occupiedBarns, $GLOBALS['StatsModule_occupiedbarns_number'], $p_3, StatsModule_incStat($occupiedBarns, $GLOBALS['StatsModule_occupiedbarns_number'], NULL, StatsModule_incStat($freeBarns, $GLOBALS['StatsModule_freebarns_number'], $p_3, StatsModule_incStat($freeBarns, $GLOBALS['StatsModule_freebarns_number'], NULL, StatsModule_updateStat(function ($current_1, $_arg2) use ($size) {                                 return \Util\max(function ($x_1, $y_1) {                                 return \Util\comparePrimitives($x_1, $y_1);
  }, $current_1, $size);
- }, $GLOBALS['StatsModule_biggest_takeover'], NULL, StatsModule_updateStat(function ($current, $_arg1) use ($size) {                                         return \Util\max(function ($x, $y) {                                         return \Util\comparePrimitives($x, $y);
+ }, $GLOBALS['StatsModule_biggest_takeover'], NULL, StatsModule_updateStat(function ($current, $_arg1) use ($size) {                                 return \Util\max(function ($x, $y) {                                 return \Util\comparePrimitives($x, $y);
  }, $current, $size);
  }, $GLOBALS['StatsModule_biggest_takeover'], $p_3, StatsModule_incStat(1, $GLOBALS['StatsModule_takeovers_number'], $p_3, StatsModule_incStat(1, $GLOBALS['StatsModule_takeovers_number'], NULL, $stats->Stats)))))))), $stats->UndoPoint);
-                                    } else {
-                                        switch ($e->Item2->get_Tag())
-                                        {
-                                            case 10:
-                                                $cp = $e->Item2->Item;
-                                                $p_4 = $e->Item1;
-                                                $statsNew = StatsModule_incStat(1, $GLOBALS['StatsModule_cardsplayed_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_cardsplayed_number'], NULL, $stats->Stats));
-                                                if ($cp->get_Tag() == 3) {
-                                                    return new UndoableStats(StatsModule_updateStat(function ($current_3, $stats_27) {                                                     return \Util\max(function ($x_3, $y_3) {                                                     return \Util\comparePrimitives($x_3, $y_3);
+                            case 10:
+                                $cp = $e->Item2->Item;
+                                $p_4 = $e->Item1;
+                                $statsNew = StatsModule_incStat(1, $GLOBALS['StatsModule_cardsplayed_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_cardsplayed_number'], NULL, $stats->Stats));
+                                if ($cp->get_Tag() == 3) {
+                                    return new UndoableStats(StatsModule_updateStat(function ($current_3, $stats_27) {                                     return \Util\max(function ($x_3, $y_3) {                                     return \Util\comparePrimitives($x_3, $y_3);
  }, $current_3, StatsModule_getStat($GLOBALS['StatsModule_haybales_number'], $stats_27) - StatsModule_getStat($GLOBALS['StatsModule_dynamites_number'], $stats_27) - StatsModule_getStat($GLOBALS['StatsModule_haybales_moved_number'], $stats_27));
  }, $GLOBALS['StatsModule_haybales_max_number'], NULL, StatsModule_incStat(1, $GLOBALS['StatsModule_dynamites_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_dynamites_number'], NULL, $statsNew))), $stats->UndoPoint);
+                                } else {
+                                    if ($cp->get_Tag() == 6) {
+                                        return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_helicopters_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_helicopters_number'], NULL, $statsNew)), $stats->UndoPoint);
+                                    } else {
+                                        if ($cp->get_Tag() == 4) {
+                                            return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_highvoltages_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_highvoltages_number'], NULL, $statsNew)), $stats->UndoPoint);
+                                        } else {
+                                            if ($cp->get_Tag() == 5) {
+                                                return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_watchdogs_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_watchdogs_number'], NULL, $statsNew)), $stats->UndoPoint);
+                                            } else {
+                                                if ($cp->get_Tag() == 7) {
+                                                    return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_bribes_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_bribes_number'], NULL, $statsNew)), $stats->UndoPoint);
                                                 } else {
-                                                    if ($cp->get_Tag() == 6) {
-                                                        return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_helicopters_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_helicopters_number'], NULL, $statsNew)), $stats->UndoPoint);
+                                                    if ($cp->get_Tag() == 0) {
+                                                        switch ($cp->power->get_Tag())
+                                                        {
+                                                            case 1:
+                                                                return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_nitro2_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_nitro2_number'], NULL, $statsNew)), $stats->UndoPoint);
+                                                            default:
+                                                                return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_nitro1_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_nitro1_number'], NULL, $statsNew)), $stats->UndoPoint);
+                                                        }
                                                     } else {
-                                                        if ($cp->get_Tag() == 4) {
-                                                            return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_highvoltages_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_highvoltages_number'], NULL, $statsNew)), $stats->UndoPoint);
-                                                        } else {
-                                                            if ($cp->get_Tag() == 5) {
-                                                                return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_watchdogs_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_watchdogs_number'], NULL, $statsNew)), $stats->UndoPoint);
-                                                            } else {
-                                                                if ($cp->get_Tag() == 7) {
-                                                                    return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_bribes_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_bribes_number'], NULL, $statsNew)), $stats->UndoPoint);
-                                                                } else {
-                                                                    if ($cp->get_Tag() == 0) {
-                                                                        switch ($cp->power->get_Tag())
-                                                                        {
-                                                                            case 1:
-                                                                                return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_nitro2_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_nitro2_number'], NULL, $statsNew)), $stats->UndoPoint);
-                                                                            default:
-                                                                                return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_nitro1_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_nitro1_number'], NULL, $statsNew)), $stats->UndoPoint);
-                                                                        }
-                                                                    } else {
-                                                                        switch ($cp->get_Tag())
-                                                                        {
-                                                                            case 1:
-                                                                                $victim = $cp->victim;
-                                                                                return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_rutted_number'], $victim, StatsModule_incStat(1, $GLOBALS['StatsModule_ruts_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_ruts_number'], NULL, $statsNew))), $stats->UndoPoint);
-                                                                            case 8:
-                                                                                return $stats;
-                                                                            default:
-                                                                                $hb = $cp->path;
-                                                                                $rm = $cp->moved;
-                                                                                $hayBales = \FSharpList\length($hb);
-                                                                                return new UndoableStats(StatsModule_updateStat(function ($current_2, $stats_23) {                                                                                 return \Util\max(function ($x_2, $y_2) {                                                                                 return \Util\comparePrimitives($x_2, $y_2);
+                                                        switch ($cp->get_Tag())
+                                                        {
+                                                            case 1:
+                                                                $victim = $cp->victim;
+                                                                return new UndoableStats(StatsModule_incStat(1, $GLOBALS['StatsModule_rutted_number'], $victim, StatsModule_incStat(1, $GLOBALS['StatsModule_ruts_number'], $p_4, StatsModule_incStat(1, $GLOBALS['StatsModule_ruts_number'], NULL, $statsNew))), $stats->UndoPoint);
+                                                            case 8:
+                                                                return $stats;
+                                                            default:
+                                                                $hb = $cp->path;
+                                                                $rm = $cp->moved;
+                                                                $hayBales = \FSharpList\length($hb);
+                                                                return new UndoableStats(StatsModule_updateStat(function ($current_2, $stats_23) {                                                                 return \Util\max(function ($x_2, $y_2) {                                                                 return \Util\comparePrimitives($x_2, $y_2);
  }, $current_2, StatsModule_getStat($GLOBALS['StatsModule_haybales_number'], $stats_23) - StatsModule_getStat($GLOBALS['StatsModule_dynamites_number'], $stats_23) - StatsModule_getStat($GLOBALS['StatsModule_haybales_moved_number'], $stats_23));
  }, $GLOBALS['StatsModule_haybales_max_number'], NULL, StatsModule_incStat(\FSharpList\length($rm), $GLOBALS['StatsModule_haybales_moved_number'], NULL, StatsModule_incStat($hayBales, $GLOBALS['StatsModule_haybales_number'], $p_4, StatsModule_incStat($hayBales, $GLOBALS['StatsModule_haybales_number'], NULL, $statsNew)))), $stats->UndoPoint);
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
                                                         }
                                                     }
                                                 }
-                                            default:
-                                                return $stats;
+                                            }
                                         }
                                     }
                                 }
-                            }
+                            default:
+                                return $stats;
                         }
                     } else {
                         return $stats;

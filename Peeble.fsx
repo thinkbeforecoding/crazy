@@ -1,12 +1,12 @@
-
 #r @"..\Fable\lib\fcs\FSharp.Compiler.Service.dll"
 #load "./.paket/load/netStandard2.0/Transpiler/FSharp.Compiler.Service.fsx"
 #I @"..\Fable\src\Fable.AST"
 #I @"..\Fable\src\Fable.Core"
-#I @"..\Fable\src\Fable.Transforms"
-#I @"..\Fable\src\fcs-fable\src\fsharp\symbols\"
-#I @"..\Fable\src\fcs-fable\src\fsharp\"
+#I @"..\fable\src\Fable.Transforms"
+#I @"..\fable\src\fcs-fable\src\fsharp\symbols\"
+#I @"..\fable\src\fcs-fable\src\fsharp\"
 #load @"Fable.Core.Types.fs" @"Global\Prelude.fs" @"Common.fs" @"Fable.fs" @"Plugins.fs" @"Global\Compiler.fs" @"MonadicTrampoline.fs" @"Transforms.Util.fs" @"OverloadSuffix.fs" "FSharp2Fable.Util.fs" @"ReplacementsInject.fs" @"Replacements.fs" @"Inject.fs" @"FSharp2Fable.fs" @"Inject.fs" @"FableTransforms.fs" "Global/Metadata.fs" "State.fs"
+
 open System
 open Fable
 open Fable.AST
@@ -818,6 +818,7 @@ let fixExt path = Path.ChangeExtension(path, Path.GetExtension(path).Replace("js
 
 type PhpCompiler =
     { mutable Types: Map<string,PhpType> 
+      mutable Unions: Map<string, Map<int, string>>
       mutable DecisionTargets: (Fable.Ident list * Fable.Expr) list
       mutable LocalVars: string Set
       mutable CapturedVars: Capture Set
@@ -842,7 +843,7 @@ type PhpCompiler =
                     PhpResult.error ] 
                   |> List.map (fun t -> t.Name, t)
                   |> Map.ofList
-          
+          Unions = Map.empty
           DecisionTargets = []
           LocalVars = Set.empty
           CapturedVars = Set.empty
@@ -860,6 +861,9 @@ type PhpCompiler =
     member this.AddType(phpType: PhpType) =
         this.Types <- Map.add phpType.Name phpType this.Types
         phpType
+
+    member this.AddUnion(name,union) =
+        this.Unions <- Map.add name union this.Unions
 
     member this.AddLocalVar(var, isMutable) =
         if isMutable then
@@ -1168,7 +1172,13 @@ let convertUnion (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) =
               Interfaces = [ Core.icomparable ]
               File = ctx.File
               }
+
+        let union = 
+            [ for i,case in Seq.indexed info.UnionCases ->
+                i, caseName ctx info case
+            ] |> Map.ofList
         ctx.AddUse(Core.icomparable)
+        ctx.AddUnion(t.Name, union)
         ctx.AddType(t) |> PhpType ]
 
 let convertRecord (com: Fable.Compiler) (ctx: PhpCompiler) (info: Fable.Entity) = 
@@ -1425,7 +1435,7 @@ let rec convertExpr (com: Fable.Compiler) (ctx: PhpCompiler) (expr: Fable.Expr) 
         let phpExpr = convertExpr com ctx expr
         match kind with 
         | Fable.UnionField(fieldIndex,t, field) ->
-            PhpProp(phpExpr, StrField field.Name, None)
+            PhpProp(phpExpr, StrField field, None)
         | Fable.OptionValue ->
             phpExpr
         | Fable.ByKey (Fable.KeyKind.FieldKey field) ->

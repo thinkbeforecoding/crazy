@@ -159,9 +159,13 @@ opponents will try to stop you by cutting your electric fences or playing event 
 
 ////////
 
-'custom_buy_button' => array(
-    'url' => 'https://www.thylgames.fr/fr/99-the-freaky42-games',
-    'label' => totranslate('Buy Online')
- )
+// 'custom_buy_button' => array(
+//     'url' => 'https://www.thylgames.fr/fr/99-the-freaky42-games',
+//     'label' => totranslate('Buy Online')
+//  )
 
+'custom_buy_button' => array(
+    'url' => 'https://www.philibertnet.com/fr/the-freaky-42/92577-crazy-farmers-and-the-clotures-electriques-3760250841910.html',
+    'label' => totranslate('Philibertnet')
+ )
 );

@@ -2429,6 +2429,23 @@ module Board =
                       2 * Axe.S + Axe.SE
                       2 * Axe.S + Axe.SW ]
 
+            let star =
+                classicpos,
+                Barns.create
+                    [ Axe.zero
+                      1 * Axe.N
+                      -1 * Axe.N
+                      -2 * Axe.N
+                      -3 * Axe.N
+                      Axe.SE
+                      -1 * Axe.SE
+                      -2 * Axe.SE
+                      -3 * Axe.SE
+                      Axe.SW
+                      -1 * Axe.SW
+                      -2 * Axe.SW
+                      -3 * Axe.SW ]
+
         
         module P4 =
             let classicpos =
@@ -2489,18 +2506,18 @@ module Board =
 
                 match cmd.Players with
                 | [ _; _ ] ->
-                    let (p1, p2), barns = Configurations.P2.classic
+                    let (p1, p2), barns = Configurations.P2.star
                     
                     shufflePlayers cmd.Players [  p1; p2  ],
                       barns
 
                 | [ _;_;_] ->
-                    let (p1,p2,p3), barns = Configurations.P3.classic
+                    let (p1,p2,p3), barns = Configurations.P3.star
                     shufflePlayers cmd.Players [ p1; p2; p3 ],
                       barns
 
                 | [_;_;_;_] ->
-                    let (p1,p2,p3,p4), barns = Configurations.P4.classic
+                    let (p1,p2,p3,p4), barns = Configurations.P4.windmill
                     shufflePlayers cmd.Players [ p1; p2; p3; p4 ],
                       barns
                 | _ ->

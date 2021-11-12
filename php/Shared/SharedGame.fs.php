@@ -6350,86 +6350,76 @@ function BoardModule_evolve($state, $event) {
                         return $state;
                     } else {
                         if ($matchValue[1]->get_Tag() == 0) {
-                            if ($matchValue[1]->Item2->get_Tag() == 8) {
-                                $board_4 = $matchValue[0]->Item;
-                                $playerid = $matchValue[1]->Item2->Item->Player;
-                                $matchValue_3 = $board_4->Players->get_Item($playerid);
-                                if ($matchValue_3->get_Tag() == 1) {
-                                    $player_1 = $matchValue_3->Item;
-                                    return new UndoableBoard(new Board_Board(new PlayingBoard(\Map\add($playerid, new CrazyPlayer_Playing(new Playing($player_1->Color, $player_1->Tractor, $GLOBALS['FenceModule_empty'], $player_1->Field, new Power_PowerDown(), $player_1->Moves, $player_1->Hand, $player_1->Bonus)), $board_4->Players), $board_4->Table, $board_4->DrawPile, $board_4->DiscardPile, $board_4->Barns, $board_4->HayBales, $board_4->Goal, $board_4->UseGameOver, $board_4->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false, $state->Undone);
-                                } else {
-                                    return $state;
-                                }
-                            } else {
-                                if ($matchValue[1]->Item2->get_Tag() == 7) {
+                            switch ($matchValue[1]->Item2->get_Tag())
+                            {
+                                case 8:
+                                    $board_4 = $matchValue[0]->Item;
+                                    $playerid = $matchValue[1]->Item2->Item->Player;
+                                    $matchValue_3 = $board_4->Players->get_Item($playerid);
+                                    if ($matchValue_3->get_Tag() == 1) {
+                                        $player_1 = $matchValue_3->Item;
+                                        return new UndoableBoard(new Board_Board(new PlayingBoard(\Map\add($playerid, new CrazyPlayer_Playing(new Playing($player_1->Color, $player_1->Tractor, $GLOBALS['FenceModule_empty'], $player_1->Field, new Power_PowerDown(), $player_1->Moves, $player_1->Hand, $player_1->Bonus)), $board_4->Players), $board_4->Table, $board_4->DrawPile, $board_4->DiscardPile, $board_4->Barns, $board_4->HayBales, $board_4->Goal, $board_4->UseGameOver, $board_4->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false, $state->Undone);
+                                    } else {
+                                        return $state;
+                                    }
+                                case 7:
                                     $board_5 = $matchValue[0]->Item;
                                     $e = $matchValue[1]->Item2->Item;
                                     $playerid_1 = $matchValue[1]->Item1;
                                     return new UndoableBoard(new Board_Board(BoardModule_annexed($playerid_1, $e, $board_5)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false, $state->Undone);
-                                } else {
-                                    if ($matchValue[1]->Item2->get_Tag() == 18) {
-                                        $board_11 = $matchValue[0]->Item;
-                                        $p_3 = $matchValue[1]->Item2->Item;
-                                        $playerid_2 = $matchValue[1]->Item1;
-                                        return new UndoableBoard(new Board_Board(BoardModule_bribed($playerid_2, $p_3, $board_11)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false, $state->Undone);
-                                    } else {
-                                        if ($matchValue[1]->Item2->get_Tag() == 19) {
-                                            $board_12 = $matchValue[0]->Item;
-                                            $e_2 = $matchValue[1]->Item2;
-                                            $playerid_3 = $matchValue[1]->Item1;
-                                            $newPlayer = Player_evolve($board_12->Players->get_Item($playerid_3), $e_2);
-                                            $newTable = Table_eliminate($playerid_3, $board_12->Table);
-                                            return new UndoableBoard(new Board_Board(new PlayingBoard(\Map\add($playerid_3, $newPlayer, $board_12->Players), $newTable, $board_12->DrawPile, $board_12->DiscardPile, $board_12->Barns, $board_12->HayBales, $board_12->Goal, $board_12->UseGameOver, $board_12->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false, $state->Undone);
-                                        } else {
-                                            if ($matchValue[1]->Item2->get_Tag() == 21) {
-                                                $board_13 = $matchValue[0]->Item;
-                                                $e_3 = $matchValue[1]->Item2;
-                                                $playerid_4 = $matchValue[1]->Item1;
-                                                $currentPlayer = $board_13->Table->get_Player();
-                                                $newPlayer_1 = Player_evolve($board_13->Players->get_Item($playerid_4), $e_3);
-                                                $newTable_1 = Table_eliminate($playerid_4, $board_13->Table);
-                                                $players_1 = \Map\add($playerid_4, $newPlayer_1, $board_13->Players);
-                                                return new UndoableBoard(new Board_Board(new PlayingBoard(($playerid_4 === $currentPlayer ? (function ($nextPlayer) use ($newTable_1, $players_1) {                                                 return \Map\add($newTable_1->get_Player(), $nextPlayer, $players_1);
+                                case 18:
+                                    $board_11 = $matchValue[0]->Item;
+                                    $p_3 = $matchValue[1]->Item2->Item;
+                                    $playerid_2 = $matchValue[1]->Item1;
+                                    return new UndoableBoard(new Board_Board(BoardModule_bribed($playerid_2, $p_3, $board_11)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false, $state->Undone);
+                                case 19:
+                                    $board_12 = $matchValue[0]->Item;
+                                    $e_2 = $matchValue[1]->Item2;
+                                    $playerid_3 = $matchValue[1]->Item1;
+                                    $newPlayer = Player_evolve($board_12->Players->get_Item($playerid_3), $e_2);
+                                    $newTable = Table_eliminate($playerid_3, $board_12->Table);
+                                    return new UndoableBoard(new Board_Board(new PlayingBoard(\Map\add($playerid_3, $newPlayer, $board_12->Players), $newTable, $board_12->DrawPile, $board_12->DiscardPile, $board_12->Barns, $board_12->HayBales, $board_12->Goal, $board_12->UseGameOver, $board_12->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false, $state->Undone);
+                                case 21:
+                                    $board_13 = $matchValue[0]->Item;
+                                    $e_3 = $matchValue[1]->Item2;
+                                    $playerid_4 = $matchValue[1]->Item1;
+                                    $currentPlayer = $board_13->Table->get_Player();
+                                    $newPlayer_1 = Player_evolve($board_13->Players->get_Item($playerid_4), $e_3);
+                                    $newTable_1 = Table_eliminate($playerid_4, $board_13->Table);
+                                    $players_1 = \Map\add($playerid_4, $newPlayer_1, $board_13->Players);
+                                    return new UndoableBoard(new Board_Board(new PlayingBoard(($playerid_4 === $currentPlayer ? (function ($nextPlayer) use ($newTable_1, $players_1) {                                     return \Map\add($newTable_1->get_Player(), $nextPlayer, $players_1);
  })(Player_startTurn($board_13->Players->get_Item($newTable_1->get_Player()))) : $players_1), $newTable_1, $board_13->DrawPile, $board_13->DiscardPile, $board_13->Barns, $board_13->HayBales, $board_13->Goal, $board_13->UseGameOver, $board_13->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false, $state->Undone);
-                                            } else {
-                                                switch ($matchValue[1]->Item2->get_Tag())
-                                                {
-                                                    case 20:
-                                                        return new UndoableBoard($state->UndoPoint, $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, true, true);
-                                                    default:
-                                                        $board_14 = $matchValue[0]->Item;
-                                                        $e_4 = $matchValue[1]->Item2;
-                                                        $playerid_5 = $matchValue[1]->Item1;
-                                                        $player_4 = Player_evolve($board_14->Players->get_Item($playerid_5), $e_4);
-                                                        switch ($e_4->get_Tag())
-                                                        {
-                                                            case 14:
-                                                                $card = $e_4->Item;
-                                                                $_target__330 = 0;
-                                                                break;
-                                                            case 15:
-                                                                $card = $e_4->Item;
-                                                                $_target__330 = 0;
-                                                                break;
-                                                            default:
-                                                                $_target__330 = 1;
-                                                                break;
-                                                        }
-                                                        switch ($_target__330)
-                                                        {
-                                                            case 0:
-                                                                $newDiscardPile = new Cons($card, $board_14->DiscardPile);
-                                                                break;
-                                                            case 1:
-                                                                $newDiscardPile = $board_14->DiscardPile;
-                                                                break;
-                                                        }
-                                                        return new UndoableBoard(new Board_Board(new PlayingBoard(\Map\add($playerid_5, $player_4, $board_14->Players), $board_14->Table, $board_14->DrawPile, $newDiscardPile, $board_14->Barns, $board_14->HayBales, $board_14->Goal, $board_14->UseGameOver, $board_14->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false, $state->Undone);
-                                                }
-                                            }
-                                        }
+                                case 20:
+                                    return new UndoableBoard($state->UndoPoint, $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, true, true);
+                                default:
+                                    $board_14 = $matchValue[0]->Item;
+                                    $e_4 = $matchValue[1]->Item2;
+                                    $playerid_5 = $matchValue[1]->Item1;
+                                    $player_4 = Player_evolve($board_14->Players->get_Item($playerid_5), $e_4);
+                                    switch ($e_4->get_Tag())
+                                    {
+                                        case 14:
+                                            $card = $e_4->Item;
+                                            $_target__330 = 0;
+                                            break;
+                                        case 15:
+                                            $card = $e_4->Item;
+                                            $_target__330 = 0;
+                                            break;
+                                        default:
+                                            $_target__330 = 1;
+                                            break;
                                     }
-                                }
+                                    switch ($_target__330)
+                                    {
+                                        case 0:
+                                            $newDiscardPile = new Cons($card, $board_14->DiscardPile);
+                                            break;
+                                        case 1:
+                                            $newDiscardPile = $board_14->DiscardPile;
+                                            break;
+                                    }
+                                    return new UndoableBoard(new Board_Board(new PlayingBoard(\Map\add($playerid_5, $player_4, $board_14->Players), $board_14->Table, $board_14->DrawPile, $newDiscardPile, $board_14->Barns, $board_14->HayBales, $board_14->Goal, $board_14->UseGameOver, $board_14->History)), $state->UndoPoint, $state->UndoType, $state->ShouldShuffle, false, $state->Undone);
                             }
                         } else {
                             switch ($matchValue[1]->get_Tag())
@@ -6597,18 +6587,21 @@ $GLOBALS['BoardModule_Configurations_P3_galaxy'] = [ $GLOBALS['BoardModule_Confi
 $GLOBALS['BoardModule_Configurations_P3_famine'] = [ $GLOBALS['BoardModule_Configurations_P3_classicpos'], BarnsModule_create(new Cons($GLOBALS['AxeModule_NW'], new Cons(Axe_op_Addition_2BE35040(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NW']), $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Addition_2BE35040(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NW']), $GLOBALS['AxeModule_N']), new Cons($GLOBALS['AxeModule_NE'], new Cons(Axe_op_Addition_2BE35040(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NE']), $GLOBALS['AxeModule_SE']), new Cons(Axe_op_Addition_2BE35040(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NE']), $GLOBALS['AxeModule_N']), new Cons($GLOBALS['AxeModule_S'], new Cons(Axe_op_Addition_2BE35040(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_S']), $GLOBALS['AxeModule_SE']), new Cons(Axe_op_Addition_2BE35040(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_S']), $GLOBALS['AxeModule_SW']), $GLOBALS['NIL']))))))))))];
 
 #242
-$GLOBALS['BoardModule_Configurations_P4_classicpos'] = [ Parcel_op_Addition_ZF6EFE4B(Parcel_op_Addition_ZF6EFE4B($GLOBALS['ParcelModule_center'], $GLOBALS['AxeModule_N']), $GLOBALS['AxeModule_NE']), Parcel_op_Addition_ZF6EFE4B($GLOBALS['ParcelModule_center'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NW'])), Parcel_op_Addition_ZF6EFE4B(Parcel_op_Addition_ZF6EFE4B($GLOBALS['ParcelModule_center'], $GLOBALS['AxeModule_SW']), $GLOBALS['AxeModule_S']), Parcel_op_Addition_ZF6EFE4B($GLOBALS['ParcelModule_center'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_SE']))];
+$GLOBALS['BoardModule_Configurations_P3_star'] = [ $GLOBALS['BoardModule_Configurations_P3_classicpos'], BarnsModule_create(new Cons($GLOBALS['AxeModule_zero'], new Cons(Axe_op_Multiply_Z425F7B5E(1, $GLOBALS['AxeModule_N']), new Cons(Axe_op_Multiply_Z425F7B5E(-1, $GLOBALS['AxeModule_N']), new Cons(Axe_op_Multiply_Z425F7B5E(-2, $GLOBALS['AxeModule_N']), new Cons(Axe_op_Multiply_Z425F7B5E(-3, $GLOBALS['AxeModule_N']), new Cons($GLOBALS['AxeModule_SE'], new Cons(Axe_op_Multiply_Z425F7B5E(-1, $GLOBALS['AxeModule_SE']), new Cons(Axe_op_Multiply_Z425F7B5E(-2, $GLOBALS['AxeModule_SE']), new Cons(Axe_op_Multiply_Z425F7B5E(-3, $GLOBALS['AxeModule_SE']), new Cons($GLOBALS['AxeModule_SW'], new Cons(Axe_op_Multiply_Z425F7B5E(-1, $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Multiply_Z425F7B5E(-2, $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Multiply_Z425F7B5E(-3, $GLOBALS['AxeModule_SW']), $GLOBALS['NIL']))))))))))))))];
 
 #243
-$GLOBALS['BoardModule_Configurations_P4_classic'] = [ $GLOBALS['BoardModule_Configurations_P4_classicpos'], BarnsModule_create(new Cons($GLOBALS['AxeModule_zero'], new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_N'], $GLOBALS['AxeModule_NW']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_S'], $GLOBALS['AxeModule_SE']), new Cons(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NE']), new Cons(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Addition_2BE35040(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_N']), $GLOBALS['AxeModule_NE']), new Cons(Axe_op_Addition_2BE35040(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_S']), $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_E2'], $GLOBALS['AxeModule_SE']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_W2'], $GLOBALS['AxeModule_NW']), $GLOBALS['NIL']))))))))))];
+$GLOBALS['BoardModule_Configurations_P4_classicpos'] = [ Parcel_op_Addition_ZF6EFE4B(Parcel_op_Addition_ZF6EFE4B($GLOBALS['ParcelModule_center'], $GLOBALS['AxeModule_N']), $GLOBALS['AxeModule_NE']), Parcel_op_Addition_ZF6EFE4B($GLOBALS['ParcelModule_center'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NW'])), Parcel_op_Addition_ZF6EFE4B(Parcel_op_Addition_ZF6EFE4B($GLOBALS['ParcelModule_center'], $GLOBALS['AxeModule_SW']), $GLOBALS['AxeModule_S']), Parcel_op_Addition_ZF6EFE4B($GLOBALS['ParcelModule_center'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_SE']))];
 
 #244
-$GLOBALS['BoardModule_Configurations_P4_xwing'] = [ $GLOBALS['BoardModule_Configurations_P4_classicpos'], BarnsModule_create(new Cons($GLOBALS['AxeModule_zero'], new Cons($GLOBALS['AxeModule_NW'], new Cons($GLOBALS['AxeModule_SW'], new Cons($GLOBALS['AxeModule_NE'], new Cons($GLOBALS['AxeModule_SE'], new Cons(Axe_op_Multiply_Z425F7B5E(3, $GLOBALS['AxeModule_S']), new Cons(Axe_op_Multiply_Z425F7B5E(3, $GLOBALS['AxeModule_N']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_S'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_SW'])), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_S'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_SE'])), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_N'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NW'])), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_N'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NE'])), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_W2'], $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_E2'], $GLOBALS['AxeModule_NE']), $GLOBALS['NIL']))))))))))))))];
+$GLOBALS['BoardModule_Configurations_P4_classic'] = [ $GLOBALS['BoardModule_Configurations_P4_classicpos'], BarnsModule_create(new Cons($GLOBALS['AxeModule_zero'], new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_N'], $GLOBALS['AxeModule_NW']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_S'], $GLOBALS['AxeModule_SE']), new Cons(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NE']), new Cons(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Addition_2BE35040(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_N']), $GLOBALS['AxeModule_NE']), new Cons(Axe_op_Addition_2BE35040(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_S']), $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_E2'], $GLOBALS['AxeModule_SE']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_W2'], $GLOBALS['AxeModule_NW']), $GLOBALS['NIL']))))))))))];
 
 #245
-$GLOBALS['BoardModule_Configurations_P4_windmill'] = [ $GLOBALS['BoardModule_Configurations_P4_classicpos'], BarnsModule_create(new Cons($GLOBALS['AxeModule_zero'], new Cons($GLOBALS['AxeModule_N'], new Cons(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_N']), new Cons(Axe_op_Multiply_Z425F7B5E(3, $GLOBALS['AxeModule_N']), new Cons($GLOBALS['AxeModule_S'], new Cons(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_S']), new Cons(Axe_op_Multiply_Z425F7B5E(3, $GLOBALS['AxeModule_S']), new Cons($GLOBALS['AxeModule_NW'], new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_NW'], $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_NW'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_SW'])), new Cons($GLOBALS['AxeModule_SE'], new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_SE'], $GLOBALS['AxeModule_NE']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_SE'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NE'])), $GLOBALS['NIL']))))))))))))))];
+$GLOBALS['BoardModule_Configurations_P4_xwing'] = [ $GLOBALS['BoardModule_Configurations_P4_classicpos'], BarnsModule_create(new Cons($GLOBALS['AxeModule_zero'], new Cons($GLOBALS['AxeModule_NW'], new Cons($GLOBALS['AxeModule_SW'], new Cons($GLOBALS['AxeModule_NE'], new Cons($GLOBALS['AxeModule_SE'], new Cons(Axe_op_Multiply_Z425F7B5E(3, $GLOBALS['AxeModule_S']), new Cons(Axe_op_Multiply_Z425F7B5E(3, $GLOBALS['AxeModule_N']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_S'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_SW'])), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_S'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_SE'])), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_N'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NW'])), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_N'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NE'])), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_W2'], $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_E2'], $GLOBALS['AxeModule_NE']), $GLOBALS['NIL']))))))))))))))];
 
 #246
+$GLOBALS['BoardModule_Configurations_P4_windmill'] = [ $GLOBALS['BoardModule_Configurations_P4_classicpos'], BarnsModule_create(new Cons($GLOBALS['AxeModule_zero'], new Cons($GLOBALS['AxeModule_N'], new Cons(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_N']), new Cons(Axe_op_Multiply_Z425F7B5E(3, $GLOBALS['AxeModule_N']), new Cons($GLOBALS['AxeModule_S'], new Cons(Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_S']), new Cons(Axe_op_Multiply_Z425F7B5E(3, $GLOBALS['AxeModule_S']), new Cons($GLOBALS['AxeModule_NW'], new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_NW'], $GLOBALS['AxeModule_SW']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_NW'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_SW'])), new Cons($GLOBALS['AxeModule_SE'], new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_SE'], $GLOBALS['AxeModule_NE']), new Cons(Axe_op_Addition_2BE35040($GLOBALS['AxeModule_SE'], Axe_op_Multiply_Z425F7B5E(2, $GLOBALS['AxeModule_NE'])), $GLOBALS['NIL']))))))))))))))];
+
+#247
 function BoardModule_shufflePlayers($players, $parcels) {
     $rand = [ ];
     return \FSharpList\map2(function ($tupledArg, $p) {     return [ $tupledArg[0], $tupledArg[1], $tupledArg[2], $p];
@@ -6617,7 +6610,7 @@ function BoardModule_shufflePlayers($players, $parcels) {
  }]));
 }
 
-#247
+#248
 function BoardModule_decide($cmd, $state) {
     $matchValue = [ $state->Board, $cmd];
     if ($matchValue[0]->get_Tag() == 0) {
@@ -6631,7 +6624,7 @@ function BoardModule_decide($cmd, $state) {
                         if ($matchValue_1->next->next instanceof Cons) {
                             if ($matchValue_1->next->next->next instanceof Cons) {
                                 if ($matchValue_1->next->next->next->next instanceof Nil) {
-                                    $patternInput = [ BoardModule_shufflePlayers($cmd_1->Players, new Cons($GLOBALS['BoardModule_Configurations_P4_classic'][0][0], new Cons($GLOBALS['BoardModule_Configurations_P4_classic'][0][1], new Cons($GLOBALS['BoardModule_Configurations_P4_classic'][0][2], new Cons($GLOBALS['BoardModule_Configurations_P4_classic'][0][3], $GLOBALS['NIL']))))), $GLOBALS['BoardModule_Configurations_P4_classic'][1]];
+                                    $patternInput = [ BoardModule_shufflePlayers($cmd_1->Players, new Cons($GLOBALS['BoardModule_Configurations_P4_windmill'][0][0], new Cons($GLOBALS['BoardModule_Configurations_P4_windmill'][0][1], new Cons($GLOBALS['BoardModule_Configurations_P4_windmill'][0][2], new Cons($GLOBALS['BoardModule_Configurations_P4_windmill'][0][3], $GLOBALS['NIL']))))), $GLOBALS['BoardModule_Configurations_P4_windmill'][1]];
                                 } else {
                                     if (\FSharpList\length($cmd_1->Players) < 2) {
                                         throw new Error('Too few players');
@@ -6640,10 +6633,10 @@ function BoardModule_decide($cmd, $state) {
                                     }
                                 }
                             } else {
-                                $patternInput = [ BoardModule_shufflePlayers($cmd_1->Players, new Cons($GLOBALS['BoardModule_Configurations_P3_classic'][0][0], new Cons($GLOBALS['BoardModule_Configurations_P3_classic'][0][1], new Cons($GLOBALS['BoardModule_Configurations_P3_classic'][0][2], $GLOBALS['NIL'])))), $GLOBALS['BoardModule_Configurations_P3_classic'][1]];
+                                $patternInput = [ BoardModule_shufflePlayers($cmd_1->Players, new Cons($GLOBALS['BoardModule_Configurations_P3_star'][0][0], new Cons($GLOBALS['BoardModule_Configurations_P3_star'][0][1], new Cons($GLOBALS['BoardModule_Configurations_P3_star'][0][2], $GLOBALS['NIL'])))), $GLOBALS['BoardModule_Configurations_P3_star'][1]];
                             }
                         } else {
-                            $patternInput = [ BoardModule_shufflePlayers($cmd_1->Players, new Cons($GLOBALS['BoardModule_Configurations_P2_classic'][0][0], new Cons($GLOBALS['BoardModule_Configurations_P2_classic'][0][1], $GLOBALS['NIL']))), $GLOBALS['BoardModule_Configurations_P2_classic'][1]];
+                            $patternInput = [ BoardModule_shufflePlayers($cmd_1->Players, new Cons($GLOBALS['BoardModule_Configurations_P2_star'][0][0], new Cons($GLOBALS['BoardModule_Configurations_P2_star'][0][1], $GLOBALS['NIL']))), $GLOBALS['BoardModule_Configurations_P2_star'][1]];
                         }
                     } else {
                         if (\FSharpList\length($cmd_1->Players) < 2) {
@@ -6666,23 +6659,28 @@ function BoardModule_decide($cmd, $state) {
     } else {
         if ($matchValue[0]->get_Tag() == 1) {
             if ($matchValue[1]->get_Tag() == 0) {
-                if ($matchValue[1]->Item2->get_Tag() == 5) {
-                    $board = $matchValue[0]->Item;
-                    $playerId = $matchValue[1]->Item1;
-                    if ($board->Table->get_Player() === $playerId) {
-                        $player = $board->Players->get_Item($playerId);
-                        if ($player->get_Tag() == 1) {
-                            if (!(Player_canMove($playerId, $state->Board) ? true : HandModule_shouldDiscard($player->Item->Hand))) {
-                                $p_1 = $player->Item;
-                                $matchValue_2 = HistoryModule_repetitions($playerId, HistoryModule_createPos($board), $board->History);
-                                if ($matchValue_2 >= 2) {
-                                    return new Cons(new BoardEvent_GameEndedByRepetition(), $GLOBALS['NIL']);
-                                } else {
-                                    if ($matchValue_2 === 1) {
-                                        return BoardModule_next($state->ShouldShuffle, $state->Undone, true, $board);
+                switch ($matchValue[1]->Item2->get_Tag())
+                {
+                    case 5:
+                        $board = $matchValue[0]->Item;
+                        $playerId = $matchValue[1]->Item1;
+                        if ($board->Table->get_Player() === $playerId) {
+                            $player = $board->Players->get_Item($playerId);
+                            if ($player->get_Tag() == 1) {
+                                if (!(Player_canMove($playerId, $state->Board) ? true : HandModule_shouldDiscard($player->Item->Hand))) {
+                                    $p_1 = $player->Item;
+                                    $matchValue_2 = HistoryModule_repetitions($playerId, HistoryModule_createPos($board), $board->History);
+                                    if ($matchValue_2 >= 2) {
+                                        return new Cons(new BoardEvent_GameEndedByRepetition(), $GLOBALS['NIL']);
                                     } else {
-                                        return BoardModule_next($state->ShouldShuffle, $state->Undone, false, $board);
+                                        if ($matchValue_2 === 1) {
+                                            return BoardModule_next($state->ShouldShuffle, $state->Undone, true, $board);
+                                        } else {
+                                            return BoardModule_next($state->ShouldShuffle, $state->Undone, false, $board);
+                                        }
                                     }
+                                } else {
+                                    return $GLOBALS['NIL'];
                                 }
                             } else {
                                 return $GLOBALS['NIL'];
@@ -6690,11 +6688,7 @@ function BoardModule_decide($cmd, $state) {
                         } else {
                             return $GLOBALS['NIL'];
                         }
-                    } else {
-                        return $GLOBALS['NIL'];
-                    }
-                } else {
-                    if ($matchValue[1]->Item2->get_Tag() == 6) {
+                    case 6:
                         $board_1 = $matchValue[0]->Item;
                         $playerId_1 = $matchValue[1]->Item1;
                         if (($board_1->Table->get_Player() === $playerId_1 ? !\Util\equals($state->UndoType, new \Shared\UndoType_NoUndo()) : false) ? !$state->AtUndoPoint : false) {
@@ -6702,106 +6696,90 @@ function BoardModule_decide($cmd, $state) {
                         } else {
                             return $GLOBALS['NIL'];
                         }
-                    } else {
-                        switch ($matchValue[1]->Item2->get_Tag())
-                        {
-                            case 4:
-                                $board_2 = $matchValue[0]->Item;
-                                $card = $matchValue[1]->Item2->Item;
-                                $cmd_2 = $matchValue[1]->Item2;
-                                $playerId_2 = $matchValue[1]->Item1;
-                                if ($board_2->Table->get_Player() === $playerId_2) {
-                                    $player_1 = $board_2->Players->get_Item($playerId_2);
-                                    $events = Player_decide(Player_otherPlayers($playerId_2, $board_2), $board_2->Barns, $board_2->HayBales, function ($unitVar0) use ($board_2) {                                     return BoardModule_bribeParcels($board_2);
+                    case 4:
+                        $board_2 = $matchValue[0]->Item;
+                        $card = $matchValue[1]->Item2->Item;
+                        $cmd_2 = $matchValue[1]->Item2;
+                        $playerId_2 = $matchValue[1]->Item1;
+                        if ($board_2->Table->get_Player() === $playerId_2) {
+                            $player_1 = $board_2->Players->get_Item($playerId_2);
+                            $events = Player_decide(Player_otherPlayers($playerId_2, $board_2), $board_2->Barns, $board_2->HayBales, function ($unitVar0) use ($board_2) {                             return BoardModule_bribeParcels($board_2);
  }, $cmd_2, $player_1);
-                                    return \Seq\toList(\Seq\delay(function ($unitVar) use ($events, $playerId_2) {                                     return \Seq\map(function ($e) use ($playerId_2) {                                     return new BoardEvent_Played($playerId_2, $e);
+                            return \Seq\toList(\Seq\delay(function ($unitVar) use ($events, $playerId_2) {                             return \Seq\map(function ($e) use ($playerId_2) {                             return new BoardEvent_Played($playerId_2, $e);
  }, $events);
  }));
-                                } else {
-                                    return $GLOBALS['NIL'];
-                                }
-                            default:
-                                $board_3 = $matchValue[0]->Item;
-                                $cmd_3 = $matchValue[1]->Item2;
-                                $playerid = $matchValue[1]->Item1;
-                                $player_2 = $board_3->Players->get_Item($playerid);
-                                $others_1 = Player_otherPlayers($playerid, $board_3);
-                                if ($playerid === $board_3->Table->get_Player()) {
-                                    return (function ($tupledArg_7) use ($playerid, $state) {                                     return BoardModule_cont(function ($board_16, $es_1) use ($playerid, $state) { 
-                                        $matchValue_9 = BoardModule_tryFindWinner($board_16);
-                                        switch ($matchValue_9->get_Tag())
-                                        {
-                                            case 1:
-                                                $leads = $matchValue_9->Item;
-                                                $matchValue_10 = \FSharpList\tryFind(function ($_arg3_1) {                                                 if ($_arg3_1->get_Tag() == 0) {
-                                                    switch ($_arg3_1->Item2->get_Tag())
-                                                    {
-                                                        case 7:
-                                                            return true;
-                                                        default:
-                                                            return false;
-                                                    }
-                                                } else {
+                        } else {
+                            return $GLOBALS['NIL'];
+                        }
+                    default:
+                        $board_3 = $matchValue[0]->Item;
+                        $cmd_3 = $matchValue[1]->Item2;
+                        $playerid = $matchValue[1]->Item1;
+                        $player_2 = $board_3->Players->get_Item($playerid);
+                        $others_1 = Player_otherPlayers($playerid, $board_3);
+                        if ($playerid === $board_3->Table->get_Player()) {
+                            return (function ($tupledArg_7) use ($playerid, $state) {                             return BoardModule_cont(function ($board_16, $es_1) use ($playerid, $state) { 
+                                $matchValue_9 = BoardModule_tryFindWinner($board_16);
+                                switch ($matchValue_9->get_Tag())
+                                {
+                                    case 1:
+                                        $leads = $matchValue_9->Item;
+                                        $matchValue_10 = \FSharpList\tryFind(function ($_arg3_1) {                                         if ($_arg3_1->get_Tag() == 0) {
+                                            switch ($_arg3_1->Item2->get_Tag())
+                                            {
+                                                case 7:
+                                                    return true;
+                                                default:
                                                     return false;
-                                                }
+                                            }
+                                        } else {
+                                            return false;
+                                        }
  }, $es_1);
-                                                if (!is_null($matchValue_10)) {
-                                                    if ($matchValue_10->get_Tag() == 0) {
-                                                        switch ($matchValue_10->Item2->get_Tag())
-                                                        {
-                                                            case 7:
-                                                                $e_4 = $matchValue_10->Item2->Item;
-                                                                $player_7 = $matchValue_10->Item1;
-                                                                $cardsToTake_1 = \FSharpList\length($e_4->FreeBarns) + 2 * \FSharpList\length($e_4->OccupiedBarns);
-                                                                return \Seq\toList(\Seq\delay(function ($unitVar_9) use ($board_16, $cardsToTake_1, $leads, $playerid, $state) {                                                                 if ($cardsToTake_1 > 0) {
-                                                                    $matchValue_11 = $board_16->DrawPile;
-                                                                    switch ($matchValue_11->get_Tag())
-                                                                    {
-                                                                        case 0:
-                                                                            return \Seq\_empty();
-                                                                        default:
-                                                                            $cardsDrawn = DrawPile_take($cardsToTake_1, $matchValue_11->cards);
-                                                                            return \Seq\append(\Seq\singleton(new BoardEvent_PlayerDrewCards(new PlayerDrewCards($playerid, new Hand_PublicHand($cardsDrawn)))), \Seq\delay(function ($unitVar_10) use ($cardsDrawn, $leads, $playerid, $state) {                                                                             if (\FSharpList\contains(new Card_GameOver(), $cardsDrawn, [ 'Equals' => function ($x, $y) {                                                                             return \Util\equals($x, $y);
- }, 'GetHashCode' => function ($x) {                                                                             return \Util\safeHash($x);
- }])) {
-                                                                                return \Seq\append(\Seq\singleton(new BoardEvent_Played($playerid, new Event_CardPlayed(new PlayCard_PlayGameOver()))), \Seq\delay(function ($unitVar_11) use ($leads) {                                                                                 if ($leads instanceof Cons) {
-                                                                                    if ($leads->next instanceof Nil) {
-                                                                                        $win_1 = $leads->value;
-                                                                                        return \Seq\singleton(new BoardEvent_GameWon($win_1));
-                                                                                    } else {
-                                                                                        return \Seq\singleton(new BoardEvent_GameEnded($leads));
-                                                                                    }
-                                                                                } else {
-                                                                                    return \Seq\singleton(new BoardEvent_GameEnded($leads));
-                                                                                }
- }));
-                                                                            } else {
-                                                                                if (\Util\equals($state->UndoType, new \Shared\UndoType_DontUndoCards())) {
-                                                                                    return \Seq\singleton(new BoardEvent_UndoCheckPointed());
-                                                                                } else {
-                                                                                    return \Seq\_empty();
-                                                                                }
-                                                                            }
- }));
-                                                                    }
-                                                                } else {
+                                        if (!is_null($matchValue_10)) {
+                                            if ($matchValue_10->get_Tag() == 0) {
+                                                switch ($matchValue_10->Item2->get_Tag())
+                                                {
+                                                    case 7:
+                                                        $e_4 = $matchValue_10->Item2->Item;
+                                                        $player_7 = $matchValue_10->Item1;
+                                                        $cardsToTake_1 = \FSharpList\length($e_4->FreeBarns) + 2 * \FSharpList\length($e_4->OccupiedBarns);
+                                                        return \Seq\toList(\Seq\delay(function ($unitVar_9) use ($board_16, $cardsToTake_1, $leads, $playerid, $state) {                                                         if ($cardsToTake_1 > 0) {
+                                                            $matchValue_11 = $board_16->DrawPile;
+                                                            switch ($matchValue_11->get_Tag())
+                                                            {
+                                                                case 0:
                                                                     return \Seq\_empty();
-                                                                }
+                                                                default:
+                                                                    $cardsDrawn = DrawPile_take($cardsToTake_1, $matchValue_11->cards);
+                                                                    return \Seq\append(\Seq\singleton(new BoardEvent_PlayerDrewCards(new PlayerDrewCards($playerid, new Hand_PublicHand($cardsDrawn)))), \Seq\delay(function ($unitVar_10) use ($cardsDrawn, $leads, $playerid, $state) {                                                                     if (\FSharpList\contains(new Card_GameOver(), $cardsDrawn, [ 'Equals' => function ($x, $y) {                                                                     return \Util\equals($x, $y);
+ }, 'GetHashCode' => function ($x) {                                                                     return \Util\safeHash($x);
+ }])) {
+                                                                        return \Seq\append(\Seq\singleton(new BoardEvent_Played($playerid, new Event_CardPlayed(new PlayCard_PlayGameOver()))), \Seq\delay(function ($unitVar_11) use ($leads) {                                                                         if ($leads instanceof Cons) {
+                                                                            if ($leads->next instanceof Nil) {
+                                                                                $win_1 = $leads->value;
+                                                                                return \Seq\singleton(new BoardEvent_GameWon($win_1));
+                                                                            } else {
+                                                                                return \Seq\singleton(new BoardEvent_GameEnded($leads));
+                                                                            }
+                                                                        } else {
+                                                                            return \Seq\singleton(new BoardEvent_GameEnded($leads));
+                                                                        }
  }));
-                                                            default:
-                                                                $player_8 = $board_16->Players->get_Item($playerid);
-                                                                if ($playerid !== $board_16->Table->get_Player()) {
-                                                                    $nextPlayerId = $board_16->Table->get_Player();
-                                                                    $nextPlayer = $board_16->Players->get_Item($nextPlayerId);
-                                                                    return \Seq\toList(\Seq\delay(function ($unitVar_12) use ($nextPlayer, $nextPlayerId) {                                                                     return \Seq\append(\FSharpList\map(function ($c_1) use ($nextPlayerId) {                                                                     return new BoardEvent_Played($nextPlayerId, new Event_BonusDiscarded($c_1));
- }, BonusModule_startTurn(Player_bonus($nextPlayer))), \Seq\delay(function ($unitVar_13) {                                                                     return \Seq\singleton(new BoardEvent_UndoCheckPointed());
+                                                                    } else {
+                                                                        if (\Util\equals($state->UndoType, new \Shared\UndoType_DontUndoCards())) {
+                                                                            return \Seq\singleton(new BoardEvent_UndoCheckPointed());
+                                                                        } else {
+                                                                            return \Seq\_empty();
+                                                                        }
+                                                                    }
  }));
- }));
-                                                                } else {
-                                                                    return $GLOBALS['NIL'];
-                                                                }
+                                                            }
+                                                        } else {
+                                                            return \Seq\_empty();
                                                         }
-                                                    } else {
+ }));
+                                                    default:
                                                         $player_8 = $board_16->Players->get_Item($playerid);
                                                         if ($playerid !== $board_16->Table->get_Player()) {
                                                             $nextPlayerId = $board_16->Table->get_Player();
@@ -6813,265 +6791,272 @@ function BoardModule_decide($cmd, $state) {
                                                         } else {
                                                             return $GLOBALS['NIL'];
                                                         }
-                                                    }
-                                                } else {
-                                                    $player_8 = $board_16->Players->get_Item($playerid);
-                                                    if ($playerid !== $board_16->Table->get_Player()) {
-                                                        $nextPlayerId = $board_16->Table->get_Player();
-                                                        $nextPlayer = $board_16->Players->get_Item($nextPlayerId);
-                                                        return \Seq\toList(\Seq\delay(function ($unitVar_12) use ($nextPlayer, $nextPlayerId) {                                                         return \Seq\append(\FSharpList\map(function ($c_1) use ($nextPlayerId) {                                                         return new BoardEvent_Played($nextPlayerId, new Event_BonusDiscarded($c_1));
- }, BonusModule_startTurn(Player_bonus($nextPlayer))), \Seq\delay(function ($unitVar_13) {                                                         return \Seq\singleton(new BoardEvent_UndoCheckPointed());
- }));
- }));
-                                                    } else {
-                                                        return $GLOBALS['NIL'];
-                                                    }
-                                                }
-                                            default:
-                                                $winners = $matchValue_9->Item;
-                                                if ($winners instanceof Cons) {
-                                                    if ($winners->next instanceof Nil) {
-                                                        $win = $winners->value;
-                                                        return new Cons(new BoardEvent_GameWon($win), $GLOBALS['NIL']);
-                                                    } else {
-                                                        return new Cons(new BoardEvent_GameEnded($winners), $GLOBALS['NIL']);
-                                                    }
-                                                } else {
-                                                    return new Cons(new BoardEvent_GameEnded($winners), $GLOBALS['NIL']);
-                                                }
-                                        }
-                                    }, $tupledArg_7[0], $tupledArg_7[1]);
- })((function ($tupledArg_6) {                                     return BoardModule_cont(function ($board_14, $es) { 
-                                        $matchValue_8 = \FSharpList\tryFind(function ($_arg2_1) {                                         if ($_arg2_1->get_Tag() == 0) {
-                                            switch ($_arg2_1->Item2->get_Tag())
-                                            {
-                                                case 7:
-                                                    return true;
-                                                default:
-                                                    return false;
-                                            }
-                                        } else {
-                                            return false;
-                                        }
- }, $es);
-                                        if (!is_null($matchValue_8)) {
-                                            if ($matchValue_8->get_Tag() == 0) {
-                                                switch ($matchValue_8->Item2->get_Tag())
-                                                {
-                                                    case 7:
-                                                        $e_3 = $matchValue_8->Item2->Item;
-                                                        if (\FSharpList\length($e_3->FreeBarns) + 2 * \FSharpList\length($e_3->OccupiedBarns) > HandModule_count($board_14->DrawPile)) {
-                                                            return new Cons(new BoardEvent_DiscardPileShuffled(DrawPile_shuffle($board_14->UseGameOver, $board_14->DiscardPile)), $GLOBALS['NIL']);
-                                                        } else {
-                                                            return $GLOBALS['NIL'];
-                                                        }
-                                                    default:
-                                                        return $GLOBALS['NIL'];
                                                 }
                                             } else {
-                                                return $GLOBALS['NIL'];
-                                            }
-                                        } else {
-                                            return $GLOBALS['NIL'];
-                                        }
-                                    }, $tupledArg_6[0], $tupledArg_6[1]);
- })((function ($tupledArg_5) {                                     return BoardModule_cont(function ($board_12, $_arg5) { 
-                                        $remainingPlayers = \Seq\toList(\Seq\choose(function ($tupledArg_4) {                                         if ($tupledArg_4[1]->get_Tag() == 2) {
-                                            return NULL;
-                                        } else {
-                                            return $tupledArg_4[0];
-                                        }
- }, \Map\toSeq($board_12->Players)));
-                                        if ($remainingPlayers instanceof Cons) {
-                                            if ($remainingPlayers->next instanceof Nil) {
-                                                $winner = $remainingPlayers->value;
-                                                return new Cons(new BoardEvent_GameWon($winner), $GLOBALS['NIL']);
-                                            } else {
-                                                return $GLOBALS['NIL'];
-                                            }
-                                        } else {
-                                            return $GLOBALS['NIL'];
-                                        }
-                                    }, $tupledArg_5[0], $tupledArg_5[1]);
- })((function ($tupledArg_3) use ($playerid) {                                     return BoardModule_cont(function ($board_10, $_arg4) use ($playerid) {                                     return \Seq\toList(\Seq\delay(function ($unitVar_7) use ($board_10, $playerid) {                                     return \Seq\collect(function ($matchValue_7) use ($playerid) { 
-                                        $pid_1 = $matchValue_7[0];
-                                        $p_9 = $matchValue_7[1];
-                                        if ($p_9->get_Tag() == 1) {
-                                            switch ($p_9->Item->Power->get_Tag())
-                                            {
-                                                case 0:
-                                                    $player_6 = $p_9->Item;
-                                                    if (!CrossroadModule_isInField($player_6->Field, FenceModule_start($player_6->Tractor, $player_6->Fence))) {
-                                                        return \Seq\append(\Seq\singleton(new BoardEvent_Played($playerid, new Event_CutFence(new CutFence($pid_1)))), \Seq\delay(function ($unitVar_8) use ($pid_1, $player_6) {                                                         if (CrossroadModule_isInField($player_6->Field, $player_6->Tractor)) {
-                                                            return \Seq\singleton(new BoardEvent_Played($pid_1, new Event_PoweredUp()));
-                                                        } else {
-                                                            return \Seq\_empty();
-                                                        }
- }));
-                                                    } else {
-                                                        return \Seq\_empty();
-                                                    }
-                                                default:
-                                                    $player_5 = $p_9->Item;
-                                                    if (CrossroadModule_isInField($player_5->Field, $player_5->Tractor)) {
-                                                        return \Seq\singleton(new BoardEvent_Played($pid_1, new Event_PoweredUp()));
-                                                    } else {
-                                                        return \Seq\_empty();
-                                                    }
-                                            }
-                                        } else {
-                                            return \Seq\_empty();
-                                        }
-                                    }, \Map\toSeq($board_10->Players));
- }));
- }, $tupledArg_3[0], $tupledArg_3[1]);
- })((function ($tupledArg_2) {                                     return BoardModule_cont(function ($board_8, $_arg3) {                                     return \Seq\toList(\Seq\delay(function ($unitVar_5) use ($board_8) {                                     return \Seq\collect(function ($matchValue_6) { 
-                                        $activePatternResult1591 = $matchValue_6;
-                                        $p_8 = $activePatternResult1591[1];
-                                        if (FieldModule_isEmpty(Player_field($p_8)) ? !Player_isKo($p_8) : false) {
-                                            return \Seq\append(\Seq\singleton(new BoardEvent_Played($activePatternResult1591[0], new Event_Eliminated())), \Seq\delay(function ($unitVar_6) {                                             return \Seq\singleton(new BoardEvent_UndoCheckPointed());
- }));
-                                        } else {
-                                            return \Seq\_empty();
-                                        }
-                                    }, $board_8->Players);
- }));
- }, $tupledArg_2[0], $tupledArg_2[1]);
- })((function ($tupledArg_1) use ($playerid) {                                     return BoardModule_cont(function ($board_6, $_arg2) use ($playerid) { 
-                                        $player_3 = $board_6->Players->get_Item($playerid);
-                                        if ($player_3->get_Tag() == 1) {
-                                            $player_4 = $player_3->Item;
-                                            $matchValue_3 = Player_fullAnnexation($player_4->Field, $player_4->Fence, $player_4->Tractor);
-                                            if (is_null($matchValue_3)) {
-                                                return $GLOBALS['NIL'];
-                                            } else {
-                                                $surrounded = $matchValue_3[0];
-                                                $newLength = $matchValue_3[1];
-                                                if (FieldModule_isEmpty($surrounded)) {
-                                                    return new Cons(new BoardEvent_Played($playerid, new Event_FenceReduced(new FenceReduced($newLength))), $GLOBALS['NIL']);
-                                                } else {
-                                                    $annexed = Field_op_Subtraction_Z24735800($surrounded, FieldModule_unionMany(\Seq\toList(\Seq\delay(function ($unitVar_3) use ($board_6, $playerid) {                                                     return \Seq\collect(function ($matchValue_4) use ($playerid) { 
-                                                        $p_2 = $matchValue_4[1];
-                                                        if ($p_2->get_Tag() == 1) {
-                                                            if ($matchValue_4[0] !== $playerid ? $p_2->Item->Bonus->Watched : false) {
-                                                                $p_4 = $p_2->Item;
-                                                                return \Seq\singleton($p_4->Field);
-                                                            } else {
-                                                                return \Seq\_empty();
-                                                            }
-                                                        } else {
-                                                            return \Seq\_empty();
-                                                        }
-                                                    }, \Map\toSeq($board_6->Players));
- }))));
-                                                    $lostFields = \Seq\toList(\Seq\delay(function ($unitVar_4) use ($annexed, $board_6, $playerid) {                                                     return \Seq\collect(function ($matchValue_5) use ($annexed, $playerid) { 
-                                                        $p_5 = $matchValue_5[1];
-                                                        $id_1 = $matchValue_5[0];
-                                                        if ($p_5->get_Tag() == 1) {
-                                                            if ($id_1 !== $playerid) {
-                                                                $p_7 = $p_5->Item;
-                                                                $lost = FieldModule_intersect($annexed, $p_7->Field);
-                                                                if (!FieldModule_isEmpty($lost)) {
-                                                                    return \Seq\singleton([ $id_1, FieldModule_parcels($lost)]);
-                                                                } else {
-                                                                    return \Seq\_empty();
-                                                                }
-                                                            } else {
-                                                                return \Seq\_empty();
-                                                            }
-                                                        } else {
-                                                            return \Seq\_empty();
-                                                        }
-                                                    }, \Map\toSeq($board_6->Players));
- }));
-                                                    $annexedBarns = BarnsModule_intersectWith($annexed, $board_6->Barns);
-                                                    return new Cons(new BoardEvent_Played($playerid, new Event_Annexed(new Annexed(FieldModule_parcels($annexed), $lostFields, FieldModule_parcels($annexedBarns->Free), FieldModule_parcels($annexedBarns->Occupied), $newLength))), $GLOBALS['NIL']);
-                                                }
-                                            }
-                                        } else {
-                                            return $GLOBALS['NIL'];
-                                        }
-                                    }, $tupledArg_1[0], $tupledArg_1[1]);
- })((function ($tupledArg) use ($cmd_3, $others_1, $player_2, $playerid, $state) {                                     return BoardModule_cont(function ($board_4, $_arg1) use ($cmd_3, $others_1, $player_2, $playerid, $state) {                                     if ($cmd_3->get_Tag() == 2 ? ((function ($m) use ($playerid, $state) {                                     return !\FSharpList\exists(function ($_arg1_1) use ($m) {                                     if ($_arg1_1->get_Tag() == 0) {
-                                        if (\Util\equals($_arg1_1->Item1, $m->Direction)) {
-                                            return \Util\equals($_arg1_1->Item2, $m->Destination);
-                                        } else {
-                                            return false;
-                                        }
-                                    } else {
-                                        return false;
-                                    }
- }, Player_possibleMoves($playerid, $state->Board));
- })($cmd_3->Item) ? (function ($m_1) {                                     return false;
- })($cmd_3->Item) : true) : true) {
-                                        $events_1 = Player_decide($others_1, $board_4->Barns, $board_4->HayBales, function ($unitVar0_1) use ($board_4) {                                         return BoardModule_bribeParcels($board_4);
- }, $cmd_3, $player_2);
-                                        return \Seq\toList(\Seq\delay(function ($unitVar_1) use ($events_1, $playerid) {                                         return \Seq\append(\Seq\map(function ($e_1) use ($playerid) {                                         return new BoardEvent_Played($playerid, $e_1);
- }, $events_1), \Seq\delay(function ($unitVar_2) use ($events_1) {                                         return \Seq\collect(function ($e_2) {                                         if ($e_2->get_Tag() == 10) {
-                                            if ($e_2->Item->get_Tag() == 1) {
-                                                $victim = $e_2->Item->victim;
-                                                return \Seq\singleton(new BoardEvent_Played($victim, new Event_Rutted()));
-                                            } else {
-                                                if ($e_2->Item->get_Tag() == 2) {
-                                                    $added = $e_2->Item->path;
-                                                    $removed = $e_2->Item->moved;
-                                                    return \Seq\singleton(new BoardEvent_HayBalesPlaced($added, $removed));
-                                                } else {
-                                                    switch ($e_2->Item->get_Tag())
-                                                    {
-                                                        case 3:
-                                                            $bale = $e_2->Item->path;
-                                                            return \Seq\singleton(new BoardEvent_HayBaleDynamited($bale));
-                                                        default:
-                                                            return \Seq\_empty();
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            return \Seq\_empty();
-                                        }
- }, $events_1);
+                                                $player_8 = $board_16->Players->get_Item($playerid);
+                                                if ($playerid !== $board_16->Table->get_Player()) {
+                                                    $nextPlayerId = $board_16->Table->get_Player();
+                                                    $nextPlayer = $board_16->Players->get_Item($nextPlayerId);
+                                                    return \Seq\toList(\Seq\delay(function ($unitVar_12) use ($nextPlayer, $nextPlayerId) {                                                     return \Seq\append(\FSharpList\map(function ($c_1) use ($nextPlayerId) {                                                     return new BoardEvent_Played($nextPlayerId, new Event_BonusDiscarded($c_1));
+ }, BonusModule_startTurn(Player_bonus($nextPlayer))), \Seq\delay(function ($unitVar_13) {                                                     return \Seq\singleton(new BoardEvent_UndoCheckPointed());
  }));
  }));
-                                    } else {
-                                        return $GLOBALS['NIL'];
-                                    }
- }, $tupledArg[0], $tupledArg[1]);
- })([ $state, $GLOBALS['NIL']])))))))[1];
-                                } else {
-                                    if ($cmd_3->get_Tag() == 7) {
-                                        return (function ($tupledArg_11) {                                         return BoardModule_cont(function ($board_20, $_arg8) { 
-                                            $remainingPlayers_1 = \Seq\toList(\Seq\choose(function ($tupledArg_10) {                                             if ($tupledArg_10[1]->get_Tag() == 2) {
-                                                return NULL;
-                                            } else {
-                                                return $tupledArg_10[0];
-                                            }
- }, \Map\toSeq($board_20->Players)));
-                                            if ($remainingPlayers_1 instanceof Cons) {
-                                                if ($remainingPlayers_1->next instanceof Nil) {
-                                                    $winner_1 = $remainingPlayers_1->value;
-                                                    return new Cons(new BoardEvent_GameWon($winner_1), $GLOBALS['NIL']);
                                                 } else {
                                                     return $GLOBALS['NIL'];
                                                 }
+                                            }
+                                        } else {
+                                            $player_8 = $board_16->Players->get_Item($playerid);
+                                            if ($playerid !== $board_16->Table->get_Player()) {
+                                                $nextPlayerId = $board_16->Table->get_Player();
+                                                $nextPlayer = $board_16->Players->get_Item($nextPlayerId);
+                                                return \Seq\toList(\Seq\delay(function ($unitVar_12) use ($nextPlayer, $nextPlayerId) {                                                 return \Seq\append(\FSharpList\map(function ($c_1) use ($nextPlayerId) {                                                 return new BoardEvent_Played($nextPlayerId, new Event_BonusDiscarded($c_1));
+ }, BonusModule_startTurn(Player_bonus($nextPlayer))), \Seq\delay(function ($unitVar_13) {                                                 return \Seq\singleton(new BoardEvent_UndoCheckPointed());
+ }));
+ }));
                                             } else {
                                                 return $GLOBALS['NIL'];
                                             }
-                                        }, $tupledArg_11[0], $tupledArg_11[1]);
- })((function ($tupledArg_9) use ($cmd_3, $others_1, $player_2, $playerid) {                                         return BoardModule_cont(function ($board_18, $_arg7) use ($cmd_3, $others_1, $player_2, $playerid) { 
-                                            $events_9 = Player_decide($others_1, $board_18->Barns, $board_18->HayBales, function ($unitVar0_2) use ($board_18) {                                             return BoardModule_bribeParcels($board_18);
- }, $cmd_3, $player_2);
-                                            return \Seq\toList(\Seq\delay(function ($unitVar_14) use ($events_9, $playerid) {                                             return \Seq\map(function ($e_5) use ($playerid) {                                             return new BoardEvent_Played($playerid, $e_5);
- }, $events_9);
- }));
-                                        }, $tupledArg_9[0], $tupledArg_9[1]);
- })([ $state, $GLOBALS['NIL']]))[1];
+                                        }
+                                    default:
+                                        $winners = $matchValue_9->Item;
+                                        if ($winners instanceof Cons) {
+                                            if ($winners->next instanceof Nil) {
+                                                $win = $winners->value;
+                                                return new Cons(new BoardEvent_GameWon($win), $GLOBALS['NIL']);
+                                            } else {
+                                                return new Cons(new BoardEvent_GameEnded($winners), $GLOBALS['NIL']);
+                                            }
+                                        } else {
+                                            return new Cons(new BoardEvent_GameEnded($winners), $GLOBALS['NIL']);
+                                        }
+                                }
+                            }, $tupledArg_7[0], $tupledArg_7[1]);
+ })((function ($tupledArg_6) {                             return BoardModule_cont(function ($board_14, $es) { 
+                                $matchValue_8 = \FSharpList\tryFind(function ($_arg2_1) {                                 if ($_arg2_1->get_Tag() == 0) {
+                                    switch ($_arg2_1->Item2->get_Tag())
+                                    {
+                                        case 7:
+                                            return true;
+                                        default:
+                                            return false;
+                                    }
+                                } else {
+                                    return false;
+                                }
+ }, $es);
+                                if (!is_null($matchValue_8)) {
+                                    if ($matchValue_8->get_Tag() == 0) {
+                                        switch ($matchValue_8->Item2->get_Tag())
+                                        {
+                                            case 7:
+                                                $e_3 = $matchValue_8->Item2->Item;
+                                                if (\FSharpList\length($e_3->FreeBarns) + 2 * \FSharpList\length($e_3->OccupiedBarns) > HandModule_count($board_14->DrawPile)) {
+                                                    return new Cons(new BoardEvent_DiscardPileShuffled(DrawPile_shuffle($board_14->UseGameOver, $board_14->DiscardPile)), $GLOBALS['NIL']);
+                                                } else {
+                                                    return $GLOBALS['NIL'];
+                                                }
+                                            default:
+                                                return $GLOBALS['NIL'];
+                                        }
                                     } else {
                                         return $GLOBALS['NIL'];
                                     }
+                                } else {
+                                    return $GLOBALS['NIL'];
                                 }
+                            }, $tupledArg_6[0], $tupledArg_6[1]);
+ })((function ($tupledArg_5) {                             return BoardModule_cont(function ($board_12, $_arg5) { 
+                                $remainingPlayers = \Seq\toList(\Seq\choose(function ($tupledArg_4) {                                 if ($tupledArg_4[1]->get_Tag() == 2) {
+                                    return NULL;
+                                } else {
+                                    return $tupledArg_4[0];
+                                }
+ }, \Map\toSeq($board_12->Players)));
+                                if ($remainingPlayers instanceof Cons) {
+                                    if ($remainingPlayers->next instanceof Nil) {
+                                        $winner = $remainingPlayers->value;
+                                        return new Cons(new BoardEvent_GameWon($winner), $GLOBALS['NIL']);
+                                    } else {
+                                        return $GLOBALS['NIL'];
+                                    }
+                                } else {
+                                    return $GLOBALS['NIL'];
+                                }
+                            }, $tupledArg_5[0], $tupledArg_5[1]);
+ })((function ($tupledArg_3) use ($playerid) {                             return BoardModule_cont(function ($board_10, $_arg4) use ($playerid) {                             return \Seq\toList(\Seq\delay(function ($unitVar_7) use ($board_10, $playerid) {                             return \Seq\collect(function ($matchValue_7) use ($playerid) { 
+                                $pid_1 = $matchValue_7[0];
+                                $p_9 = $matchValue_7[1];
+                                if ($p_9->get_Tag() == 1) {
+                                    switch ($p_9->Item->Power->get_Tag())
+                                    {
+                                        case 0:
+                                            $player_6 = $p_9->Item;
+                                            if (!CrossroadModule_isInField($player_6->Field, FenceModule_start($player_6->Tractor, $player_6->Fence))) {
+                                                return \Seq\append(\Seq\singleton(new BoardEvent_Played($playerid, new Event_CutFence(new CutFence($pid_1)))), \Seq\delay(function ($unitVar_8) use ($pid_1, $player_6) {                                                 if (CrossroadModule_isInField($player_6->Field, $player_6->Tractor)) {
+                                                    return \Seq\singleton(new BoardEvent_Played($pid_1, new Event_PoweredUp()));
+                                                } else {
+                                                    return \Seq\_empty();
+                                                }
+ }));
+                                            } else {
+                                                return \Seq\_empty();
+                                            }
+                                        default:
+                                            $player_5 = $p_9->Item;
+                                            if (CrossroadModule_isInField($player_5->Field, $player_5->Tractor)) {
+                                                return \Seq\singleton(new BoardEvent_Played($pid_1, new Event_PoweredUp()));
+                                            } else {
+                                                return \Seq\_empty();
+                                            }
+                                    }
+                                } else {
+                                    return \Seq\_empty();
+                                }
+                            }, \Map\toSeq($board_10->Players));
+ }));
+ }, $tupledArg_3[0], $tupledArg_3[1]);
+ })((function ($tupledArg_2) {                             return BoardModule_cont(function ($board_8, $_arg3) {                             return \Seq\toList(\Seq\delay(function ($unitVar_5) use ($board_8) {                             return \Seq\collect(function ($matchValue_6) { 
+                                $activePatternResult1591 = $matchValue_6;
+                                $p_8 = $activePatternResult1591[1];
+                                if (FieldModule_isEmpty(Player_field($p_8)) ? !Player_isKo($p_8) : false) {
+                                    return \Seq\append(\Seq\singleton(new BoardEvent_Played($activePatternResult1591[0], new Event_Eliminated())), \Seq\delay(function ($unitVar_6) {                                     return \Seq\singleton(new BoardEvent_UndoCheckPointed());
+ }));
+                                } else {
+                                    return \Seq\_empty();
+                                }
+                            }, $board_8->Players);
+ }));
+ }, $tupledArg_2[0], $tupledArg_2[1]);
+ })((function ($tupledArg_1) use ($playerid) {                             return BoardModule_cont(function ($board_6, $_arg2) use ($playerid) { 
+                                $player_3 = $board_6->Players->get_Item($playerid);
+                                if ($player_3->get_Tag() == 1) {
+                                    $player_4 = $player_3->Item;
+                                    $matchValue_3 = Player_fullAnnexation($player_4->Field, $player_4->Fence, $player_4->Tractor);
+                                    if (is_null($matchValue_3)) {
+                                        return $GLOBALS['NIL'];
+                                    } else {
+                                        $surrounded = $matchValue_3[0];
+                                        $newLength = $matchValue_3[1];
+                                        if (FieldModule_isEmpty($surrounded)) {
+                                            return new Cons(new BoardEvent_Played($playerid, new Event_FenceReduced(new FenceReduced($newLength))), $GLOBALS['NIL']);
+                                        } else {
+                                            $annexed = Field_op_Subtraction_Z24735800($surrounded, FieldModule_unionMany(\Seq\toList(\Seq\delay(function ($unitVar_3) use ($board_6, $playerid) {                                             return \Seq\collect(function ($matchValue_4) use ($playerid) { 
+                                                $p_2 = $matchValue_4[1];
+                                                if ($p_2->get_Tag() == 1) {
+                                                    if ($matchValue_4[0] !== $playerid ? $p_2->Item->Bonus->Watched : false) {
+                                                        $p_4 = $p_2->Item;
+                                                        return \Seq\singleton($p_4->Field);
+                                                    } else {
+                                                        return \Seq\_empty();
+                                                    }
+                                                } else {
+                                                    return \Seq\_empty();
+                                                }
+                                            }, \Map\toSeq($board_6->Players));
+ }))));
+                                            $lostFields = \Seq\toList(\Seq\delay(function ($unitVar_4) use ($annexed, $board_6, $playerid) {                                             return \Seq\collect(function ($matchValue_5) use ($annexed, $playerid) { 
+                                                $p_5 = $matchValue_5[1];
+                                                $id_1 = $matchValue_5[0];
+                                                if ($p_5->get_Tag() == 1) {
+                                                    if ($id_1 !== $playerid) {
+                                                        $p_7 = $p_5->Item;
+                                                        $lost = FieldModule_intersect($annexed, $p_7->Field);
+                                                        if (!FieldModule_isEmpty($lost)) {
+                                                            return \Seq\singleton([ $id_1, FieldModule_parcels($lost)]);
+                                                        } else {
+                                                            return \Seq\_empty();
+                                                        }
+                                                    } else {
+                                                        return \Seq\_empty();
+                                                    }
+                                                } else {
+                                                    return \Seq\_empty();
+                                                }
+                                            }, \Map\toSeq($board_6->Players));
+ }));
+                                            $annexedBarns = BarnsModule_intersectWith($annexed, $board_6->Barns);
+                                            return new Cons(new BoardEvent_Played($playerid, new Event_Annexed(new Annexed(FieldModule_parcels($annexed), $lostFields, FieldModule_parcels($annexedBarns->Free), FieldModule_parcels($annexedBarns->Occupied), $newLength))), $GLOBALS['NIL']);
+                                        }
+                                    }
+                                } else {
+                                    return $GLOBALS['NIL'];
+                                }
+                            }, $tupledArg_1[0], $tupledArg_1[1]);
+ })((function ($tupledArg) use ($cmd_3, $others_1, $player_2, $playerid, $state) {                             return BoardModule_cont(function ($board_4, $_arg1) use ($cmd_3, $others_1, $player_2, $playerid, $state) {                             if ($cmd_3->get_Tag() == 2 ? ((function ($m) use ($playerid, $state) {                             return !\FSharpList\exists(function ($_arg1_1) use ($m) {                             if ($_arg1_1->get_Tag() == 0) {
+                                if (\Util\equals($_arg1_1->Item1, $m->Direction)) {
+                                    return \Util\equals($_arg1_1->Item2, $m->Destination);
+                                } else {
+                                    return false;
+                                }
+                            } else {
+                                return false;
+                            }
+ }, Player_possibleMoves($playerid, $state->Board));
+ })($cmd_3->Item) ? (function ($m_1) {                             return false;
+ })($cmd_3->Item) : true) : true) {
+                                $events_1 = Player_decide($others_1, $board_4->Barns, $board_4->HayBales, function ($unitVar0_1) use ($board_4) {                                 return BoardModule_bribeParcels($board_4);
+ }, $cmd_3, $player_2);
+                                return \Seq\toList(\Seq\delay(function ($unitVar_1) use ($events_1, $playerid) {                                 return \Seq\append(\Seq\map(function ($e_1) use ($playerid) {                                 return new BoardEvent_Played($playerid, $e_1);
+ }, $events_1), \Seq\delay(function ($unitVar_2) use ($events_1) {                                 return \Seq\collect(function ($e_2) {                                 if ($e_2->get_Tag() == 10) {
+                                    switch ($e_2->Item->get_Tag())
+                                    {
+                                        case 1:
+                                            $victim = $e_2->Item->victim;
+                                            return \Seq\singleton(new BoardEvent_Played($victim, new Event_Rutted()));
+                                        case 2:
+                                            $added = $e_2->Item->path;
+                                            $removed = $e_2->Item->moved;
+                                            return \Seq\singleton(new BoardEvent_HayBalesPlaced($added, $removed));
+                                        case 3:
+                                            $bale = $e_2->Item->path;
+                                            return \Seq\singleton(new BoardEvent_HayBaleDynamited($bale));
+                                        default:
+                                            return \Seq\_empty();
+                                    }
+                                } else {
+                                    return \Seq\_empty();
+                                }
+ }, $events_1);
+ }));
+ }));
+                            } else {
+                                return $GLOBALS['NIL'];
+                            }
+ }, $tupledArg[0], $tupledArg[1]);
+ })([ $state, $GLOBALS['NIL']])))))))[1];
+                        } else {
+                            if ($cmd_3->get_Tag() == 7) {
+                                return (function ($tupledArg_11) {                                 return BoardModule_cont(function ($board_20, $_arg8) { 
+                                    $remainingPlayers_1 = \Seq\toList(\Seq\choose(function ($tupledArg_10) {                                     if ($tupledArg_10[1]->get_Tag() == 2) {
+                                        return NULL;
+                                    } else {
+                                        return $tupledArg_10[0];
+                                    }
+ }, \Map\toSeq($board_20->Players)));
+                                    if ($remainingPlayers_1 instanceof Cons) {
+                                        if ($remainingPlayers_1->next instanceof Nil) {
+                                            $winner_1 = $remainingPlayers_1->value;
+                                            return new Cons(new BoardEvent_GameWon($winner_1), $GLOBALS['NIL']);
+                                        } else {
+                                            return $GLOBALS['NIL'];
+                                        }
+                                    } else {
+                                        return $GLOBALS['NIL'];
+                                    }
+                                }, $tupledArg_11[0], $tupledArg_11[1]);
+ })((function ($tupledArg_9) use ($cmd_3, $others_1, $player_2, $playerid) {                                 return BoardModule_cont(function ($board_18, $_arg7) use ($cmd_3, $others_1, $player_2, $playerid) { 
+                                    $events_9 = Player_decide($others_1, $board_18->Barns, $board_18->HayBales, function ($unitVar0_2) use ($board_18) {                                     return BoardModule_bribeParcels($board_18);
+ }, $cmd_3, $player_2);
+                                    return \Seq\toList(\Seq\delay(function ($unitVar_14) use ($events_9, $playerid) {                                     return \Seq\map(function ($e_5) use ($playerid) {                                     return new BoardEvent_Played($playerid, $e_5);
+ }, $events_9);
+ }));
+                                }, $tupledArg_9[0], $tupledArg_9[1]);
+ })([ $state, $GLOBALS['NIL']]))[1];
+                            } else {
+                                return $GLOBALS['NIL'];
+                            }
                         }
-                    }
                 }
             } else {
                 return $GLOBALS['NIL'];
@@ -7082,7 +7067,7 @@ function BoardModule_decide($cmd, $state) {
     }
 }
 
-#248
+#249
 function BoardModule_toState($board) {
     switch ($board->get_Tag())
     {
@@ -7117,7 +7102,7 @@ function BoardModule_toState($board) {
     }
 }
 
-#249
+#250
 function BoardModule_toUndoState($s) {
     return new UndoBoardState(BoardModule_toState($s->Board), BoardModule_toState($s->UndoPoint), (function ($matchValue) {     switch ($matchValue->get_Tag())
     {
@@ -7131,7 +7116,7 @@ function BoardModule_toUndoState($s) {
  })($s->UndoType), $s->ShouldShuffle, $s->AtUndoPoint, $s->Undone);
 }
 
-#250
+#251
 function BoardModule_ofState($board) {
     $matchValue = $board->SPlayers;
     if (!\FSharpArray\equalsWith(function ($x, $y) {     return \Util\compareArrays($x, $y);
@@ -7191,7 +7176,7 @@ function BoardModule_ofState($board) {
     }
 }
 
-#251
+#252
 function BoardModule_ofUndoState($s) {
     return new UndoableBoard(BoardModule_ofState($s->SBoard), BoardModule_ofState($s->SUndoPoint), (function ($matchValue) {     if ($matchValue === 'NoUndo') {
         return new \Shared\UndoType_NoUndo();
@@ -7205,7 +7190,7 @@ function BoardModule_ofUndoState($s) {
  })($s->SUndoType), $s->SShouldShuffle, $s->SAtUndoPoint, $s->SUndone);
 }
 
-#252
+#253
 function Client_cardName($_arg1) {
     if ($_arg1->get_Tag() == 1) {
         return 'card rut';
@@ -7254,11 +7239,11 @@ function Client_cardName($_arg1) {
     }
 }
 
-#253
+#254
 abstract class ServerMsg implements FSharpUnion {
 }
 
-#253
+#254
 class ServerMsg_JoinGame extends ServerMsg implements IComparable {
     public $Item;
     function __construct($Item) {
@@ -7283,7 +7268,7 @@ class ServerMsg_JoinGame extends ServerMsg implements IComparable {
     }
 }
 
-#253
+#254
 class ServerMsg_Command extends ServerMsg implements IComparable {
     public $Item;
     function __construct($Item) {
@@ -7308,7 +7293,7 @@ class ServerMsg_Command extends ServerMsg implements IComparable {
     }
 }
 
-#253
+#254
 class ServerMsg_SendMessage extends ServerMsg implements IComparable {
     public $Item;
     function __construct($Item) {
@@ -7333,7 +7318,7 @@ class ServerMsg_SendMessage extends ServerMsg implements IComparable {
     }
 }
 
-#254
+#255
 class ChatEntry implements IComparable {
     public $Text;
     public $Player;
@@ -7360,11 +7345,11 @@ class ChatEntry implements IComparable {
     }
 }
 
-#255
+#256
 abstract class ClientMsg implements FSharpUnion {
 }
 
-#255
+#256
 class ClientMsg_Events extends ClientMsg implements IComparable {
     public $Item1;
     public $Item2;
@@ -7395,7 +7380,7 @@ class ClientMsg_Events extends ClientMsg implements IComparable {
     }
 }
 
-#255
+#256
 class ClientMsg_Message extends ClientMsg implements IComparable {
     public $Item;
     function __construct($Item) {
@@ -7420,7 +7405,7 @@ class ClientMsg_Message extends ClientMsg implements IComparable {
     }
 }
 
-#255
+#256
 class ClientMsg_Sync extends ClientMsg implements IComparable {
     public $Item1;
     public $Item2;
@@ -7457,7 +7442,7 @@ class ClientMsg_Sync extends ClientMsg implements IComparable {
     }
 }
 
-#255
+#256
 class ClientMsg_SyncPlayer extends ClientMsg implements IComparable {
     public $Item;
     function __construct($Item) {
@@ -7482,7 +7467,7 @@ class ClientMsg_SyncPlayer extends ClientMsg implements IComparable {
     }
 }
 
-#255
+#256
 class ClientMsg_ReceiveMessage extends ClientMsg implements IComparable {
     public $Item;
     function __construct($Item) {
