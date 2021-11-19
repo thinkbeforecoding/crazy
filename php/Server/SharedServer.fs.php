@@ -206,16 +206,16 @@ function bgaNextPlayer($board) {
     switch ($matchValue->get_Tag())
     {
         case 0:
-            $_target__354 = 1;
+            $_target__355 = 1;
             break;
         case 2:
-            $_target__354 = 1;
+            $_target__355 = 1;
             break;
         default:
-            $_target__354 = 0;
+            $_target__355 = 0;
             break;
     }
-    switch ($_target__354)
+    switch ($_target__355)
     {
         case 0:
             $b = $matchValue->Item;
@@ -392,17 +392,17 @@ function textAction($previous, $b, $e) {
     {
         case 1:
             $board = $matchValue->Item;
-            $_target__355 = 0;
+            $_target__356 = 0;
             break;
         case 2:
             $board = $matchValue->Item2;
-            $_target__355 = 0;
+            $_target__356 = 0;
             break;
         default:
-            $_target__355 = 1;
+            $_target__356 = 1;
             break;
     }
-    switch ($_target__355)
+    switch ($_target__356)
     {
         case 0:
             $playerName = function ($p) use ($board) { 
@@ -546,13 +546,13 @@ class Stats implements IComparable {
         $this->PlayerStats = $PlayerStats;
     }
     function CompareTo($other) {
-        $_cmp__356 = $this->TableStats->CompareTo($other->TableStats);
-        if ($_cmp__356 != 0) {
-            return $_cmp__356;
-        }        
-        $_cmp__357 = $this->PlayerStats->CompareTo($other->PlayerStats);
+        $_cmp__357 = $this->TableStats->CompareTo($other->TableStats);
         if ($_cmp__357 != 0) {
             return $_cmp__357;
+        }        
+        $_cmp__358 = $this->PlayerStats->CompareTo($other->PlayerStats);
+        if ($_cmp__358 != 0) {
+            return $_cmp__358;
         }        
         return 0;
     }
@@ -567,13 +567,13 @@ class UndoableStats implements IComparable {
         $this->UndoPoint = $UndoPoint;
     }
     function CompareTo($other) {
-        $_cmp__358 = $this->Stats->CompareTo($other->Stats);
-        if ($_cmp__358 != 0) {
-            return $_cmp__358;
-        }        
-        $_cmp__359 = $this->UndoPoint->CompareTo($other->UndoPoint);
+        $_cmp__359 = $this->Stats->CompareTo($other->Stats);
         if ($_cmp__359 != 0) {
             return $_cmp__359;
+        }        
+        $_cmp__360 = $this->UndoPoint->CompareTo($other->UndoPoint);
+        if ($_cmp__360 != 0) {
+            return $_cmp__360;
         }        
         return 0;
     }

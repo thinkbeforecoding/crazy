@@ -7410,10 +7410,12 @@ class ClientMsg_Sync extends ClientMsg implements IComparable {
     public $Item1;
     public $Item2;
     public $Item3;
-    function __construct($Item1, $Item2, $Item3) {
+    public $Item4;
+    function __construct($Item1, $Item2, $Item3, $Item4) {
         $this->Item1 = $Item1;
         $this->Item2 = $Item2;
         $this->Item3 = $Item3;
+        $this->Item4 = $Item4;
     }
     function get_FSharpCase() {
         return 'Sync';
@@ -7430,13 +7432,17 @@ class ClientMsg_Sync extends ClientMsg implements IComparable {
         if ($_cmp__347 != 0) {
             return $_cmp__347;
         }        
-        $_cmp__348 = $this->Item2 > $other->Item2 ? 1 : ($this->Item2 < $other->Item2 ? -1 : 0);
+        $_cmp__348 = $this->Item2->CompareTo($other->Item2);
         if ($_cmp__348 != 0) {
             return $_cmp__348;
         }        
-        $_cmp__349 = $this->Item3->CompareTo($other->Item3);
+        $_cmp__349 = $this->Item3 > $other->Item3 ? 1 : ($this->Item3 < $other->Item3 ? -1 : 0);
         if ($_cmp__349 != 0) {
             return $_cmp__349;
+        }        
+        $_cmp__350 = $this->Item4->CompareTo($other->Item4);
+        if ($_cmp__350 != 0) {
+            return $_cmp__350;
         }        
         return 0;
     }
@@ -7455,13 +7461,13 @@ class ClientMsg_SyncPlayer extends ClientMsg implements IComparable {
         return 3;
     }
     function CompareTo($other) {
-        $_cmp__350 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__350 != 0) {
-            return $_cmp__350;
-        }        
-        $_cmp__351 = $this->Item->CompareTo($other->Item);
+        $_cmp__351 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__351 != 0) {
             return $_cmp__351;
+        }        
+        $_cmp__352 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__352 != 0) {
+            return $_cmp__352;
         }        
         return 0;
     }
@@ -7480,13 +7486,13 @@ class ClientMsg_ReceiveMessage extends ClientMsg implements IComparable {
         return 4;
     }
     function CompareTo($other) {
-        $_cmp__352 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
-        if ($_cmp__352 != 0) {
-            return $_cmp__352;
-        }        
-        $_cmp__353 = $this->Item->CompareTo($other->Item);
+        $_cmp__353 = $this->get_Tag() > $other->get_Tag() ? 1 : ($this->get_Tag() < $other->get_Tag() ? -1 : 0);
         if ($_cmp__353 != 0) {
             return $_cmp__353;
+        }        
+        $_cmp__354 = $this->Item->CompareTo($other->Item);
+        if ($_cmp__354 != 0) {
+            return $_cmp__354;
         }        
         return 0;
     }

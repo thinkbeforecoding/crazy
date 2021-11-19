@@ -42,6 +42,7 @@ type Model =
     PlayedCard: Card option
     Chat: Chat
     ShowVictory: bool
+    ArchiveMode: bool
     }
 
 

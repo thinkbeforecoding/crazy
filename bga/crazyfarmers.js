@@ -54,6 +54,7 @@ function (dojo, declare,ui,c,v,crazy) {
             self = this;
 
             this.crazy.setup( (this.isSpectator ? null : this.player_id.toString()),
+                              g_archive_mode,
                               gamedatas.board,gamedatas.version, 
                               function(command) { return self.onCommand(command[0], command[1], command[2], command[3]); });
             //this.cf.setup(gamedatas);
@@ -193,20 +194,24 @@ function (dojo, declare,ui,c,v,crazy) {
         
         onCommand: function(cmd, args, cont, err)
         {
-            this.ajaxcall( "/crazyfarmers/crazyfarmers/"+cmd+".html", args, 
-            this, function( result ) {
+            if (this.current_player_is_active) {
+                this.ajaxcall( "/crazyfarmers/crazyfarmers/"+cmd+".html", args, 
+                this, function( result ) {
 
-            // What to do after the server call if it succeeded
-            // (most of the time: nothing)
-                cont.call(this,result);
+                // What to do after the server call if it succeeded
+                // (most of the time: nothing)
+                    cont.call(this,result);
 
-            }, function( is_error) {
+                }, function( is_error) {
 
-            // What to do after the server call in anyway (success or failure)
-            // (most of the time: nothing)
-                if (is_error)
-                    err.call(this,is_error);   
-            } );      
+                // What to do after the server call in anyway (success or failure)
+                // (most of the time: nothing)
+                    if (is_error)
+                        err.call(this,is_error);   
+                } );      
+            }
+            else
+                cont.call(this, null);
                 // this.ajaxcall( "/crazyfarmers/crazyfarmers/sendCommand.html", { 
                 //                                             lock: true, 
                 //                                             cmd: "Hello", 

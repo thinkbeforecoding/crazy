@@ -45,7 +45,7 @@ module Serialization =
 [<AllowNullLiteral>]
 type gamegui =
     abstract constructor: unit -> unit
-    abstract setup: string option * obj * int * (string * obj * (obj -> unit) * (exn -> unit) -> unit) -> unit
+    abstract setup: string option * bool * obj * int * (string * obj * (obj -> unit) * (exn -> unit) -> unit) -> unit
     abstract onEnteringState: string ->  obj[] -> unit
     abstract onLeavingState: string -> obj[] -> unit
     abstract onUpdateActionButtons: string -> obj[] -> unit
@@ -134,7 +134,7 @@ type Bridge(dispatch: ClientMsg -> unit) =
         member _.constructor() =
             console.log("crazyfarmers constructor in F#")
             dispatch (Message "constructor")
-        member this.setup(playerId, board, version, sendCallback) =
+        member this.setup(playerId, archiveMode, board, version, sendCallback) =
 
             let fsBoard = Serialization.ofObjectLiteral board
 
@@ -143,7 +143,7 @@ type Bridge(dispatch: ClientMsg -> unit) =
             match playerId with
             | Some playerId -> dispatch (SyncPlayer playerId)
             | None -> ()
-            dispatch (Sync (fsBoard, version, []))
+            dispatch (Sync (archiveMode, fsBoard, version, []))
         member _.onEnteringState stateName args =
             console.log("Entering state: " + stateName)
             dispatch (Message ("Entering state" + stateName))
@@ -215,32 +215,36 @@ let init () : Model * Cmd<Msg> =
       PlayedCard = None
       Chat = { Show = false; Entries = []; Pop = false}
       ShowVictory = true
+      ArchiveMode = false
     }, Cmd.none
 
 
 let handleCommand (model : Model) command =
-    match model.PlayerId with
-    | Some playerid ->
-        let events =
-            Board.decide (Board.Play(playerid, command)) model.Board 
-            // fitler out PlayerDrewCard since randomness cannot be computed locally
-            // the actual card will be sent by the server
-            
-        let filteredEvent =
-            events |> List.filter (function Board.PlayerDrewCards e when e.Player = playerid -> false | _ -> true )
+    if model.ArchiveMode then
+        model, Cmd.none
+    else
+        match model.PlayerId with
+        | Some playerid ->
+            let events =
+                Board.decide (Board.Play(playerid, command)) model.Board 
+                // fitler out PlayerDrewCard since randomness cannot be computed locally
+                // the actual card will be sent by the server
+                
+            let filteredEvent =
+                events |> List.filter (function Board.PlayerDrewCards e when e.Player = playerid -> false | _ -> true )
 
-        if List.isEmpty events then
-            model, Cmd.none
-        else
-            let newState = List.fold Board.evolve model.Board filteredEvent
-            console.log(sprintf "handleCommand version %d" (model.LocalVersion + 1))
-            { model with 
-                Board = newState
-                LocalVersion = model.LocalVersion + 1
-                Moves = Player.possibleMoves model.PlayerId newState.Board
-                CardAction = None
-            } , Cmd.bridgeSend(command, model.Version, model.Synched)
-    | None -> model,  Cmd.none
+            if List.isEmpty events then
+                model, Cmd.none
+            else
+                let newState = List.fold Board.evolve model.Board filteredEvent
+                console.log(sprintf "handleCommand version %d" (model.LocalVersion + 1))
+                { model with 
+                    Board = newState
+                    LocalVersion = model.LocalVersion + 1
+                    Moves = Player.possibleMoves model.PlayerId newState.Board
+                    CardAction = None
+                } , Cmd.bridgeSend(command, model.Version, model.Synched)
+        | None -> model,  Cmd.none
 
 
 
@@ -329,7 +333,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     | Remote (SyncPlayer playerid) ->
         { currentModel with PlayerId = Some playerid }, Cmd.none
         
-    | Remote (Sync (s, v, _)) ->
+    | Remote (Sync (archiveMode, s, v, _)) ->
         let state = Board.ofUndoState s
         let newState =
             { currentModel with
@@ -337,6 +341,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                   LocalVersion = v
                   Synched = state
                   Version = v
+                  ArchiveMode = archiveMode
                   Moves =  Player.possibleMoves currentModel.PlayerId state.Board
                   }
         newState, Cmd.none// cmd

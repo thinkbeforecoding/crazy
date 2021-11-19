@@ -2927,6 +2927,6 @@ type ChatEntry =
 type ClientMsg =
     | Events of Board.Event list * int
     | Message of string
-    | Sync of UndoBoardState * int * ChatEntry list
+    | Sync of bool * UndoBoardState * int * ChatEntry list
     | SyncPlayer of  string
     | ReceiveMessage of ChatEntry
