@@ -4,12 +4,14 @@ namespace Util;
 require_once "FSharp.Core.php";
 require_once "Range.php";
 
+use \IComparable;
+
 $equals = function ($x,$y) { return $x == $y; };
 
 function equals($x,$y) { 
     if ( $x instanceof IComparable)
         return $x->CompareTo($y) == 0;
-    
+
     return $x == $y; }
 
 function max($comparer, $x, $y) {

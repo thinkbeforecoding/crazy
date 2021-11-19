@@ -1,5 +1,7 @@
 <?php
 namespace Set;
+require_once "FSharp.Core.php";
+require_once "List.php";
 use \IteratorAggregate, \IComparable;
 
 const TOLERANCE = 2;
@@ -410,11 +412,11 @@ class SetTree {
 
     static function compareStacks($comparer,$l1,$l2) 
     {
-        if (!($l1 instanceof Cons) && !($l2 instanceof Cons))
+        if (!($l1 instanceof \FSharpList\Cons) && !($l2 instanceof \FSharpList\Cons))
             return 0;
-        if (!($l1 instanceof Cons))
+        if (!($l1 instanceof \FSharpList\Cons))
             return -1;
-        if (!($l2 instanceof Cons))
+        if (!($l2 instanceof \FSharpList\Cons))
             return 1;
 
         if (is_null($l1->value) && is_null($l2->value))
@@ -433,7 +435,7 @@ class SetTree {
             if ($c != 0)
                 return $c;
             else
-                return SetTree::compareStacks($comparer, new Cons(NULL, $l1->next), new Cons($l2->value->right, $l2->next));
+                return SetTree::compareStacks($comparer, new \FSharpList\Cons(NULL, $l1->next), new \FSharpList\Cons($l2->value->right, $l2->next));
         }
         if ($l1->value instanceof SetNode && is_null($l1->value->left) && (! (is_null($l2->value) || $l2->value instanceof SetNode)))
         {
@@ -441,7 +443,7 @@ class SetTree {
             if ($c != 0)
                 return $c;
             else
-                return SetTree::compareStacks($comparer, new Cons($l1->value->right, $l1->next), new Cons(NULL, $l2->next));
+                return SetTree::compareStacks($comparer, new \FSharpList\Cons($l1->value->right, $l1->next), new \FSharpList\Cons(NULL, $l2->next));
         }
         if ($l1->value instanceof SetNode && is_null($l1->value->left) && $l2->value instanceof SetNode && is_null($l2->value->left))
         {
@@ -449,16 +451,16 @@ class SetTree {
             if ($c != 0)
                 return $c;
             else
-                return SetTree::compareStacks($comparer, new Cons($l1->value->right, $l1->next), new Cons($l2->value->right, $l2->next));
+                return SetTree::compareStacks($comparer, new \FSharpList\Cons($l1->value->right, $l1->next), new \FSharpList\Cons($l2->value->right, $l2->next));
         }
         if (!(is_null($l1->value) || $l1->value instanceof SetNode))
-            return SetTree::compareStacks($comparer, new Cons(NULL, new Cons (new SetOne($l1->value->value), $l1->next)), $l2);
+            return SetTree::compareStacks($comparer, new \FSharpList\Cons(NULL, new \FSharpList\Cons (new SetOne($l1->value->value), $l1->next)), $l2);
         if ($l1->value instanceof SetNode)
-            return SetTree::compareStacks($comparer, new Cons($l1->value->left, new Cons (new SetNode($l1->value->value, NULL, $l1->value->right, 0), $l1->next)), $l2);
+            return SetTree::compareStacks($comparer, new \FSharpList\Cons($l1->value->left, new \FSharpList\Cons (new SetNode($l1->value->value, NULL, $l1->value->right, 0), $l1->next)), $l2);
         if (!(is_null($l2->value) || $l2->value instanceof SetNode))
-            return SetTree::compareStacks($comparer, $l1, new Cons(NULL, new Cons (new SetOne($l2->value->value), $l2->next)));
+            return SetTree::compareStacks($comparer, $l1, new \FSharpList\Cons(NULL, new \FSharpList\Cons (new SetOne($l2->value->value), $l2->next)));
         
-        return SetTree::compareStacks($comparer, $l1, new Cons($l2->value->left, new Cons (new SetNode($l2->value->value, NULL, $l2->value->right, 0), $l2->next)));
+        return SetTree::compareStacks($comparer, $l1, new \FSharpList\Cons($l2->value->left, new \FSharpList\Cons (new SetNode($l2->value->value, NULL, $l2->value->right, 0), $l2->next)));
     }
 
     static function compare($comparer, $s1, $s2)  
@@ -468,7 +470,7 @@ class SetTree {
         if (is_null($s2))
             return 1;
         
-        return SetTree::compareStacks($comparer, new Cons($s1, NULL), new Cons($s2, NULL) );
+        return SetTree::compareStacks($comparer, new \FSharpList\Cons($s1, NULL), new \FSharpList\Cons($s2, NULL) );
     }
 }
 
@@ -545,7 +547,7 @@ function FSharpSet_op_Addition($set1, $set2)
     if (is_null($set1->Tree))
         return $set2; //  (* 0 U B = B *)
     return new Set($set1->Comparer, SetTree::union($set1->Comparer, $set1->Tree, $set2->Tree));
-
+    
 }
 
 function FSharpSet_op_Subtraction($set1, $set2)
