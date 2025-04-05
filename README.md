@@ -1,5 +1,7 @@
 # Crazy Farmers and the Clôtures Electriques
 
+This repository has moved to Codeberg: https://codeberg.org/thinkbeforecoding/crazy
+
 You'll find here the code of Crazy Farmers and the Clôtures Electique, a board game I've been working on as an author and is [currently on Kickstarter](https://www.kickstarter.com/projects/1486112993/crazy-farmers-and-the-clotures-electriques?ref=3gajzr). You'll also find the code of **Peeble**, a F# to Php transpiler, and the code for the Board Game  version, that has been created using **Peeble**.
 
 ## The game
